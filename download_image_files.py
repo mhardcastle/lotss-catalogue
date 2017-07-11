@@ -14,6 +14,7 @@ import re
 import numpy as np
 from lxml import html
 import glob
+import os
 
 def download_file(url,outname):
     if os.path.isfile(outname):
@@ -87,8 +88,10 @@ if __name__=='__main__':
     t=Table.read(sys.argv[1])
     outfile=open(sys.argv[1].replace('.fits','-list.txt'),'w')
 
+    imagedir=os.environ['IMAGEDIR']
+    os.chdir(imagedir)
     # read the LOFAR map positions
-    g=glob.glob('/data/lofar/mjh/hetdex_v3/mosaics/P*')
+    g=glob.glob('mosaics/P*')
 
     files=[]
     ras=[]
@@ -101,6 +104,9 @@ if __name__=='__main__':
         files.append(file)
     ras=np.array(ras)
     decs=np.array(decs)
+
+    # now work in downloads dir
+    os.chdir('downloads')
 
     for r in t:
         dist=np.cos(decs*np.pi/180.0)*(ras-r['RA'])**2.0 + (decs-r['DEC'])**2.0

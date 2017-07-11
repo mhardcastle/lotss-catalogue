@@ -126,7 +126,7 @@ def find_bbox(t):
     return ra,dec,size
 
 def get_mosaic_name(name):
-    g=glob.glob('/data/lofar/mjh/hetdex_v3/mosaics/'+name+'*')
+    g=glob.glob(os.environ['IMAGEDIR']+'/mosaics/'+name+'*')
     if len(g)>0:
         return g[0]
     else:
@@ -134,11 +134,12 @@ def get_mosaic_name(name):
 
 if __name__=='__main__':
 
+    imagedir=os.environ['IMAGEDIR']
     tname=sys.argv[1]
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # all LOFAR sources
-    ot=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.1.fits')
+    ot=Table.read(imagedir+'/LOFAR_HBA_T1_DR1_catalog_v0.1.fits')
     # large source table
     lt=ot[(ot['Total_flux']>10) & (ot['Maj']>8)]
 
@@ -178,6 +179,7 @@ if __name__=='__main__':
     except:
         title=None
 
+    # resize the image to look for interesting neighbours
     iter=0
     while True:
         startra,startdec=ra,dec
@@ -225,26 +227,26 @@ if __name__=='__main__':
 
     size/=3600.0
 
-    gals=Table.read('tier1_ps1_wise_hetdex.fits')
+    gals=Table.read(imagedir+'/tier1_ps1_wise_hetdex.fits')
     gals['raMean'].name='ra'
     gals['decMean'].name='dec'
     pg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
     del(gals)
 
-    gals=Table.read('allwise_HETDEX_1.fits')
+    gals=Table.read(imagedir+'/allwise_HETDEX_1.fits')
     pwg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
     del(gals)
 
-    pshdu=extract_subim(psmaps[i],ra,dec,size,hduid=1)
+    pshdu=extract_subim(imagedir+'/downloads/'+psmaps[i],ra,dec,size,hduid=1)
     lhdu=extract_subim(lofarfile,ra,dec,size)
-    firsthdu=extract_subim(firstmaps[i],ra,dec,size)
+    firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
     psimage=r['Source_id']+'_PS.png'
     pspimage=r['Source_id']+'_PSp.png'
     wiseimage=r['Source_id']+'_W.png'
     
     show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ot,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title)
     show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ot,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,plotpos=[(pg,'x'),(pwg,'+')],show_lofar=False,save_name=pspimage,no_labels=True,title=title)
-    whdu=extract_subim(wisemaps[i],ra,dec,size)
+    whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
     show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ot,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=wiseimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,noisethresh=0)
 
     with open(r['Source_id']+'-manifest.txt','w') as manifest:
