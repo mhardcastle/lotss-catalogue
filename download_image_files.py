@@ -15,6 +15,7 @@ import numpy as np
 from lxml import html
 import glob
 import os
+from time import sleep
 
 def download_file(url,outname):
     if os.path.isfile(outname):
@@ -52,7 +53,15 @@ def get_wise(ra,dec,band):
     mission='wise'
     dataset='allwise'
     table='p3am_cdd'
-    results=Ibe.query_region(coord.SkyCoord(ra, dec, unit=(u.deg, u.deg), frame='icrs'),mission=mission,dataset=dataset,table=table)
+    successful=False
+    while not successful:
+        try:
+            results=Ibe.query_region(coord.SkyCoord(ra, dec, unit=(u.deg, u.deg), frame='icrs'),mission=mission,dataset=dataset,table=table)
+            successful=True
+        except requests.exceptions.ConnectionError:
+            print 'Connection failed, retrying'
+            sleep(10)
+    
     url = 'http://irsa.ipac.caltech.edu/ibe/data/'+mission+'/'+dataset+'/'+table+'/'
     params = { 'coadd_id': results[results['band']==band]['coadd_id'][0],
            'band': band }
@@ -86,7 +95,13 @@ def get_first(ra,dec):
 
 if __name__=='__main__':
     t=Table.read(sys.argv[1])
-    outfile=open(sys.argv[1].replace('.fits','-list.txt'),'w')
+    outfilename=sys.argv[1].replace('.fits','-list.txt')
+    if not(os.path.isfile(outfilename)):
+        startpoint=0
+        outfile=open(outfilename,'w')
+    else:
+        startpoint=len(open(outfilename).readlines())
+        outfile=open(outfilename,'a')
 
     imagedir=os.environ['IMAGEDIR']
     os.chdir(imagedir)
@@ -97,7 +112,10 @@ if __name__=='__main__':
     ras=[]
     decs=[]
     for d in g:
-        file=d+'/mosaic.fits'
+        if '.fits' in d:
+            file=d
+        else:
+            file=d+'/mosaic.fits'
         hdu=fits.open(file)
         ras.append(hdu[0].header['CRVAL1'])
         decs.append(hdu[0].header['CRVAL2'])
@@ -108,7 +126,7 @@ if __name__=='__main__':
     # now work in downloads dir
     os.chdir('downloads')
 
-    for r in t:
+    for r in t[startpoint:]:
         dist=np.cos(decs*np.pi/180.0)*(ras-r['RA'])**2.0 + (decs-r['DEC'])**2.0
         i=np.argmin(dist)
         lofarname=files[i]
@@ -116,6 +134,6 @@ if __name__=='__main__':
         psnames=get_panstarrs(r['RA'],r['DEC'],'i')
         wisename=get_wise(r['RA'],r['DEC'],1)
         firstname=get_first(r['RA'],r['DEC'])
-        print >>outfile,r['Source_id'],lofarname,psnames[0],wisename,firstname
+        print >>outfile,r['Source_Name'],lofarname,psnames[0],wisename,firstname
 
     outfile.close()

@@ -10,7 +10,7 @@ Montage needs to be on your PATH: e.g. at Herts
 
 export PATH=/soft/Montage_v3.3/bin:$PATH
 
-Make a source FITS file with 'RA', 'DEC', 'Source_ID' columns.
+Make a source FITS file with 'RA', 'DEC', 'Source_Name' columns.
 
 If source ID is broken, fix it -- will rewrite based on RA,DEC:
 
@@ -33,9 +33,14 @@ wc file-list.txt
 
 (to find how many jobs you're going to be running) and then
 
-qsub t 0-100 -v INFILE=file.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/lgz.qsub
+qsub -t 0-100 -v INFILE=file.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/lgz.qsub
 
 To upload to Zooniverse...
 
+echo > manifest.txt <<EOF
+subject_id,image_name_1,image_name_2,image_name_3,source_name,ra,dec,#size
+EOF
+cat *-manifest.txt | sort -n -k 1 -t , >> manifest.csv
+
 export PANOPTES_PASSWORD=whatever
-panoptes-subject-uploader ./manifest.csv --username mjh22 --project 2513 --workflow 1772
+NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --project 2513 --workflow 1772

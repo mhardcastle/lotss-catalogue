@@ -2,7 +2,6 @@
 
 import matplotlib
 matplotlib.use('Agg')
-from overlay import show_overlay
 from astropy.table import Table,vstack
 from astropy.io import fits
 from astropy.wcs import WCS
@@ -24,6 +23,7 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3):
     if naxis<2:
         raise OverlayException('Can\'t make map from this')
 
+    print f[hduid].data.shape
     ds=f[hduid].data.shape[-2:]
     by,bx=ds
     xmin=int(x-size)
@@ -85,6 +85,7 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3):
     return hdulist
 
 def extract_subim(filename,ra,dec,size,hduid=0):
+    print 'Opening',filename
     orighdu=fits.open(filename)
     psize=int(size/orighdu[hduid].header['CDELT2'])
     ndims=orighdu[hduid].header['NAXIS']
@@ -126,7 +127,9 @@ def find_bbox(t):
     return ra,dec,size
 
 def get_mosaic_name(name):
-    g=glob.glob(os.environ['IMAGEDIR']+'/mosaics/'+name+'*')
+    globst=os.environ['IMAGEDIR']+'/mosaics/'+name.rstrip()+'*'
+    print 'Looking for',globst
+    g=glob.glob(globst)
     if len(g)>0:
         return g[0]
     else:
@@ -139,7 +142,7 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # all LOFAR sources
-    ot=Table.read(imagedir+'/LOFAR_HBA_T1_DR1_catalog_v0.1.fits')
+    ot=Table.read(imagedir+'/LOFAR_HBA_T1_DR1_catalog_v0.2.srl.fits')
     # large source table
     lt=ot[(ot['Total_flux']>10) & (ot['Maj']>8)]
 
@@ -158,13 +161,36 @@ if __name__=='__main__':
     i=int(sys.argv[2])
     r=t[i]
     print r
+    sourcename=r['Source_Name']
+    sourcename=sourcename.rstrip()
+
+    psimage=sourcename+'_PS.png'
+    pspimage=sourcename+'_PSp.png'
+    wiseimage=sourcename+'_W.png'
+    manifestname=sourcename+'-manifest.txt'
     print lofarmaps[i],psmaps[i],wisemaps[i]
     try:
         mosaic=r['Mosaic_ID']
-        lofarfile=get_mosaic_name(mosaic)+'/mosaic.fits'
     except:
-        lofarfile=lofarmaps[i]
+        mosaic=None
+    if mosaic is not None:
+        try:
+            lofarfile=get_mosaic_name(mosaic)
+        except RuntimeError:
+            print 'Could not get mosaic ID from',r['Mosaic_ID']
+            mosaic=None
+    if mosaic is None:
+        lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
+    if os.path.isdir(lofarfile):
+        lofarfile+='/mosaic.fits'
     print lofarfile
+
+    if os.path.isfile(manifestname):
+        print 'Selected output file exists already'
+        sys.exit(0)
+
+    from overlay import show_overlay
+
     ra,dec=r['RA'],r['DEC']
 
     try:
@@ -190,10 +216,11 @@ if __name__=='__main__':
 
         # make sure the original source is in there
         for nr in tcopy:
-            if r['Source_id']==nr['Source_id']:
+            if sourcename==nr['Source_Name']:
                 break
         else:
-            tcopy=vstack((tcopy,r))
+            if 'Maj' in r.columns:
+                tcopy=vstack((tcopy,r))
 
         ra=np.mean(tcopy['RA'])
         dec=np.mean(tcopy['DEC'])
@@ -233,23 +260,21 @@ if __name__=='__main__':
     pg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
     del(gals)
 
-    gals=Table.read(imagedir+'/allwise_HETDEX_1.fits')
+    gals=Table.read(imagedir+'/wise/allwise_HETDEX_full_radec.fits')
     pwg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
     del(gals)
 
     pshdu=extract_subim(imagedir+'/downloads/'+psmaps[i],ra,dec,size,hduid=1)
     lhdu=extract_subim(lofarfile,ra,dec,size)
     firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
-    psimage=r['Source_id']+'_PS.png'
-    pspimage=r['Source_id']+'_PSp.png'
-    wiseimage=r['Source_id']+'_W.png'
     
     show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ot,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title)
+    
     show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ot,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,plotpos=[(pg,'x'),(pwg,'+')],show_lofar=False,save_name=pspimage,no_labels=True,title=title)
     whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
     show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ot,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=wiseimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,noisethresh=0)
 
-    with open(r['Source_id']+'-manifest.txt','w') as manifest:
-        manifest.write('%i,%s,%s,%s,%s,%f,%f,%f\n' % (i,psimage,pspimage,wiseimage,r['Source_id'],ra,dec,size*3600.0))
+    with open(manifestname,'w') as manifest:
+        manifest.write('%i,%s,%s,%s,%s,%f,%f,%f\n' % (i,psimage,pspimage,wiseimage,sourcename,ra,dec,size*3600.0))
 
-    os.system('mogrify -quality 90 -trim '+r['Source_id']+'*.png')
+    os.system('mogrify -quality 90 -trim '+sourcename+'*.png')

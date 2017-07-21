@@ -6,8 +6,15 @@
 # lofarhdu must be a flattened (2D) LOFAR map. opthdu can be any type
 # of optical map. rms_use must be the loc
 
-import aplpy
+from time import sleep
 import numpy as np
+successful=False
+while not successful:
+    try:
+        import aplpy
+        successful=True
+    except:
+        sleep(np.random.rand()*20)
 import matplotlib.pyplot as plt
 from astropy.wcs import WCS
 from astropy.table import Table
@@ -52,6 +59,9 @@ def find_noise_area(hdu,ra,dec,size):
 
 def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1):
 
+    if lofarhdu is None:
+        print 'LOFAR HDU is missing, not showing it'
+        show_lofar=False
     try:
         from matplotlib.cbook import MatplotlibDeprecationWarning
         import warnings
@@ -71,7 +81,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
         if rms_use is None:
             rms_use=find_noise_area(lofarhdu,ra,dec,size)[1]
             print 'Using LOFAR rms',rms_use
-        drlimit=1000
+        drlimit=500
         print lofarmax/drlimit,rms_use*2.0
         minlevel=max([lofarmax/drlimit,rms_use*2.0])
         levels=minlevel*2.0**np.linspace(0,14,30)
