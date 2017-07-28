@@ -4,7 +4,7 @@ Making image sets and uploading to Zooniverse
 Set path somewhere sensible: set IMAGEDIR to the image dump directory
 
 export LGZPATH=/home/mjh/git/lgz
-export IMAGEDIR=/data/lofar/mjh/hetdex_v3
+export IMAGEDIR=/data/lofar/mjh/hetdex_v4
 
 Montage needs to be on your PATH: e.g. at Herts
 

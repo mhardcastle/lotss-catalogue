@@ -4,7 +4,7 @@
 # determination of what maps to use
 
 # lofarhdu must be a flattened (2D) LOFAR map. opthdu can be any type
-# of optical map. rms_use must be the loc
+# of optical map. rms_use must be the local rms
 
 from time import sleep
 import numpy as np

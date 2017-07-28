@@ -9,95 +9,9 @@ import numpy as np
 import sys
 import os
 import glob
+from subim import extract_subim
 
 scale=3600.0 # scaling factor for region sizes
-
-def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3):
-    """ 
-    Flatten a fits file so that it becomes a 2D image. Return new header and
-    data
-    This version also makes a sub-image of specified size.
-    """
-
-    naxis=f[hduid].header['NAXIS']
-    if naxis<2:
-        raise OverlayException('Can\'t make map from this')
-
-    print f[hduid].data.shape
-    ds=f[hduid].data.shape[-2:]
-    by,bx=ds
-    xmin=int(x-size)
-    if xmin<0:
-        xmin=0
-    xmax=int(x+size)
-    if xmax>bx:
-        xmax=bx
-    ymin=int(y-size)
-    if ymin<0:
-        ymin=0
-    ymax=int(y+size)
-    if ymax>by:
-        ymax=by
-    
-    if ymax<=ymin or xmax<=xmin:
-        # this can only happen if the required position is not on the map
-        print 'Failed to make subimage!'
-        return None
-
-    w = WCS(f[hduid].header)
-    wn=WCS(naxis=2)
-    
-    wn.wcs.crpix[0]=w.wcs.crpix[0]-xmin
-    wn.wcs.crpix[1]=w.wcs.crpix[1]-ymin
-    wn.wcs.cdelt=w.wcs.cdelt[0:2]
-    try:
-        wn.wcs.pc=w.wcs.pc[0:2,0:2]
-    except AttributeError:
-        pass # pc is not present
-    wn.wcs.crval=w.wcs.crval[0:2]
-    wn.wcs.ctype[0]=w.wcs.ctype[0]
-    wn.wcs.ctype[1]=w.wcs.ctype[1]
-    
-    header = wn.to_header()
-    header["NAXIS"]=2
-
-    slice=[]
-    for i in range(naxis,0,-1):
-        if i==1:
-            slice.append(np.s_[xmin:xmax])
-        elif i==2:
-            slice.append(np.s_[ymin:ymax])
-        elif i==freqaxis:
-            slice.append(channel)
-        else:
-            slice.append(0)
-    print slice
-
-    hdu=fits.PrimaryHDU(f[hduid].data[slice],header)
-    copy=('EQUINOX','EPOCH','BMAJ','BMIN','BPA')
-    for k in copy:
-        r=f[hduid].header.get(k)
-        if r:
-            hdu.header[k]=r
-    if 'TAN' in hdu.header['CTYPE1']:
-        hdu.header['LATPOLE']=f[hduid].header['CRVAL2']
-    hdulist=fits.HDUList([hdu])
-    return hdulist
-
-def extract_subim(filename,ra,dec,size,hduid=0):
-    print 'Opening',filename
-    orighdu=fits.open(filename)
-    psize=int(size/orighdu[hduid].header['CDELT2'])
-    ndims=orighdu[hduid].header['NAXIS']
-    pvect=np.zeros((1,ndims))
-    lwcs=WCS(orighdu[hduid].header)
-    pvect[0][0]=ra
-    pvect[0][1]=dec
-    imc=lwcs.wcs_world2pix(pvect,0)
-    x=imc[0][0]
-    y=imc[0][1]
-    hdu=flatten(orighdu,ra,dec,x,y,psize,hduid=hduid)
-    return hdu
 
 def find_bbox(t):
     # given a table t find the bounding box of the ellipses for the regions
@@ -264,11 +178,15 @@ if __name__=='__main__':
     pwg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
     del(gals)
 
+    ots=ot[(np.abs(ot['RA']-ra)<size) & (np.abs(ot['DEC']-dec)<size)]
+    print ra,dec
+    print ots['RA','DEC']
+
     pshdu=extract_subim(imagedir+'/downloads/'+psmaps[i],ra,dec,size,hduid=1)
     lhdu=extract_subim(lofarfile,ra,dec,size)
     firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
     
-    show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ot,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title)
+    show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title)
     
     show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ot,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,plotpos=[(pg,'x'),(pwg,'+')],show_lofar=False,save_name=pspimage,no_labels=True,title=title)
     whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
