@@ -7,7 +7,7 @@ t=Table.read('subset_with_id.fits')
 
 # read the maps
 
-g=glob.glob('/data/lofar/mjh/hetdex_v3/mosaics/P*')
+g=glob.glob('/data/lofar/mjh/hetdex_v4/mosaics/P*')
 outfile=open('lofar-maps.txt','w')
 
 files=[]

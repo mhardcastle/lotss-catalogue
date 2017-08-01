@@ -57,7 +57,7 @@ def find_noise_area(hdu,ra,dec,size):
     return mean,noise,vmax
     
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen'):
 
     if lofarhdu is None:
         print 'LOFAR HDU is missing, not showing it'
@@ -82,8 +82,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
             rms_use=find_noise_area(lofarhdu,ra,dec,size)[1]
             print 'Using LOFAR rms',rms_use
         drlimit=500
-        print lofarmax/drlimit,rms_use*2.0
-        minlevel=max([lofarmax/drlimit,rms_use*2.0])
+        print lofarmax/drlimit,rms_use*lofarlevel
+        minlevel=max([lofarmax/drlimit,rms_use*lofarlevel])
         levels=minlevel*2.0**np.linspace(0,14,30)
 
     hdu=opthdu
@@ -106,7 +106,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
         firstrms=find_noise_area(firsthdu,ra,dec,size)[1]
         print 'Using FIRST rms',firstrms
         firstlevels=firstrms*3*2.0**np.linspace(0,14,30)
-        f.show_contour(firsthdu,colors='lightgreen',linewidths=lw, levels=firstlevels)
+        f.show_contour(firsthdu,colors=first_color,linewidths=lw, levels=firstlevels)
 
     if bmaj is not None:
         f.add_beam()

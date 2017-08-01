@@ -127,7 +127,7 @@ if __name__=='__main__':
     os.chdir('downloads')
 
     for r in t[startpoint:]:
-        dist=np.cos(decs*np.pi/180.0)*(ras-r['RA'])**2.0 + (decs-r['DEC'])**2.0
+        dist=(np.cos(decs*np.pi/180.0)*(ras-r['RA']))**2.0 + (decs-r['DEC'])**2.0
         i=np.argmin(dist)
         lofarname=files[i]
 
