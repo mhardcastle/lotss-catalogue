@@ -133,7 +133,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
 
     if overlay_cat is not None:
         t=overlay_cat
-        f.show_ellipses(t['RA'],t['DEC'],t['Maj']*2/overlay_scale,t['Min']*2/overlay_scale,angle=90+t['PA'],edgecolor='red',linewidth=3,zorder=100)
+        if len(t)>0:
+            f.show_ellipses(t['RA'],t['DEC'],t['Maj']*2/overlay_scale,t['Min']*2/overlay_scale,angle=90+t['PA'],edgecolor='red',linewidth=3,zorder=100)
 
     if overlay_region is not None:
         f.show_regions(overlay_region)

@@ -24,12 +24,14 @@ def download_file(url,outname):
         print 'Downloading',outname
         while True:
             try:
-                response = requests.get(url, stream=True,verify=False)
+                response = requests.get(url, stream=True,verify=False,timeout=120)
                 if response.status_code!=200:
                     print 'Warning, HTML status code',response.status_code
             except requests.exceptions.ConnectionError:
                 print 'Connection error! sleeping 60 seconds before retry...'
                 sleep(60)
+            except requests.exceptions.Timeout:
+                print 'Timeout: retrying download'
             else:
                 break
         with open(outname, 'wb') as out_file:

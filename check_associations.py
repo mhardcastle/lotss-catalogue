@@ -96,5 +96,5 @@ if __name__=='__main__':
         for p in plot_positions:
             plot_ra.append(p[0])
             plot_dec.append(p[1])
-        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ot,overlay_scale=scale,lw=2,save_name=outname,no_labels=True,coords_ra=plot_ra,coords_dec=plot_dec)
+        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ot,overlay_scale=scale,lw=2,save_name=outname,no_labels=True,coords_ra=plot_ra,coords_dec=plot_dec,coords_lw=2)
 
