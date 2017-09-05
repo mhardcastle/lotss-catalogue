@@ -95,6 +95,36 @@ def get_first(ra,dec):
     download_file(url+path,outname)
     return outname
 
+class LofarMaps(object):
+    def __init__(self):
+        imagedir=os.environ['IMAGEDIR']
+        wd=os.getcwd()
+        os.chdir(imagedir)
+        # read the LOFAR map positions
+        g=glob.glob('mosaics/P*')
+
+        files=[]
+        ras=[]
+        decs=[]
+        for d in g:
+            if '.fits' in d:
+                file=d
+            else:
+                file=d+'/mosaic.fits'
+            hdu=fits.open(file)
+            ras.append(hdu[0].header['CRVAL1'])
+            decs.append(hdu[0].header['CRVAL2'])
+            files.append(file)
+        self.files=files
+        self.ras=np.array(ras)
+        self.decs=np.array(decs)
+        os.chdir(wd)
+    def find(self,ra,dec):
+        dist=(np.cos(self.decs*np.pi/180.0)*(self.ras-ra))**2.0 + (self.decs-dec)**2.0
+        i=np.argmin(dist)
+        return self.files[i]
+        
+
 if __name__=='__main__':
     t=Table.read(sys.argv[1])
     outfilename=sys.argv[1].replace('.fits','-list.txt')
@@ -105,34 +135,13 @@ if __name__=='__main__':
         startpoint=len(open(outfilename).readlines())
         outfile=open(outfilename,'a')
 
-    imagedir=os.environ['IMAGEDIR']
-    os.chdir(imagedir)
-    # read the LOFAR map positions
-    g=glob.glob('mosaics/P*')
-
-    files=[]
-    ras=[]
-    decs=[]
-    for d in g:
-        if '.fits' in d:
-            file=d
-        else:
-            file=d+'/mosaic.fits'
-        hdu=fits.open(file)
-        ras.append(hdu[0].header['CRVAL1'])
-        decs.append(hdu[0].header['CRVAL2'])
-        files.append(file)
-    ras=np.array(ras)
-    decs=np.array(decs)
-
+    lm=LofarMaps()
+    
     # now work in downloads dir
     os.chdir('downloads')
 
     for r in t[startpoint:]:
-        dist=(np.cos(decs*np.pi/180.0)*(ras-r['RA']))**2.0 + (decs-r['DEC'])**2.0
-        i=np.argmin(dist)
-        lofarname=files[i]
-
+        lofarname=lm.find(r['RA'],r['DEC'])
         psnames=get_panstarrs(r['RA'],r['DEC'],'i')
         wisename=get_wise(r['RA'],r['DEC'],1)
         firstname=get_first(r['RA'],r['DEC'])
