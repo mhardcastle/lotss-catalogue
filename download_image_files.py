@@ -96,7 +96,7 @@ def get_first(ra,dec):
     return outname
 
 class LofarMaps(object):
-    def __init__(self):
+    def __init__(self,stay_in_imagedir=False):
         imagedir=os.environ['IMAGEDIR']
         wd=os.getcwd()
         os.chdir(imagedir)
@@ -118,7 +118,8 @@ class LofarMaps(object):
         self.files=files
         self.ras=np.array(ras)
         self.decs=np.array(decs)
-        os.chdir(wd)
+        if not stay_in_imagedir:
+            os.chdir(wd)
     def find(self,ra,dec):
         dist=(np.cos(self.decs*np.pi/180.0)*(self.ras-ra))**2.0 + (self.decs-dec)**2.0
         i=np.argmin(dist)
@@ -135,7 +136,7 @@ if __name__=='__main__':
         startpoint=len(open(outfilename).readlines())
         outfile=open(outfilename,'a')
 
-    lm=LofarMaps()
+    lm=LofarMaps(stay_in_imagedir=True)
     
     # now work in downloads dir
     os.chdir('downloads')

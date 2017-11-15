@@ -5,7 +5,10 @@ import sys
 
 t=Table.read(sys.argv[1])
 ilt=[]
-sc=SkyCoord(t['RA'],t['DEC'],frame='icrs')
+if t['RA'].unit==u.deg:
+    sc=SkyCoord(t['RA'],t['DEC'],frame='icrs')
+else:
+    sc=SkyCoord(t['RA']*u.deg,t['DEC']*u.deg,frame='icrs')
 strings=sc.to_string(style='hmsdms',sep='',precision=2)
 for s in strings:
     ilt.append(str('ILTJ'+s).replace(' ','')[:-1])

@@ -28,4 +28,4 @@ else:
 lm=LofarMaps()
 filename=os.environ['IMAGEDIR']+'/'+lm.find(ra,dec)
 hdu=extract_subim(filename,ra,dec,0.25)
-hdu.writeto(name+'.fits',overwrite=True)
+hdu.writeto(name+'.fits',clobber=True)
