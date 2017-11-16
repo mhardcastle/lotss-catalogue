@@ -131,9 +131,13 @@ class find_overlap(object):
 
 t=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits')
 oldt=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.1.fits')
-compt=Table.read('HETDEX-LGZ-comps-v0.3.fits')
-sourcet=Table.read('HETDEX-LGZ-cat-v0.3-final.fits')
-sourcet['Component_flux']=np.nan
+compt=Table.read('HETDEX-LGZ-comps-v0.5.fits')
+sourcet=Table.read('HETDEX-LGZ-cat-v0.5.fits')
+for name in ['Component_flux','E_RA','E_DEC','Peak_flux','E_Peak_flux','E_Total_flux']:
+    sourcet[name]=np.nan
+sourcet['Dec'].name='DEC'
+sourcet['Flux'].name='Total_flux'
+
 matched=0
 unmatched=0
 bad=0
@@ -141,15 +145,17 @@ remove=[]
 drops=[]
 for i,r in enumerate(sourcet):
     drop=False
-    old_com=compt['Source_Name']==r['Source_Name']
-    comps=compt[old_com]
+    select_com=compt['Source_Name']==r['Source_Name']
+    comps=compt[select_com]
     innew=[]
+    filter=np.array([False]*len(t))
     for r2 in comps:
         name=r2['Comp_Name']
-        innew.append(np.any(t['Source_Name']==name))
-    if np.all(innew):
+        filter|=(t['Source_Name']==name)
+    if np.sum(filter)==len(comps):
         print r['Source_Name'],'all matched in main cat'
         matched+=1
+        complist=t[filter]
         for r2 in comps:
             remove.append(r2['Comp_Name'])
     else:
@@ -166,25 +172,48 @@ for i,r in enumerate(sourcet):
         flux=0
         for r2 in nt:
             flux+=r2['Total_flux']
-        print '        .... sanity check, source flux =',r['Flux'],'comps total flux =',flux
+        sourceflux=r['Total_flux']
+        print '        .... sanity check, source flux =',sourceflux,'comps total flux =',flux
         sourcet[i]['Component_flux']=flux
         if flux==0:
             bad+=1
             drop=True
             #o.plot()
-        elif flux/r['Flux']<0.5 or flux/r['Flux']>2.0:
+        elif flux/sourceflux<0.5 or flux/sourceflux>2.0:
             bad+=1
-            if flux/r['Flux']>3.0:
+            if flux/sourceflux>3.0:
                 drop=True
         unmatched+=1
-        if drop: o.plot(r['Source_Name'],'Catalogue flux %f New component flux %f' % (r['Flux'],flux))
+        complist=nt
+        if drop:
+            if r['Compoverlap']>0 or r['Art_prob']>=0.5 or r['Blend_prob']>=0.5 or r['Hostbroken_prob']>0.5 or r['Zoom_prob']>=0.5:
+                # these should be removed from the flowchart anyway because we need to fix them up later in various ways
+                drop=False
+        if drop: o.plot(r['Source_Name'],'Catalogue flux %f New component flux %f' % (sourceflux,flux))
         else: remove.append(r2['Source_Name'])
     drops.append(drop)
-
+    # fill in missing columns
+    # Assume total_flux is correct
+    # complist has whatever we know about the pybdsf components in it
+    if len(complist)>0:
+        # errors on RA, DEC are errors on the mean
+        sourcet[i]['E_RA']=np.sqrt(np.sum(complist['E_RA']**2.0))/len(complist)
+        sourcet[i]['E_DEC']=np.sqrt(np.sum(complist['E_DEC']**2.0))/len(complist)
+        # total flux error is error on the sum
+        sourcet[i]['E_Total_flux']=np.sqrt(np.sum(complist['E_Total_flux']**2.0))
+        # peak flux and error from brightest component
+        maxpk=np.argmax(complist['Peak_flux'])
+        sourcet[i]['Peak_flux']=complist[maxpk]['Peak_flux']
+        sourcet[i]['E_Peak_flux']=complist[maxpk]['E_Peak_flux']
+    
 print matched,unmatched,bad
-
+drops=np.array(drops)
 stf=sourcet[drops]
 stf.write('drop.fits',overwrite=True)
+
+sourcet.remove_column('Component_flux')
+stf=sourcet[~drops]
+stf.write('HETDEX-LGZ-cat-v0.5-filtered.fits',overwrite=True)
 
 removenames=open('remove.txt','w')
 for r in remove:
