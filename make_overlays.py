@@ -75,7 +75,12 @@ if __name__=='__main__':
     i=int(sys.argv[2])
     r=t[i]
     print r
-    sourcename=r['Source_Name']
+    try:
+        sourcename=r['Source_Name']
+    except KeyError:
+        # try to fix up old-format files
+        t['Source_id'].name='Source_Name'
+        sourcename=r['Source_Name']
     sourcename=sourcename.rstrip()
 
     psimage=sourcename+'_PS.png'
