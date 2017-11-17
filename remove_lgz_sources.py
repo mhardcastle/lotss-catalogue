@@ -133,13 +133,19 @@ t=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits')
 oldt=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.1.fits')
 compt=Table.read('HETDEX-LGZ-comps-v0.5.fits')
 sourcet=Table.read('HETDEX-LGZ-cat-v0.5.fits')
-for name in ['Component_flux','E_RA','E_DEC','Peak_flux','E_Peak_flux','E_Total_flux']:
+for name in ['Component_flux','E_RA','E_DEC','Peak_flux','E_Peak_flux','E_Total_flux','Isl_rms']:
     sourcet[name]=np.nan
+sourcet['S_Code']=""
+sourcet['Mosaic_ID']="          "
 sourcet['Dec'].name='DEC'
 sourcet['Flux'].name='Total_flux'
 
 matched=0
 unmatched=0
+matched_in=0
+matched_out=0
+unmatched_in=0
+unmatched_out=0
 bad=0
 remove=[]
 drops=[]
@@ -155,12 +161,15 @@ for i,r in enumerate(sourcet):
     if np.sum(filter)==len(comps):
         print r['Source_Name'],'all matched in main cat'
         matched+=1
+        matched_in+=len(comps)
         complist=t[filter]
         for r2 in comps:
             remove.append(r2['Comp_Name'])
+            matched_out+=1
     else:
         print r['Source_Name'],'partly or wholly unmatched with RA=',r['RA']
         # now search for components overlapping with this one in the old table
+        unmatched_in+=len(comps)
         mask=np.array([True]*len(oldt))
         for r2 in comps:
             mask&=~(oldt['Source_Name']==r2['Comp_Name'])
@@ -190,7 +199,10 @@ for i,r in enumerate(sourcet):
                 # these should be removed from the flowchart anyway because we need to fix them up later in various ways
                 drop=False
         if drop: o.plot(r['Source_Name'],'Catalogue flux %f New component flux %f' % (sourceflux,flux))
-        else: remove.append(r2['Source_Name'])
+        else:
+            for r2 in nt:
+                unmatched_out+=1
+                remove.append(r2['Source_Name'])
     drops.append(drop)
     # fill in missing columns
     # Assume total_flux is correct
@@ -205,8 +217,23 @@ for i,r in enumerate(sourcet):
         maxpk=np.argmax(complist['Peak_flux'])
         sourcet[i]['Peak_flux']=complist[maxpk]['Peak_flux']
         sourcet[i]['E_Peak_flux']=complist[maxpk]['E_Peak_flux']
-    
-print matched,unmatched,bad
+
+        # S_Code is determined from how many components we had
+        if len(complist)==1:
+            sourcet[i]['S_Code']=complist[0]['S_Code']
+        else:
+            sourcet[i]['S_Code']='M'
+
+        # isl_rms estimated from all the islands
+        sourcet[i]['Isl_rms']=np.mean(complist['Isl_rms'])
+
+        # mosaic id from brightest component again
+        sourcet[i]['Mosaic_ID']=complist[maxpk]['Mosaic_ID']
+        
+print 'Total matched',matched,'Total unmatched',unmatched,'Bad fluxes',bad
+print 'Matched in',matched_in,'Matched out',matched_out
+print 'Unmatched in',unmatched_in,'Unmatched out',unmatched_out
+
 drops=np.array(drops)
 stf=sourcet[drops]
 stf.write('drop.fits',overwrite=True)
