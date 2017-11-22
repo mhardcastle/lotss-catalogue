@@ -11,6 +11,6 @@ t['DEC_1'].name='DEC'
 t['ID_ra']=t['ra_2']
 t['ID_dec']=t['dec_2']
 
-t.remove_columns(['ra_2','dec_2','GroupID','GroupSize','Separation','raMean','decMean','class','id'])
+t.remove_columns(['ra_2','dec_2','GroupID','GroupSize','Separation','raMean','decMean','class','id','z_good'])
 t.sort('RA')
 t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v0.2.fits',overwrite=True)
