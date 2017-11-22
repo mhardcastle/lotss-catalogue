@@ -55,9 +55,8 @@ def find_noise_area(hdu,ra,dec,size):
         if not(np.isnan(vmax)):
             break
     return mean,noise,vmax
-    
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen'):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',drlimit=500,interactive_handler=None,peak=None):
 
     if lofarhdu is None:
         print 'LOFAR HDU is missing, not showing it'
@@ -77,11 +76,14 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
         coords_dec=dec
 
     if show_lofar:
-        lofarmax=np.nanmax(lofarhdu[0].data)
+        if peak is None:
+            lofarmax=np.nanmax(lofarhdu[0].data)
+        else:
+            print 'Using user-specified peak flux of',peak
+            lofarmax=peak
         if rms_use is None:
             rms_use=find_noise_area(lofarhdu,ra,dec,size)[1]
             print 'Using LOFAR rms',rms_use
-        drlimit=500
         print lofarmax/drlimit,rms_use*lofarlevel
         minlevel=max([lofarmax/drlimit,rms_use*lofarlevel])
         levels=minlevel*2.0**np.linspace(0,14,30)
@@ -156,14 +158,18 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
     else:
         plt.savefig(save_name)
 
-    if interactive:
-        def onclick(event):
-            xp=event.xdata
-            yp=event.ydata
-            xw,yw=f.pixel2world(xp,yp)
-            if event.button==2:
-                print title,xw,yw
-        fig=plt.gcf()
+    def onclick(event):
+        xp=event.xdata
+        yp=event.ydata
+        xw,yw=f.pixel2world(xp,yp)
+        if event.button==2:
+            print title,xw,yw
 
-        cid = fig.canvas.mpl_connect('button_press_event', onclick)
+    if interactive:
+        fig=plt.gcf()
+        if interactive_handler is None:
+            cid = fig.canvas.mpl_connect('button_press_event', onclick)
+        else:
+            I=interactive_handler(f)
+            fig.canvas.mpl_connect('button_press_event', I.onclick)
     return f

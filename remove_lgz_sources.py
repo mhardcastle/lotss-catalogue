@@ -148,6 +148,7 @@ unmatched_in=0
 unmatched_out=0
 bad=0
 remove=[]
+rsources=[]
 drops=[]
 for i,r in enumerate(sourcet):
     drop=False
@@ -164,6 +165,7 @@ for i,r in enumerate(sourcet):
         matched_in+=len(comps)
         complist=t[filter]
         for r2 in comps:
+            rsources.append(r['Source_Name'])
             remove.append(r2['Comp_Name'])
             matched_out+=1
     else:
@@ -195,14 +197,16 @@ for i,r in enumerate(sourcet):
         unmatched+=1
         complist=nt
         if drop:
+            o.plot(r['Source_Name'],'Catalogue flux %f New component flux %f' % (sourceflux,flux))
+        if drop:
             if r['Compoverlap']>0 or r['Art_prob']>=0.5 or r['Blend_prob']>=0.5 or r['Hostbroken_prob']>0.5 or r['Zoom_prob']>=0.5:
-                # these should be removed from the flowchart anyway because we need to fix them up later in various ways
+                # these should be removed from the flowchart anyway because we need to fix them up later in various ways, so let them through now and sort them out later
                 drop=False
-        if drop: o.plot(r['Source_Name'],'Catalogue flux %f New component flux %f' % (sourceflux,flux))
-        else:
-            for r2 in nt:
-                unmatched_out+=1
-                remove.append(r2['Source_Name'])
+        #if drop:
+        for r2 in nt:
+            unmatched_out+=1
+            rsources.append(r['Source_Name'])
+            remove.append(r2['Source_Name'])
     drops.append(drop)
     # fill in missing columns
     # Assume total_flux is correct
@@ -246,3 +250,8 @@ removenames=open('remove.txt','w')
 for r in remove:
     removenames.write(r+'\n')
 removenames.close()
+
+components=open('components.txt','w')
+for s,r in zip(rsources,remove):
+    components.write(s+' '+r+'\n')
+components.close()

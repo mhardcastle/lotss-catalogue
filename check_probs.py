@@ -1,7 +1,7 @@
 from astropy.table import Table
 import os.path
 
-t=Table.read('drop_noprobs.fits')
+t=Table.read('drop.fits')
 compt=Table.read('HETDEX-LGZ-comps-v0.3.fits')
 
 for r in t:
