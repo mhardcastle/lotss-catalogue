@@ -2,11 +2,12 @@
 
 class Source(object):
     def __init__(self):
-        self.cdict={}
-        self.odict={}
-        self.sdict={}
-        # the changed_dict tracks any changes. Since initialization is change, we also provide
-        # a function to reset changes
+        self.cdict={} # per-source dictionary of component lists
+        self.odict={} # per-source dictionary of optical IDs
+        self.sdict={} # per-source dictionary of sizes
+        self.mdict={} # per-source dictionary tracking how we got here
+        # the changed_dict tracks any changes. Since initialization is
+        # change, we also provide a function to reset changes
         self.changed_dict={}
         self.blends=[]
         

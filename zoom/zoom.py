@@ -178,21 +178,28 @@ if __name__=='__main__':
     wisemaps=[l[3] for l in lines]
     firstmaps=[l[4] for l in lines]
 
-    clines=open('../lgzmatch/components.txt').readlines()
+    clines=open('components.txt').readlines()
     ss=Source()
     for c in clines:
         bits=c.split()
         ss.add(bits[0],bits[1].rstrip())                 
 
     for r in t:
+        #ss.add(r['Source_Name'],r['Source_Name'])
         try:
             ss.set_opt(r['Source_Name'],r['optRA'],r['optDec'])
         except:
-            ss.set_opt(r['Source_Name'],r['ID_ra'],r['ID_dec'])
+            try:
+                ss.set_opt(r['Source_Name'],r['ID_ra'],r['ID_dec'])
+            except:
+                ss.set_opt(r['Source_Name'],r['LR_ra'],r['LR_dec'])
         try:
             ss.set_size(r['Source_Name'],r['Size'])
         except:
-            ss.set_size(r['Source_Name'],r['LGZ_Size'])
+            try:
+                ss.set_size(r['Source_Name'],r['LGZ_Size'])
+            except:
+                pass
             
         
     # now parse existing files to the structure
@@ -200,19 +207,21 @@ if __name__=='__main__':
         if os.path.isfile(n+'.txt'):
             parsefile(n,ss)
 
-    for i in range(260,len(t)):
+    for i in range(len(t)):
         sourcename=names[i]
-        #if os.path.isfile(sourcename+'.txt'):
-        #    continue
+        if os.path.isfile(sourcename+'.txt'):
+            continue
         if len(ss.get_comps(sourcename))==0:
             continue
         r=t[i]
         print i,r
-
+        assert(sourcename==r['Source_Name'])
+        
         try:
             mosaic=r['Mosaic_ID']
         except:
             mosaic=None
+        print 'Mosaic id is',mosaic
         if mosaic is not None:
             try:
                 lofarfile=get_mosaic_name(mosaic)
@@ -238,6 +247,7 @@ if __name__=='__main__':
         title=sourcename
 
         components=ss.get_comps(sourcename)
+        print 'Sourcename is',sourcename,'components is',components
         mask=np.array([False]*len(ot))
         for c in components:
             mask|=(ot['Source_Name']==c)
@@ -305,8 +315,12 @@ if __name__=='__main__':
         lhdu=extract_subim(lofarfile,ra,dec,size*2)
         firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size*2)
         whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
-
-        f=show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,block=False,interactive=False,drlimit=1000,peak=r['Peak_flux']/1000.0)
+        try:
+            peak==r['Peak_flux']/1000.0
+        except:
+            peak=None
+        
+        f=show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,block=False,interactive=False,drlimit=8000,peak=peak)
 
         ora,odec=ss.odict[sourcename]
         components=ss.get_comps(sourcename)
@@ -318,7 +332,11 @@ if __name__=='__main__':
 
         plt.ion()
         plt.show(block=False)
-        print 'Blend probability',r['Blend_prob']
+        try:
+            print 'Blend probability',r['Blend_prob']
+        except:
+            pass
+        
         stop=False
         while not(stop):
             print '(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, go to (n)ext or (s)ave and continue?',

@@ -32,6 +32,7 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3):
     if ymax<=ymin or xmax<=xmin:
         # this can only happen if the required position is not on the map
         print 'Failed to make subimage!'
+        print xmin,xmax,ymin,ymax
         return None
 
     w = WCS(f[hduid].header)

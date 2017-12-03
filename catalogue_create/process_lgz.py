@@ -37,10 +37,11 @@ for r in lgz:
     k=r['Source_Name']
     ss.set_components(k,[])
 
-clines=open('/data/lofar/mjh/hetdex_v4/lgzmatch/components.txt').readlines()
+clines=open('components.txt').readlines()
 for c in clines:
     bits=c.split()
-    ss.add(bits[0],bits[1].rstrip())                 
+    ss.add(bits[0],bits[1].rstrip())
+    ss.mdict[bits[0]]=1
 
 ss.reset_changes() # ignore all 'changes' from initialization
     
@@ -49,8 +50,9 @@ for r in lgz:
     dir='/data/lofar/mjh/hetdex_v4/zoom/'
     if os.path.isfile(dir+n+'.txt'):
         parsefile(n,ss,dir=dir)
+        ss.mdict[n]=2
 
-remove=open('remove.txt','w')
+remove=open('lgz_components.txt','w')
 
 filter=np.array([True]*len(lgz))
 for i,r in enumerate(lgz):
@@ -128,7 +130,7 @@ for i,r in enumerate(lgz):
         if k in ss.blends:
             r['Blend_prob']=1
 
-        r['Zoom_prob']=0
+        r['Zoom_prob']=0 # since these should all have been resolved
 
         if ora is not None:
             # check opt position
@@ -148,7 +150,7 @@ for i,r in enumerate(lgz):
                     idx=int(idx)
                     ora=ocat[idx]['ra']
                     odec=ocat[idx]['dec']
-                    name=ocat[idx]['AllWISE']
+                    name='AllWISE'+ocat[idx]['AllWISE']
                     qual=0.667+0.333*(12.0-sep)/12.0
 
                 r['optRA']=ora
@@ -159,11 +161,11 @@ for i,r in enumerate(lgz):
         olgz[i]=r
 
     comps=ss.get_comps(k)
-    for k in comps:
-        remove.write(k+'\n')
+    for j in comps:
+        remove.write('%s %s %i\n' % (j,r['Source_Name'],ss.mdict[k]))
         
 olgz=olgz[filter]
 
-olgz.write('HETDEX-LGZ-cat-v0.5-filtered-zooms.fits',overwrite=True)
+olgz.write('HETDEX-LGZ-cat-v0.6-filtered-zooms.fits',overwrite=True)
 
 remove.close()
