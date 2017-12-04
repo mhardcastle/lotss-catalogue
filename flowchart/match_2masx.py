@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 '''
-get_intersecting_sources
-find which sources in a catalogue intersect, enclose or are enclosed by another source...
+match_2masx
+find which sources potentially match to a 2MASX source
 '''
 
 from lofar_source_sorter import Mask, Masks_disjoint_complete
@@ -17,11 +17,6 @@ import os
 path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
 lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits'
 lofarcat_file_psrt = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.presort.fits'
-
-
-
-
-
 
 lofarcat = Table.read(lofarcat_file)
 
@@ -142,17 +137,6 @@ lofarcat['2MASX_match'] = Xsmall
 
 print '{n:n} lofar sources have a possible 2MASX match'.format(n=sum(lofarcat['2MASX']))
 print '{n:n} 2MASX sources out of {nall:n} have a possible LOFAR match'.format(n=len(np.unique(lofarcat['2MASX_name']))-1,nall=Nxsc)
-
-#t=M_all.submask(huge , '2MASX_huge', '2MASX_huge')
-#t.make_sample(lofarcat)
-#t=M_all.submask(Large , '2MASX_Large', '2MASX_Large')
-#t.make_sample(lofarcat)
-#t=M_all.submask(large , '2MASX_large', '2MASX_large')
-#t.make_sample(lofarcat)
-#t=M_all.submask(small , '2MASX_small', '2MASX_small')
-#t.make_sample(lofarcat)
-
-#accept_match_2mass(xmatch1, lofarcat, xsc_nn, selname='ILTJ113935.922+555529.21', plot=True)
 
 
 ## write output file

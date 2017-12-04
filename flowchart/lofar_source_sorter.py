@@ -1,7 +1,7 @@
-# coding: utf-8
-
-
-#get_ipython().magic(u'matplotlib inline')
+'''
+lofar_source_sorter.py
+the main code for the decision tree
+'''
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
