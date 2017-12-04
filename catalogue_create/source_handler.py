@@ -2,10 +2,12 @@
 
 class Source(object):
     def __init__(self):
+        # ideally this rather clunky structure would be improved!
         self.cdict={} # per-source dictionary of component lists
         self.odict={} # per-source dictionary of optical IDs
         self.sdict={} # per-source dictionary of sizes
         self.mdict={} # per-source dictionary tracking how we got here
+        self.idict={} # per-source dictionary tracking LGZ id number
         # the changed_dict tracks any changes. Since initialization is
         # change, we also provide a function to reset changes
         self.changed_dict={}
@@ -31,6 +33,9 @@ class Source(object):
                     if comp in self.cdict[k]:
                         self.remove(k,comp)
 
+    def set_lgz_number(self,source,i):
+        self.idict[source]=i
+                        
     def delete_source(self,source):
         self.changed_dict[source]=True
         self.cdict[source]=[]
