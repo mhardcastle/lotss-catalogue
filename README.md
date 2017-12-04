@@ -13,6 +13,8 @@ Directories contain README files which give more information on what scripts to 
 
 * classify: code allowing interactive user classification of sources
 
+* flowchart: various scripts for the source classification decision tree including merging of catalogues from ML and LGZ outputs based on decision tree outputs.
+
 * lgz_create: code for making the LGZ images
 
 * lgz_process: Judith's LGZ output processing code
