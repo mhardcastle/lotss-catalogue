@@ -114,7 +114,7 @@ for k in ss.cdict:
             # only one component, so we can use its properties
             c=clist[0]
             r['Assoc']=0
-            for key in ['RA','DEC','Total_flux','E_Total_flux','Peak_flux','E_Peak_flux','E_RA','E_DEC','Isl_rms','S_Code','Mosaic_ID']:
+            for key in ['RA','DEC','Total_flux','E_Total_flux','Peak_flux','E_Peak_flux','E_RA','E_DEC','Isl_rms','S_Code','Mosaic_ID','Source_Name']:
                 r[key]=c[key]
             r['Size']=c['Maj']
         else:
@@ -182,9 +182,9 @@ for k in ss.cdict:
     if r is not None:
         olgz.add_row(r)
 
-    comps=ss.get_comps(k)
-    for j in comps:
-        remove.write('%s %s %i\n' % (j,r['Source_Name'],ss.mdict[k]))
+        comps=ss.get_comps(k)
+        for j in comps:
+            remove.write('%s %s %i\n' % (j,r['Source_Name'],ss.mdict[k]))
         
 olgz.write('HETDEX-LGZ-cat-v0.6-filtered-zooms.fits',overwrite=True)
 
