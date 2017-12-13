@@ -56,7 +56,7 @@ def find_noise_area(hdu,ra,dec,size):
             break
     return mean,noise,vmax
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',drlimit=500,interactive_handler=None,peak=None):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red'):
 
     if lofarhdu is None:
         print 'LOFAR HDU is missing, not showing it'
@@ -135,8 +135,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
 
     if overlay_cat is not None:
         t=overlay_cat
-        if len(t)>0:
-            f.show_ellipses(t['RA'],t['DEC'],t['Maj']*2/overlay_scale,t['Min']*2/overlay_scale,angle=90+t['PA'],edgecolor='red',linewidth=3,zorder=100)
+        f.show_ellipses(t['RA'],t['DEC'],t['Maj']*2/overlay_scale,t['Min']*2/overlay_scale,angle=90+t['PA'],edgecolor=ellipse_color,linewidth=3,zorder=100)
 
     if overlay_region is not None:
         f.show_regions(overlay_region)

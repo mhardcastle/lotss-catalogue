@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from descartes import PolygonPatch
 from copy import deepcopy
+from separation import separation
 
 def ellipse(x0,y0,a,b,pa,n=200):
     theta=np.linspace(0,2*np.pi,n,endpoint=False)
@@ -18,10 +19,6 @@ def ellipse(x0,y0,a,b,pa,n=200):
     p[:, 0] = x0 + a * ca * ct - b * sa * st
     p[:, 1] = y0 + a * sa * ct + b * ca * st
     return Polygon(p)
-
-def separation(c_ra,c_dec,ra,dec):
-    # all values in degrees
-    return np.sqrt((np.cos(c_dec*np.pi/180.0)*(ra-c_ra))**2.0+(dec-c_dec)**2.0)
 
 class find_overlap(object):
 
@@ -202,11 +199,11 @@ for i,r in enumerate(sourcet):
             if r['Compoverlap']>0 or r['Art_prob']>=0.5 or r['Blend_prob']>=0.5 or r['Hostbroken_prob']>0.5 or r['Zoom_prob']>=0.5:
                 # these should be removed from the flowchart anyway because we need to fix them up later in various ways, so let them through now and sort them out later
                 drop=False
-        #if drop:
-        for r2 in nt:
-            unmatched_out+=1
-            rsources.append(r['Source_Name'])
-            remove.append(r2['Source_Name'])
+        if not(drop):
+            for r2 in nt:
+                unmatched_out+=1
+                rsources.append(r['Source_Name'])
+                remove.append(r2['Source_Name'])
     drops.append(drop)
     # fill in missing columns
     # Assume total_flux is correct
@@ -244,7 +241,7 @@ stf.write('drop.fits',overwrite=True)
 
 sourcet.remove_column('Component_flux')
 stf=sourcet[~drops]
-stf.write('HETDEX-LGZ-cat-v0.5-filtered.fits',overwrite=True)
+stf.write('HETDEX-LGZ-cat-v0.6-filtered.fits',overwrite=True)
 
 removenames=open('remove.txt','w')
 for r in remove:

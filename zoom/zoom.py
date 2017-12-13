@@ -10,12 +10,9 @@ import glob
 from subim import extract_subim
 import matplotlib.pyplot as plt
 from source_handler import Source,parsefile
+from separation import separation
 
 scale=3600.0 # scaling factor for region sizes
-
-def separation(c_ra,c_dec,ra,dec):
-    # all values in degrees
-    return np.sqrt((np.cos(c_dec*np.pi/180.0)*(ra-c_ra))**2.0+(dec-c_dec)**2.0)
 
 def find_bbox(t):
     # given a table t find the bounding box of the ellipses for the regions

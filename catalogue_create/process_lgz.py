@@ -10,12 +10,11 @@ import numpy as np
 import os
 from copy import deepcopy
 from astropy.coordinates import SkyCoord
+from separation import separation
 import astropy.units as u
+import glob
 
 from source_handler import Source,parsefile
-def separation(c_ra,c_dec,ra,dec):
-    # all values in degrees
-    return np.sqrt((np.cos(c_dec*np.pi/180.0)*(ra-c_ra))**2.0+(dec-c_dec)**2.0)
 
 def sourcename(ra,dec):
     sc=SkyCoord(ra*u.deg,dec*u.deg,frame='icrs')
@@ -25,17 +24,19 @@ def sourcename(ra,dec):
 scale=3600.0 # scaling factor for region sizes
 
 print 'Reading tables, please wait...'
-pyb=Table.read('/data/lofar/mjh/hetdex_v4/lgzmatch/LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits')
-lgz=Table.read('/data/lofar/mjh/hetdex_v4/lgzmatch/HETDEX-LGZ-cat-v0.5-filtered.fits')
-olgz=deepcopy(lgz)
+pyb=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits')
+lgz=Table.read('HETDEX-LGZ-cat-v0.6-filtered.fits')
 ocat=Table.read('/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.2.fits')
 opcat=SkyCoord(ocat['ra']*u.deg, ocat['dec']*u.deg)
 
 ss=Source()
 
-for r in lgz:
+for i,r in enumerate(lgz):
     k=r['Source_Name']
     ss.set_components(k,[])
+    ss.set_lgz_number(k,i)
+
+# components.txt contains components for straight lgz outputs
 
 clines=open('components.txt').readlines()
 for c in clines:
@@ -45,23 +46,47 @@ for c in clines:
 
 ss.reset_changes() # ignore all 'changes' from initialization
     
+'''
 for r in lgz:
     n=r['Source_Name']
     dir='/data/lofar/mjh/hetdex_v4/zoom/'
     if os.path.isfile(dir+n+'.txt'):
         parsefile(n,ss,dir=dir)
         ss.mdict[n]=2
+'''
+
+# zooms table includes overrides for all sources, including ones that may not have come from lgz
+
+dir='/data/lofar/mjh/hetdex_v4/zoom/'
+g=glob.glob(dir+'ILT*.txt')
+for f in g:
+    n=f.split('/')[-1].replace('.txt','')
+    print 'Parsing file for source',n
+    parsefile(n,ss,dir=dir)
+    ss.mdict[n]=2
+
+olgz=lgz[:0].copy()
 
 remove=open('lgz_components.txt','w')
 
-filter=np.array([True]*len(lgz))
-for i,r in enumerate(lgz):
-    k=r['Source_Name']
+for k in ss.cdict:
     if len(ss.cdict[k])==0:
         print 'Dropping source',k,'as it has no components'
-        filter[i]=False
-    elif ss.changed_dict[k]:
+        r=None
+    elif not(ss.changed_dict[k]):
+        print 'Source',k,'has not changed'
+        # source has not changed, which means it can be copied from the corresponding entry in the lgz table
+        r=lgz[ss.idict[k]]
+    else:
+        # source has changed, or was only ever present in zooms text
         print 'Source',k,'is flagged as having changed'
+        r=lgz[0]
+        # Clear some fields to default values
+        for j in ['Art_prob','Blend_prob','Zoom_prob','Hostbroken_prob','ID_Qual','Assoc_Qual','Assoc', 'Compoverlap']:
+            r[j]=0
+        r['OptID_Name']='None'
+        r['optRA']=np.nan
+        r['optDec']=np.nan
         # recreate all of the source's info from its component list
         pfilter=np.array([False]*len(pyb))
         cnames=ss.get_comps(k)
@@ -76,8 +101,7 @@ for i,r in enumerate(lgz):
             odec=None
         if ora is not None:
             print '      Updated optical position',ora,odec
-            # check for source near this position
-
+            # later we check for source near this position
         try:
             size=ss.sdict[k]
         except KeyError:
@@ -90,7 +114,7 @@ for i,r in enumerate(lgz):
             # only one component, so we can use its properties
             c=clist[0]
             r['Assoc']=0
-            for key in ['RA','DEC','Total_flux','E_Total_flux','Peak_flux','E_Peak_flux','E_RA','E_DEC','Isl_rms','S_Code','Mosaic_ID']:
+            for key in ['RA','DEC','Total_flux','E_Total_flux','Peak_flux','E_Peak_flux','E_RA','E_DEC','Isl_rms','S_Code','Mosaic_ID','Source_Name']:
                 r[key]=c[key]
             r['Size']=c['Maj']
         else:
@@ -125,13 +149,11 @@ for i,r in enumerate(lgz):
             print 'sizes:',maxsep,maxsize
             r['Size']=maxsize
 
-        r['Assoc_Qual']=1 # temporary flag!
-        r['Compoverlap']=0
+        r['Assoc_Qual']=1
         if k in ss.blends:
             r['Blend_prob']=1
 
         r['Zoom_prob']=0 # since these should all have been resolved
-
         if ora is not None:
             # check opt position
             sep=separation(ora,odec,r['optRA'],r['optDec'])
@@ -142,30 +164,28 @@ for i,r in enumerate(lgz):
                 sep=d2d.value*scale
                 if sep>12:
                     print '     Bad optical position! sep = ',sep
-                    ora=np.nan
-                    odec=np.nan
-                    name='None'
-                    qual=0
                 else:
                     idx=int(idx)
                     ora=ocat[idx]['ra']
                     odec=ocat[idx]['dec']
-                    name='AllWISE'+ocat[idx]['AllWISE']
+                    if ocat[idx]['AllWISE']!='N/A':
+                        name='AllWISE'+ocat[idx]['AllWISE']
+                    else:
+                        name='PSO %s' % ocat[idx]['objID']
                     qual=0.667+0.333*(12.0-sep)/12.0
 
-                r['optRA']=ora
-                r['optDec']=odec
-                r['OptID_Name']=name
-                r['ID_Qual']=qual
+                    r['optRA']=ora
+                    r['optDec']=odec
+                    r['OptID_Name']=name
+                    r['ID_Qual']=qual
 
-        olgz[i]=r
+    if r is not None:
+        olgz.add_row(r)
 
-    comps=ss.get_comps(k)
-    for j in comps:
-        remove.write('%s %s %i\n' % (j,r['Source_Name'],ss.mdict[k]))
+        comps=ss.get_comps(k)
+        for j in comps:
+            remove.write('%s %s %i\n' % (j,r['Source_Name'],ss.mdict[k]))
         
-olgz=olgz[filter]
-
 olgz.write('HETDEX-LGZ-cat-v0.6-filtered-zooms.fits',overwrite=True)
 
 remove.close()
