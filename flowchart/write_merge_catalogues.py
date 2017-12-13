@@ -53,8 +53,19 @@ ML_LR
 LGZ_flags?
 
 '''
+def count_flags(cat, flag):
+    print '{:s} counts'.format(flag)
+    unique, counts = np.unique(cat[flag], return_counts=True)
+    for u,c in zip(unique, counts):
+        print u,c
 
 
+
+def name_from_coords(ra,dec,prefix=''):
+    sc = SkyCoord(ra,dec,frame='icrs', unit='deg')
+    sc = sc.to_string(style='hmsdms',sep='',precision=2)
+    name = prefix+sc.replace(' ','')[:-1]
+    return name
 
 
 
@@ -174,7 +185,7 @@ if __name__=='__main__':
     print 'adding info for {n:d} 2MASX source matches'.format(n=np.sum(sel2mass))
     # add the 2MASXJ
     names = lofarcat_sorted['2MASX_name'][sel2mass]
-    names = np.array(['2MASXJ'+n for n in names])
+    names = np.array(['2MASX J'+n for n in names])
     
     
     lofarcat_sorted['ID_name'][sel2mass] = names
@@ -202,8 +213,6 @@ if __name__=='__main__':
         #print ra,dec
         c = SkyCoord(ra,dec, frame='icrs', unit='deg')
         
-        #c.
-        
         try:
             st = SDSS.query_region(c,radius=0.5*t['Maj']*u.arcsec, photoobj_fields=['ra','dec','objID','petroR50_r','petroMag_r'])
             st = st[(st['petroMag_r'] <20.) & (st['petroMag_r'] > 0 )] 
@@ -213,11 +222,12 @@ if __name__=='__main__':
             a = sep.argmin()
             #print st
             #print st[a]
-            snames[ti] = 'SDSS '+str(st['objID'][a])
             sdss_ra[ti] = st['ra'][a]
             sdss_dec[ti] = st['dec'][a]
+            snames[ti] = name_from_coords(sdss_ra[ti],sdss_dec[ti],prefix='SDSS J')
         except:
             print 'error - sdss', ra,dec
+            
         
     
     #c = SkyCoord(lofarcat_sorted['RA'][sel2mass ][sdss_matches], lofarcat_sorted['DEC'][sel2mass ][sdss_matches], frame='icrs', unit='deg')
@@ -249,9 +259,8 @@ if __name__=='__main__':
         
         assoc_2mass['RA']=np.average(complist['RA'], weights=complist['Total_flux'])
         assoc_2mass['DEC']=np.average(complist['DEC'], weights=complist['Total_flux'])
-        sc = SkyCoord(assoc_2mass['RA'],assoc_2mass['DEC'],frame='icrs', unit='deg')
-        sc = sc.to_string(style='hmsdms',sep='',precision=2)
-        assoc_2mass['Source_Name'] = str('ILTJ'+sc).replace(' ','')[:-1]
+        
+        assoc_2mass['Source_Name'] = name_from_coords(assoc_2mass['RA'],assoc_2mass['DEC'],prefix='ILTJ')
         
         assoc_2mass['E_RA']=np.sqrt(np.sum(complist['E_RA']**2.0))/len(complist)
         assoc_2mass['E_DEC']=np.sqrt(np.sum(complist['E_DEC']**2.0))/len(complist)
@@ -302,12 +311,15 @@ if __name__=='__main__':
     print 'adding info for {n:d} ML source matches'.format(n=np.sum(selml))
     
 
-    
+    #import ipdb; ipdb.set_trace()
     # take the PS name over the WISE name
     # why is PS name just some number ?? - pepe?
     namesP = lofarcat_sorted['LR_name_ps'][selml]
+    namesP = [ 'PS '+str(nP) if nP != 999999 else '' for nP in namesP ]
+    #namesP = [name_from_coords(ra,dec, prefix='PSO J') for ra,dec,n in zip(lofarcat_sorted['LR_ra'][selml],lofarcat_sorted['LR_dec'][selml],lofarcat_sorted['LR_name_ps'][selml])  ]
     namesW = lofarcat_sorted['LR_name_wise'][selml]
-    names = [ 'PS '+str(nP) if nP != 999999  else 'AllWISE'+nW for nP,nW in zip(namesP,namesW)]
+    namesW = [ 'AllWISE'+nW  if nW != 'N/A' else '' for nW in namesW]
+    names = [nP if nP != '' else nW  for nP,nW in zip(namesP,namesW)]
     
     
     lofarcat_sorted['ID_name'][selml] = names
@@ -352,11 +364,10 @@ if __name__=='__main__':
     mergecat = vstack([lofarcat_sorted, lgz_cat])
     print 'now we have {n:d} sources'.format(n=len(mergecat))
 
-    print 'ID_flag counts:'
-    unique, counts = np.unique(mergecat['ID_flag'], return_counts=True)
-    for u,c in zip(unique, counts):
-        print u,c
-
+        
+    count_flags(mergecat, 'ID_flag')
+    count_flags(lofarcat_sorted_antd, 'ID_flag')
+        
 
     if os.path.isfile(comp_out_file):
         os.remove(comp_out_file)
