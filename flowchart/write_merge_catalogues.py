@@ -161,7 +161,10 @@ if __name__=='__main__':
         if lf == 1:
             lofarcat_sorted_antd['ID_flag'][ind] = 311
         elif lf == 2:
-            lofarcat_sorted_antd['ID_flag'][ind] = 312
+            if lofarcat_sorted_antd['ID_flag'][ind] == 3220:
+                lofarcat_sorted_antd['ID_flag'][ind] = 322  # we now have the zoomed in
+            else:
+                lofarcat_sorted_antd['ID_flag'][ind] = 312
 
     ## remove artefacts
     # all the artefacts identified and visually confirmed in the flowchart process
@@ -353,7 +356,13 @@ if __name__=='__main__':
         if lf == 1:
             lgz_cat['ID_flag'][ind] = 311
         elif lf == 2:
-            lgz_cat['ID_flag'][ind] = 312
+            # check if it comes from v2
+            
+            inds = np.where(ls == lofarcat_sorted_antd['New_Source_Name'])[0]
+            if np.any(lofarcat_sorted_antd['ID_flag'][inds] == 322):
+                lgz_cat['ID_flag'][ind] = 322
+            else:
+                lgz_cat['ID_flag'][ind] = 312
         else:
             print 'error'
         
