@@ -281,37 +281,32 @@ if __name__=='__main__':
     if add_G:
         lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=list), 'G_ind'))
 
-    # deal with some multiple Gauss sources
     m_S = lofarcat['S_Code'] =='S'
     minds = np.where(~m_S)[0]
     for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
         ig = np.where(lofargcat['Source_Name']==sid)[0]
         lofarcat['Ng'][i]= len(ig)
         lofarcat['G_LR_max'][i]= np.nanmax(lofargcat['LR'][ig])
-        
+        igi = np.argmax(lofargcat['LR'][ig])
+        # for now, if one of the gaussian LR is better, take that
+        if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
+            lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
+            lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
+            lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
+            lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
+            lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
         # how many unique acceptable matches are there for the gaussian components
         matches_ra = np.unique(lofargcat['LR_ra'][ig][np.log10(1+lofargcat['LR'][ig]) > 0.36])
         n_matches_ra = len(matches_ra)
         if n_matches_ra > 1:
             lofarcat['Flag_G_LR_problem'][i] = True
         # any different to source match
-        if np.any(matches_ra != lofarcat['LR_ra'][i]):
+        if np.sum(matches_ra != lofarcat['LR_ra'][i]):
             lofarcat['Flag_G_LR_problem'][i] = True
         lofarcat['Ng_LR_good'][i]= np.nansum(np.log10(1+lofargcat['LR'][ig]) > 0.36)
         
-        if not lofarcat['Flag_G_LR_problem'][i]:
-            igi = np.argmax(lofargcat['LR'][ig])
-            # for now, if one of the gaussian LR is better and no problems, take that
-            if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
-                lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
-                lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
-                lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
-                lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
-                lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
-        
         if add_G:
             lofarcat['G_ind'][i]= ig
-            
     lofarcat['G_LR_max'][m_S] = lofarcat['LR'][m_S]
     lofarcat['Ng_LR_good'][m_S] = 1*(np.log10(1+lofarcat['LR'][m_S]) > 0.36)
 
