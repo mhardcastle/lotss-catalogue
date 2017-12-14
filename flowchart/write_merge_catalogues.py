@@ -197,7 +197,7 @@ if __name__=='__main__':
     
     
     # some sources come from a tag 'match to bright galaxy' - not necesarily 2MASX - look in SDSS for these:
-    sel2masssdss = (lofarcat_sorted['ID_flag']==2) & (lofarcat_sorted['ID_name']=='2MASXJ')
+    sel2masssdss = (lofarcat_sorted['ID_flag']==2) & (lofarcat_sorted['ID_name']=='2MASX J')
     #sdss_matches =  (names == '2MASXJ')
     
     #lofarcat_sorted['ID_name'][sel2mass ] = names
