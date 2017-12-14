@@ -175,11 +175,11 @@ if __name__=='__main__':
 
     path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
     lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits'
-    lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.presort.fits'
+    lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.presort.fits'
     psmlcat_file = path+'lofar_pw.fixed.fits'
     psmlgcat_file = path+'lofar_gaus_pw.fixed.fits'
 
-    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.sorted.fits'
+    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
 
 
@@ -348,13 +348,13 @@ if __name__=='__main__':
 
 
     ## get artefact information (must run find_artefacts for these)
-    if 'artefact' not in lofarcat.colnames:
+    if 'artefact_flag' not in lofarcat.colnames:
         raise  RuntimeError('need the artefact information')
-    artefact = lofarcat['artefact']
+    artefact_flag = lofarcat['artefact_flag']
         
     # combine the artefact flags
     # artefacts have been identified through various routes of visual checking
-    Artefact_flag = (artefact == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5)
+    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5)
 
 
     lofarcat.add_column(Column(Artefact_flag, 'Artefact_flag'))
@@ -445,7 +445,7 @@ if __name__=='__main__':
                     masterlist=masterlist)
 
     # artefacts
-    M_all_artefact = M_all.submask(artefact,
+    M_all_artefact = M_all.submask(artefact_flag,
                         'artefact',
                         'Artefact\n(visually confirmed)',
                         edgelabel='Y',
@@ -454,7 +454,7 @@ if __name__=='__main__':
     lofarcat['ID_flag'][M_all_artefact.mask] = -1
 
     # sources 
-    M_all_clean = M_all.submask(~artefact,
+    M_all_clean = M_all.submask(~artefact_flag,
                         'src',
                         'Clean'.format(s=size_large),
                         edgelabel='N',

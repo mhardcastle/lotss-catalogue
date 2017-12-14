@@ -79,14 +79,14 @@ if __name__=='__main__':
     path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
 
     lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits'
-    lofarcat_orig_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits'
+    lofarcat_orig_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fits'
 
     # PS ML - matches for sources and gaussians
     psmlcat_file = path+'lofar_pw.fixed.fits'
     psmlgcat_file = path+'lofar_gaus_pw.fixed.fits'
 
     # sorted output from flowchart
-    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.sorted.fits'
+    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
     # LGZ output
     #lgz_compcat_file = os.path.join(path,'LGZ_v0/HETDEX-LGZ-comps-v0.5.fits')

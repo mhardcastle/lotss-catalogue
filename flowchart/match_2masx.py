@@ -15,8 +15,8 @@ import os
 
 
 path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
-lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits'
-lofarcat_file_psrt = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.presort.fits'
+lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fits'
+lofarcat_file_psrt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.presort.fits'
 
 lofarcat = Table.read(lofarcat_file)
 
