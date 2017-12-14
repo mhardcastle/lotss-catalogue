@@ -57,6 +57,14 @@ for n in artefactlist['Source_Name']:
     lofarcat['artefact_flag'][ni] = True    
 
 
+
+#################################################################################
+# sources with E_RA are all artefacts (visually confirmed as such)
+
+lofarcat['artefact_flag'][lofarcat['E_RA'] == 0] = True  
+
+
+
 #################################################################################
 # the following come from outputs of classify.py on various subsamples
 
