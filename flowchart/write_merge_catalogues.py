@@ -103,11 +103,8 @@ if __name__=='__main__':
 
     lofarcat_sorted = Table.read(lofarcat_file_srt)
     lofarcat_sorted_antd = Table.read(lofarcat_file_srt)
-    with open(lgz_component_file,'r') as f:
-        lgz_lines = f.readlines()
-    lgz_component = [l.rstrip().split()[0] for l in lgz_lines]
-    lgz_src = [l.rstrip().split()[1] for l in lgz_lines]
-    lgz_flag = [int(l.rstrip().split()[2]) for l in lgz_lines]
+    lgz_components = Table.read(lgz_component_file, format='ascii', names=['lgz_component', 'lgz_src', 'lgz_flag'])
+    
     
     #psmlcat = Table.read(psmlcat_file)
     
@@ -133,17 +130,13 @@ if __name__=='__main__':
     tc.name = 'New_Source_Name'
     lofarcat_sorted_antd.add_column(tc)
 
-    ## remove sources associated/flagged by LGZ v0
+    ## remove sources associated/flagged by LGZ v1
     # ideally this would just remove the components in the LGZ comp catalogue  - but using legacy catalogues mean that these don't directly map onto the new sources
-    # martin has produced remove.txt to do this.
+    # martin has produced lgz_components.txt to do this.
 
 
     lgz_select = np.ones(len(lofarcat_sorted), dtype=bool)
-    #for si,s in enumerate(lofarcat_sorted['Source_Name']):
-        #if s in lgz_component:
-            #lgz_select[si] = False
-    lgz_component = np.unique(lgz_component)
-    tlgz_component = Table([Column(lgz_component,'Source_Name'), Column(np.ones(len(lgz_component)),'LGZ_remove')])
+    tlgz_component = Table([Column(lgz_components['lgz_component'], 'Source_Name'), Column(np.ones(len(lgz_components)),'LGZ_remove')])
     lofarcat_sorted.sort('Source_Name')
     tc = join(lofarcat_sorted, tlgz_component, join_type='left')
     tc['LGZ_remove'].fill_value = 0
@@ -157,7 +150,8 @@ if __name__=='__main__':
     lofarcat_sorted = lofarcat_sorted[lgz_select]
     # we don't know what their new names are
     lofarcat_sorted_antd['New_Source_Name'][~lgz_select] = 'LGZ' # there shouldn't be any of these left afterwards!
-    for lc, ls, lf in zip(lgz_component, lgz_src, lgz_flag):
+    for lgzci in lgz_components:
+        lc, ls, lf = lgzci['lgz_component'], lgzci['lgz_src'], lgzci['lgz_flag']
         ind = np.where(lofarcat_sorted_antd['Source_Name'] == lc)[0]
         lofarcat_sorted_antd['New_Source_Name'][ind] = ls
         
@@ -340,10 +334,10 @@ if __name__=='__main__':
 
                                
 
-    ## add LGz v0 associated sources
+    ## add LGz v1 associated sources
     # 
     lgz_select = (lgz_cat['Compoverlap']==0)&(lgz_cat['Art_prob']<0.5)&(lgz_cat['Zoom_prob']<0.5)&(lgz_cat['Blend_prob']<0.5)&(lgz_cat['Hostbroken_prob']<0.5)
-    print 'Selecting {n2:d} of {n1:d} sources in the LGZv0 catalogue to add'.format(n1=len(lgz_cat),n2=np.sum(lgz_select))
+    print 'Selecting {n2:d} of {n1:d} sources in the LGZv1 catalogue to add'.format(n1=len(lgz_cat),n2=np.sum(lgz_select))
     lgz_cat = lgz_cat[lgz_select]
     lgz_cat.rename_column('optRA','ID_ra')
     lgz_cat.rename_column('optDec','ID_dec')
@@ -354,7 +348,8 @@ if __name__=='__main__':
     lgz_cat.rename_column('ID_Qual','LGZ_ID_Qual')
     
     lgz_cat.add_column(Column(3*np.ones(len(lgz_cat),dtype=int),'ID_flag'))
-    for ls, lf in zip(lgz_src, lgz_flag):
+    for lgzci in lgz_components:
+        ls, lf  =  lgzci['lgz_src'], lgzci['lgz_flag']
         ind = np.where(lgz_cat['Source_Name'] == ls)[0]
         if lf == 1:
             lgz_cat['ID_flag'][ind] = 311
