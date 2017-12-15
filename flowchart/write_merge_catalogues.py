@@ -144,7 +144,6 @@ if __name__=='__main__':
     tc.sort('Source_Name')
     lgz_select = (tc['LGZ_remove']!=1)
 
-    #import ipdb ; ipdb.set_trace()
 
     print 'Removing {n:d} sources associated in LGZ v1'.format(n=np.sum(~lgz_select))
     lofarcat_sorted = lofarcat_sorted[lgz_select]
@@ -169,7 +168,8 @@ if __name__=='__main__':
     lofarcat_sorted = lofarcat_sorted[lofarcat_sorted['Artefact_flag'] == 0]
     
     # artefacts have no name in the merged catalogue cos they don't appear there
-    lofarcat_sorted_antd['New_Source_Name'][lofarcat_sorted_antd['Artefact_flag'] != 0] = ''
+    # except for ones deemed to be part of another source by the wisdom of LGZ
+    lofarcat_sorted_antd['New_Source_Name'][((lofarcat_sorted_antd['Artefact_flag'] != 0) & (lofarcat_sorted_antd['New_Source_Name']!=lofarcat_sorted_antd['Source_Name']))] = ''
     
     print 'left with {n:d} sources'.format(n=len(lofarcat_sorted))
 
@@ -285,9 +285,7 @@ if __name__=='__main__':
         assoc_2mass['LGZ_Size']=np.max([np.max(complist['Maj']) , np.max([ci.separation(c).max().to('arcsec').value for ci in c])])
         # TBD 'Mosiac_ID'
         assoc_2mass['LGZ_Assoc'] = len(complist)
-        
-        #import ipdb ; ipdb.set_trace()
-        
+                
         # to save the new names
         for c in complist:
             ni = np.where(lofarcat_sorted_antd['Source_Name'] == c['Source_Name'])[0]
@@ -311,7 +309,6 @@ if __name__=='__main__':
     print 'adding info for {n:d} ML source matches'.format(n=np.sum(selml))
     
 
-    #import ipdb; ipdb.set_trace()
     # take the PS name over the WISE name
     # why is PS name just some number ?? - pepe?
     namesP = lofarcat_sorted['LR_name_ps'][selml]
