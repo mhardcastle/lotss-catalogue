@@ -713,6 +713,7 @@ if __name__=='__main__':
                         edgelabel='N',
                         qlabel='?'.format(l=lLR_thresh),
                         masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask] = 5
 
     # compact not isolated, nnlarge
     M_small_nisol_nclustered_S = M_small_nisol_nclustered.submask(lofarcat['S_Code'] == 'S',
