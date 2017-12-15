@@ -73,6 +73,9 @@ def name_from_coords(ra,dec,prefix=''):
 if __name__=='__main__':
 
     ### Required INPUTS
+    
+    version =  '0.7'
+    
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
 
@@ -94,8 +97,8 @@ if __name__=='__main__':
     lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.6-filtered-zooms.fits') 
     lgz_component_file = os.path.join(path,'lgz_v1/lgz_components.txt')
 
-    comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v0.6.comp.fits')
-    merge_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v0.6.fits')
+    comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
+    merge_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.fits'.format(v=version))
     merge_out_full_file = merge_out_file.replace('.fits','.full.fits')
 
     lofarcat_sorted = Table.read(lofarcat_file_srt)
