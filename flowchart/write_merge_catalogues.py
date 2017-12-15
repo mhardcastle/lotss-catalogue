@@ -169,7 +169,7 @@ if __name__=='__main__':
     
     # artefacts have no name in the merged catalogue cos they don't appear there
     # except for ones deemed to be part of another source by the wisdom of LGZ
-    lofarcat_sorted_antd['New_Source_Name'][((lofarcat_sorted_antd['Artefact_flag'] != 0) & (lofarcat_sorted_antd['New_Source_Name']!=lofarcat_sorted_antd['Source_Name']))] = ''
+    lofarcat_sorted_antd['New_Source_Name'][(lofarcat_sorted_antd['Artefact_flag'] != 0) & (lofarcat_sorted_antd['New_Source_Name']==lofarcat_sorted_antd['Source_Name'])] = ''
     
     print 'left with {n:d} sources'.format(n=len(lofarcat_sorted))
 
