@@ -92,9 +92,7 @@ if __name__=='__main__':
     lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
     # LGZ output
-    #lgz_compcat_file = os.path.join(path,'LGZ_v0/HETDEX-LGZ-comps-v0.5.fits')
-    #lgz_cat_file = os.path.join(path,'LGZ_v0/HETDEX-LGZ-cat-v0.5-filtered.fits') 
-    lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.6-filtered-zooms.fits') 
+    lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.7-filtered-zooms.fits') 
     lgz_component_file = os.path.join(path,'lgz_v1/lgz_components.txt')
 
     comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
