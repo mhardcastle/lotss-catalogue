@@ -15,7 +15,7 @@ import os
 #################################################################################
 
 path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
-lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.presort.fits'
+lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.presort.fits'
 
 
 
@@ -55,6 +55,18 @@ else:
 for n in artefactlist['Source_Name']:
     ni = np.where(lofarcat['Source_Name']==n)[0][0]
     lofarcat['artefact_flag'][ni] = True    
+
+
+
+#################################################################################
+# sources with E_RA are all artefacts (visually confirmed as such)
+
+lofarcat['artefact_flag'][lofarcat['E_RA'] == 0] = True  
+
+#################################################################################
+# the 1/300k case of a duplicate source - flag the one (higher noise as an artefact here
+
+lofarcat['artefact_flag'][(lofarcat['Source_Name']=='ILTJ132633.10+484745.7') & (lofarcat['Mosaic_ID']=='P38Hetdex')] = True
 
 
 #################################################################################

@@ -53,8 +53,19 @@ ML_LR
 LGZ_flags?
 
 '''
+def count_flags(cat, flag):
+    print '{:s} counts'.format(flag)
+    unique, counts = np.unique(cat[flag], return_counts=True)
+    for u,c in zip(unique, counts):
+        print u,c
 
 
+
+def name_from_coords(ra,dec,prefix=''):
+    sc = SkyCoord(ra,dec,frame='icrs', unit='deg')
+    sc = sc.to_string(style='hmsdms',sep='',precision=2)
+    name = prefix+sc.replace(' ','')[:-1]
+    return name
 
 
 
@@ -62,20 +73,23 @@ LGZ_flags?
 if __name__=='__main__':
 
     ### Required INPUTS
+    
+    version =  '0.7'
+    
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
 
     path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
 
     lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits'
-    lofarcat_orig_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits'
+    lofarcat_orig_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fits'
 
     # PS ML - matches for sources and gaussians
     psmlcat_file = path+'lofar_pw.fixed.fits'
     psmlgcat_file = path+'lofar_gaus_pw.fixed.fits'
 
     # sorted output from flowchart
-    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.sorted.fits'
+    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
     # LGZ output
     #lgz_compcat_file = os.path.join(path,'LGZ_v0/HETDEX-LGZ-comps-v0.5.fits')
@@ -83,17 +97,14 @@ if __name__=='__main__':
     lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.6-filtered-zooms.fits') 
     lgz_component_file = os.path.join(path,'lgz_v1/lgz_components.txt')
 
-    comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v0.6.comp.fits')
-    merge_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v0.6.fits')
+    comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
+    merge_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.fits'.format(v=version))
     merge_out_full_file = merge_out_file.replace('.fits','.full.fits')
 
     lofarcat_sorted = Table.read(lofarcat_file_srt)
     lofarcat_sorted_antd = Table.read(lofarcat_file_srt)
-    with open(lgz_component_file,'r') as f:
-        lgz_lines = f.readlines()
-    lgz_component = [l.rstrip().split()[0] for l in lgz_lines]
-    lgz_src = [l.rstrip().split()[1] for l in lgz_lines]
-    lgz_flag = [int(l.rstrip().split()[2]) for l in lgz_lines]
+    lgz_components = Table.read(lgz_component_file, format='ascii', names=['lgz_component', 'lgz_src', 'lgz_flag'])
+    
     
     #psmlcat = Table.read(psmlcat_file)
     
@@ -119,17 +130,13 @@ if __name__=='__main__':
     tc.name = 'New_Source_Name'
     lofarcat_sorted_antd.add_column(tc)
 
-    ## remove sources associated/flagged by LGZ v0
+    ## remove sources associated/flagged by LGZ v1
     # ideally this would just remove the components in the LGZ comp catalogue  - but using legacy catalogues mean that these don't directly map onto the new sources
-    # martin has produced remove.txt to do this.
+    # martin has produced lgz_components.txt to do this.
 
 
     lgz_select = np.ones(len(lofarcat_sorted), dtype=bool)
-    #for si,s in enumerate(lofarcat_sorted['Source_Name']):
-        #if s in lgz_component:
-            #lgz_select[si] = False
-    lgz_component = np.unique(lgz_component)
-    tlgz_component = Table([Column(lgz_component,'Source_Name'), Column(np.ones(len(lgz_component)),'LGZ_remove')])
+    tlgz_component = Table([Column(lgz_components['lgz_component'], 'Source_Name'), Column(np.ones(len(lgz_components)),'LGZ_remove')])
     lofarcat_sorted.sort('Source_Name')
     tc = join(lofarcat_sorted, tlgz_component, join_type='left')
     tc['LGZ_remove'].fill_value = 0
@@ -143,14 +150,18 @@ if __name__=='__main__':
     lofarcat_sorted = lofarcat_sorted[lgz_select]
     # we don't know what their new names are
     lofarcat_sorted_antd['New_Source_Name'][~lgz_select] = 'LGZ' # there shouldn't be any of these left afterwards!
-    for lc, ls, lf in zip(lgz_component, lgz_src, lgz_flag):
+    for lgzci in lgz_components:
+        lc, ls, lf = lgzci['lgz_component'], lgzci['lgz_src'], lgzci['lgz_flag']
         ind = np.where(lofarcat_sorted_antd['Source_Name'] == lc)[0]
         lofarcat_sorted_antd['New_Source_Name'][ind] = ls
         
         if lf == 1:
             lofarcat_sorted_antd['ID_flag'][ind] = 311
         elif lf == 2:
-            lofarcat_sorted_antd['ID_flag'][ind] = 312
+            if lofarcat_sorted_antd['ID_flag'][ind] == 3220:
+                lofarcat_sorted_antd['ID_flag'][ind] = 322  # we now have the zoomed in
+            else:
+                lofarcat_sorted_antd['ID_flag'][ind] = 312
 
     ## remove artefacts
     # all the artefacts identified and visually confirmed in the flowchart process
@@ -174,7 +185,7 @@ if __name__=='__main__':
     print 'adding info for {n:d} 2MASX source matches'.format(n=np.sum(sel2mass))
     # add the 2MASXJ
     names = lofarcat_sorted['2MASX_name'][sel2mass]
-    names = np.array(['2MASXJ'+n for n in names])
+    names = np.array(['2MASX J'+n for n in names])
     
     
     lofarcat_sorted['ID_name'][sel2mass] = names
@@ -183,7 +194,7 @@ if __name__=='__main__':
     
     
     # some sources come from a tag 'match to bright galaxy' - not necesarily 2MASX - look in SDSS for these:
-    sel2masssdss = (lofarcat_sorted['ID_flag']==2) & (lofarcat_sorted['ID_name']=='2MASXJ')
+    sel2masssdss = (lofarcat_sorted['ID_flag']==2) & (lofarcat_sorted['ID_name']=='2MASX J')
     #sdss_matches =  (names == '2MASXJ')
     
     #lofarcat_sorted['ID_name'][sel2mass ] = names
@@ -202,8 +213,6 @@ if __name__=='__main__':
         #print ra,dec
         c = SkyCoord(ra,dec, frame='icrs', unit='deg')
         
-        #c.
-        
         try:
             st = SDSS.query_region(c,radius=0.5*t['Maj']*u.arcsec, photoobj_fields=['ra','dec','objID','petroR50_r','petroMag_r'])
             st = st[(st['petroMag_r'] <20.) & (st['petroMag_r'] > 0 )] 
@@ -213,11 +222,12 @@ if __name__=='__main__':
             a = sep.argmin()
             #print st
             #print st[a]
-            snames[ti] = 'SDSS '+str(st['objID'][a])
             sdss_ra[ti] = st['ra'][a]
             sdss_dec[ti] = st['dec'][a]
+            snames[ti] = name_from_coords(sdss_ra[ti],sdss_dec[ti],prefix='SDSS J')
         except:
             print 'error - sdss', ra,dec
+            
         
     
     #c = SkyCoord(lofarcat_sorted['RA'][sel2mass ][sdss_matches], lofarcat_sorted['DEC'][sel2mass ][sdss_matches], frame='icrs', unit='deg')
@@ -249,9 +259,8 @@ if __name__=='__main__':
         
         assoc_2mass['RA']=np.average(complist['RA'], weights=complist['Total_flux'])
         assoc_2mass['DEC']=np.average(complist['DEC'], weights=complist['Total_flux'])
-        sc = SkyCoord(assoc_2mass['RA'],assoc_2mass['DEC'],frame='icrs', unit='deg')
-        sc = sc.to_string(style='hmsdms',sep='',precision=2)
-        assoc_2mass['Source_Name'] = str('ILTJ'+sc).replace(' ','')[:-1]
+        
+        assoc_2mass['Source_Name'] = name_from_coords(assoc_2mass['RA'],assoc_2mass['DEC'],prefix='ILTJ')
         
         assoc_2mass['E_RA']=np.sqrt(np.sum(complist['E_RA']**2.0))/len(complist)
         assoc_2mass['E_DEC']=np.sqrt(np.sum(complist['E_DEC']**2.0))/len(complist)
@@ -302,12 +311,15 @@ if __name__=='__main__':
     print 'adding info for {n:d} ML source matches'.format(n=np.sum(selml))
     
 
-    
+    #import ipdb; ipdb.set_trace()
     # take the PS name over the WISE name
     # why is PS name just some number ?? - pepe?
     namesP = lofarcat_sorted['LR_name_ps'][selml]
+    namesP = [ 'PS '+str(nP) if nP != 999999 else '' for nP in namesP ]
+    #namesP = [name_from_coords(ra,dec, prefix='PSO J') for ra,dec,n in zip(lofarcat_sorted['LR_ra'][selml],lofarcat_sorted['LR_dec'][selml],lofarcat_sorted['LR_name_ps'][selml])  ]
     namesW = lofarcat_sorted['LR_name_wise'][selml]
-    names = [ 'PS '+str(nP) if nP != 999999  else 'AllWISE'+nW for nP,nW in zip(namesP,namesW)]
+    namesW = [ 'AllWISE'+nW  if nW != 'N/A' else '' for nW in namesW]
+    names = [nP if nP != '' else nW  for nP,nW in zip(namesP,namesW)]
     
     
     lofarcat_sorted['ID_name'][selml] = names
@@ -322,10 +334,10 @@ if __name__=='__main__':
 
                                
 
-    ## add LGz v0 associated sources
+    ## add LGz v1 associated sources
     # 
     lgz_select = (lgz_cat['Compoverlap']==0)&(lgz_cat['Art_prob']<0.5)&(lgz_cat['Zoom_prob']<0.5)&(lgz_cat['Blend_prob']<0.5)&(lgz_cat['Hostbroken_prob']<0.5)
-    print 'Selecting {n2:d} of {n1:d} sources in the LGZv0 catalogue to add'.format(n1=len(lgz_cat),n2=np.sum(lgz_select))
+    print 'Selecting {n2:d} of {n1:d} sources in the LGZv1 catalogue to add'.format(n1=len(lgz_cat),n2=np.sum(lgz_select))
     lgz_cat = lgz_cat[lgz_select]
     lgz_cat.rename_column('optRA','ID_ra')
     lgz_cat.rename_column('optDec','ID_dec')
@@ -336,12 +348,19 @@ if __name__=='__main__':
     lgz_cat.rename_column('ID_Qual','LGZ_ID_Qual')
     
     lgz_cat.add_column(Column(3*np.ones(len(lgz_cat),dtype=int),'ID_flag'))
-    for ls, lf in zip(lgz_src, lgz_flag):
+    for lgzci in lgz_components:
+        ls, lf  =  lgzci['lgz_src'], lgzci['lgz_flag']
         ind = np.where(lgz_cat['Source_Name'] == ls)[0]
         if lf == 1:
             lgz_cat['ID_flag'][ind] = 311
         elif lf == 2:
-            lgz_cat['ID_flag'][ind] = 312
+            # check if it comes from v2
+            
+            inds = np.where(ls == lofarcat_sorted_antd['New_Source_Name'])[0]
+            if np.any(lofarcat_sorted_antd['ID_flag'][inds] == 322):
+                lgz_cat['ID_flag'][ind] = 322
+            else:
+                lgz_cat['ID_flag'][ind] = 312
         else:
             print 'error'
         
@@ -352,11 +371,10 @@ if __name__=='__main__':
     mergecat = vstack([lofarcat_sorted, lgz_cat])
     print 'now we have {n:d} sources'.format(n=len(mergecat))
 
-    print 'ID_flag counts:'
-    unique, counts = np.unique(mergecat['ID_flag'], return_counts=True)
-    for u,c in zip(unique, counts):
-        print u,c
-
+        
+    count_flags(mergecat, 'ID_flag')
+    count_flags(lofarcat_sorted_antd, 'ID_flag')
+        
 
     if os.path.isfile(comp_out_file):
         os.remove(comp_out_file)
@@ -368,7 +386,7 @@ if __name__=='__main__':
 
 
     ## throw away extra columns
-    mergecat.keep_columns(['Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'Isl_rms', 'S_Code', 'Mosaic_ID', 'ID_flag', 'ID_name', 'ID_ra', 'ID_dec', 'ML_LR', 'LGZ_Size', 'LGZ_Assoc', 'LGZ_Assoc_Qual', 'LGZ_ID_Qual'])
+    mergecat.keep_columns(['Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'DC_Maj', 'E_DC_Maj', 'DC_Min', 'E_DC_Min', 'DC_PA', 'E_DC_PA', 'Isl_rms', 'S_Code', 'Mosaic_ID', 'Number_Masked', 'Number_Pointings', 'Masked_Fraction', 'ID_flag', 'ID_name', 'ID_ra', 'ID_dec', 'ML_LR', 'LGZ_Size', 'LGZ_Assoc', 'LGZ_Assoc_Qual', 'LGZ_ID_Qual'])
 
     
     if os.path.isfile(merge_out_file):

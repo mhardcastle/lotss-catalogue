@@ -175,11 +175,11 @@ if __name__=='__main__':
 
     path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
     lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits'
-    lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.presort.fits'
+    lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.presort.fits'
     psmlcat_file = path+'lofar_pw.fixed.fits'
     psmlgcat_file = path+'lofar_gaus_pw.fixed.fits'
 
-    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.sorted.fits'
+    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
 
 
@@ -266,6 +266,12 @@ if __name__=='__main__':
     lrgcol = np.zeros(len(lofargcat),dtype=float)
     lrgcol[f_nn_sep2d_g==0] = psmlgcat['dec'][f_nn_idx_g][f_nn_sep2d_g==0]
     lofargcat.add_column(Column(lrgcol, 'LR_dec'))
+    lrgcol = np.zeros(len(lofargcat),dtype='S19')
+    lrgcol[f_nn_sep2d_g==0] = psmlgcat['AllWISE'][f_nn_idx_g][f_nn_sep2d_g==0]
+    lofargcat.add_column(Column(lrgcol, 'LR_name_wise'))
+    lrgcol = np.zeros(len(lofargcat),dtype=int)
+    lrgcol[f_nn_sep2d_g==0] = psmlgcat['objID'][f_nn_idx_g][f_nn_sep2d_g==0]
+    lofargcat.add_column(Column(lrgcol, 'LR_name_ps'))
 
     add_G = False   # add the gaussian information
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng'))
@@ -285,6 +291,8 @@ if __name__=='__main__':
         # for now, if one of the gaussian LR is better, take that
         if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
             lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
+            lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
+            lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
             lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
             lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
         # how many unique acceptable matches are there for the gaussian components
@@ -340,13 +348,13 @@ if __name__=='__main__':
 
 
     ## get artefact information (must run find_artefacts for these)
-    if 'artefact' not in lofarcat.colnames:
+    if 'artefact_flag' not in lofarcat.colnames:
         raise  RuntimeError('need the artefact information')
-    artefact = lofarcat['artefact']
+    artefact_flag = lofarcat['artefact_flag']
         
     # combine the artefact flags
     # artefacts have been identified through various routes of visual checking
-    Artefact_flag = (artefact == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5)
+    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5)
 
 
     lofarcat.add_column(Column(Artefact_flag, 'Artefact_flag'))
@@ -437,7 +445,7 @@ if __name__=='__main__':
                     masterlist=masterlist)
 
     # artefacts
-    M_all_artefact = M_all.submask(artefact,
+    M_all_artefact = M_all.submask(artefact_flag,
                         'artefact',
                         'Artefact\n(visually confirmed)',
                         edgelabel='Y',
@@ -446,7 +454,7 @@ if __name__=='__main__':
     lofarcat['ID_flag'][M_all_artefact.mask] = -1
 
     # sources 
-    M_all_clean = M_all.submask(~artefact,
+    M_all_clean = M_all.submask(~artefact_flag,
                         'src',
                         'Clean'.format(s=size_large),
                         edgelabel='N',
@@ -543,7 +551,6 @@ if __name__=='__main__':
                         masterlist=masterlist)
     lofarcat['ID_flag'][M_large_faint_complex.mask] = 3210
     lofarcat['LGZ_flag'][M_large_faint_complex.mask] = 2
-    import ipdb ; ipdb.set_trace()
     
     M_large_faint_complex_zoom = M_large_faint.submask(lf_complex_zoom,
                         'lgzz',
@@ -636,36 +643,36 @@ if __name__=='__main__':
                         masterlist=masterlist)
     lofarcat['ID_flag'][M_small_isol_nS.mask] = 5
 
-    # compact isolated good lr
-    M_small_isol_nS_gprob = M_small_isol_nS.submask(lofarcat['Flag_G_LR_problem'],
-                        'gprob',
-                        color='orange',
-                        qlabel='problem',
-                        edgelabel='Y',
-                        masterlist=masterlist)
+    ## compact isolated good lr
+    #M_small_isol_nS_gprob = M_small_isol_nS.submask(lofarcat['Flag_G_LR_problem'],
+                        #'gprob',
+                        #color='orange',
+                        #qlabel='problem',
+                        #edgelabel='Y',
+                        #masterlist=masterlist)
 
-    # compact isolated good lr
-    M_small_isol_nS_nprob = M_small_isol_nS.submask(~lofarcat['Flag_G_LR_problem'],
-                        'nprob',
-                        qlabel='LR?',
-                        edgelabel='N',
-                        masterlist=masterlist)
+    ## compact isolated good lr
+    #M_small_isol_nS_nprob = M_small_isol_nS.submask(~lofarcat['Flag_G_LR_problem'],
+                        #'nprob',
+                        #qlabel='LR?',
+                        #edgelabel='N',
+                        #masterlist=masterlist)
 
-    # compact isolated good lr
-    M_small_isol_nS_nprob_lr = M_small_isol_nS_nprob.submask(np.log10(1+lofarcat['LR']) > lLR_thresh,
-                        'lr',
-                        qlabel='accept LR',
-                        edgelabel='Y',
-                        color='blue',
-                        masterlist=masterlist)
+    ## compact isolated good lr
+    #M_small_isol_nS_nprob_lr = M_small_isol_nS_nprob.submask(np.log10(1+lofarcat['LR']) > lLR_thresh,
+                        #'lr',
+                        #qlabel='accept LR',
+                        #edgelabel='Y',
+                        #color='blue',
+                        #masterlist=masterlist)
     
-    # compact isolated good lr
-    M_small_isol_nS_nprob_nlr = M_small_isol_nS_nprob.submask(np.log10(1+lofarcat['LR']) <= lLR_thresh,
-                        'nlr',
-                        qlabel='accept no LR',
-                        edgelabel='N',
-                        color='red',
-                        masterlist=masterlist)
+    ## compact isolated good lr
+    #M_small_isol_nS_nprob_nlr = M_small_isol_nS_nprob.submask(np.log10(1+lofarcat['LR']) <= lLR_thresh,
+                        #'nlr',
+                        #qlabel='accept no LR',
+                        #edgelabel='N',
+                        #color='red',
+                        #masterlist=masterlist)
 
     # compact not isolated
     M_small_nisol = M_small.submask(lofarcat['NN_sep'] <= separation1,
@@ -697,47 +704,60 @@ if __name__=='__main__':
                         'nclustered',
                         'compact not isolated (s<{s:.0f}", NN5>{nn:.0f}")'.format(s=size_large, nn=separation1),
                         edgelabel='N',
-                        qlabel='NN Large?',
+                        qlabel='S?',
                         masterlist=masterlist)
-
 
     # compact not isolated, nnlarge
-    M_small_nisol_nclustered_NNlarge = M_small_nisol_nclustered.submask(lofarcat['NN_Maj'] > size_large,
-                        'NNlarge',
-                        'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN large (s>{s:.0f}")'.format(s=size_large, nn=separation1),
-                        edgelabel='Y',
-                        qlabel='NN in VC list\nLR > {l:.2f}?'.format(l=lLR_thresh),
-                        masterlist=masterlist)
-
-
-    # compact not isolated, nnlarge, nnbright
-    in_LGZ = (lofarcat['LGZ_flag'][lofarcat['NN_idx']] == 1) | (lofarcat['LGZ_flag'][lofarcat['NN_idx']] == 2) | (lofarcat['LGZ_flag'][lofarcat['NN_idx']] == 20)
-    M_small_nisol_nclustered_NNlarge_NNvc = M_small_nisol_nclustered_NNlarge.submask(in_LGZ,
-                        'NNvc',
-                        edgelabel='Y',
-                        color='orange',
-                        masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_NNlarge_NNvc.mask] = 1
-
-
-    # compact not isolated, nnlarge, nnbright
-    M_small_nisol_nclustered_NNlarge_NNnvc = M_small_nisol_nclustered_NNlarge.submask(~in_LGZ,
-                        'NNnvc',
+    M_small_nisol_nclustered_nS = M_small_nisol_nclustered.submask(lofarcat['S_Code'] != 'S',
+                        'nS',
                         edgelabel='N',
-                        color='orange',
+                        qlabel='?'.format(l=lLR_thresh),
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_NNlarge_NNnvc.mask] = 1
 
-    # compact not isolated, nnsmall
-    M_small_nisol_nclustered_NNsmall = M_small_nisol_nclustered.submask(lofarcat['NN_Maj'] <= size_large,
-                        'NNsmall',
-                        'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}")'.format(s=size_large, nn=separation1),
-                        edgelabel='N',
-                        qlabel='LR > {l:.2f}?'.format(l=lLR_thresh),
+    # compact not isolated, nnlarge
+    M_small_nisol_nclustered_S = M_small_nisol_nclustered.submask(lofarcat['S_Code'] == 'S',
+                        'S',
+                        edgelabel='Y',
+                        qlabel='?'.format(l=lLR_thresh),
                         masterlist=masterlist)
+
+    ## compact not isolated, nnlarge
+    #M_small_nisol_nclustered_NNlarge = M_small_nisol_nclustered.submask(lofarcat['NN_Maj'] > size_large,
+                        #'NNlarge',
+                        #'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN large (s>{s:.0f}")'.format(s=size_large, nn=separation1),
+                        #edgelabel='Y',
+                        #qlabel='NN in VC list\nLR > {l:.2f}?'.format(l=lLR_thresh),
+                        #masterlist=masterlist)
+
+
+    ## compact not isolated, nnlarge, nnbright
+    #in_LGZ = (lofarcat['LGZ_flag'][lofarcat['NN_idx']] == 1) | (lofarcat['LGZ_flag'][lofarcat['NN_idx']] == 2) | (lofarcat['LGZ_flag'][lofarcat['NN_idx']] == 20)
+    #M_small_nisol_nclustered_NNlarge_NNvc = M_small_nisol_nclustered_NNlarge.submask(in_LGZ,
+                        #'NNvc',
+                        #edgelabel='Y',
+                        #color='orange',
+                        #masterlist=masterlist)
+    #lofarcat['ID_flag'][M_small_nisol_nclustered_NNlarge_NNvc.mask] = 1
+
+
+    ## compact not isolated, nnlarge, nnbright
+    #M_small_nisol_nclustered_NNlarge_NNnvc = M_small_nisol_nclustered_NNlarge.submask(~in_LGZ,
+                        #'NNnvc',
+                        #edgelabel='N',
+                        #color='orange',
+                        #masterlist=masterlist)
+    #lofarcat['ID_flag'][M_small_nisol_nclustered_NNlarge_NNnvc.mask] = 1
+
+    ## compact not isolated, nnsmall
+    #M_small_nisol_nclustered_NNsmall = M_small_nisol_nclustered_S.submask(lofarcat['NN_Maj'] <= size_large,
+                        #'NNsmall',
+                        #'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}")'.format(s=size_large, nn=separation1),
+                        #edgelabel='N',
+                        #qlabel='LR > {l:.2f}?'.format(l=lLR_thresh),
+                        #masterlist=masterlist)
 
     # compact not isolated, nnsmall, lr
-    M_small_nisol_nclustered_NNsmall_lr = M_small_nisol_nclustered_NNsmall.submask(np.log10(1+lofarcat['LR']) > lLR_thresh,
+    M_small_nisol_nclustered_S_lr = M_small_nisol_nclustered_S.submask(np.log10(1+lofarcat['LR']) > lLR_thresh,
                         'lr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), good LR'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
@@ -745,27 +765,27 @@ if __name__=='__main__':
                         masterlist=masterlist)
 
     # compact not isolated, nnsmall, lr, NNlr
-    M_small_nisol_nclustered_NNsmall_lr_NNlr = M_small_nisol_nclustered_NNsmall_lr.submask(np.log10(1+lofarcat['NN_LR']) > lLR_thresh,
+    M_small_nisol_nclustered_S_lr_NNlr = M_small_nisol_nclustered_S_lr.submask(np.log10(1+lofarcat['NN_LR']) > lLR_thresh,
                         'NNlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), good LR, NN good lr'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
                         color='blue',
                         qlabel='accept LR',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_NNsmall_lr_NNlr.mask] = 1
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_lr_NNlr.mask] = 1
 
     # compact not isolated, nnsmall, lr, NNnlr
-    M_small_nisol_nclustered_NNsmall_lr_NNnlr = M_small_nisol_nclustered_NNsmall_lr.submask(np.log10(1+lofarcat['NN_LR']) <= lLR_thresh,
+    M_small_nisol_nclustered_S_lr_NNnlr = M_small_nisol_nclustered_S_lr.submask(np.log10(1+lofarcat['NN_LR']) <= lLR_thresh,
                         'NNnlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), good LR, NN bad lr'.format(s=size_large, nn=separation1),
                         edgelabel='N',
                         color='blue',
                         qlabel='accept LR',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_NNsmall_lr_NNnlr.mask] = 1
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_lr_NNnlr.mask] = 1
 
     # compact not isolated, nnsmall, nlr
-    M_small_nisol_nclustered_NNsmall_nlr = M_small_nisol_nclustered_NNsmall.submask(np.log10(1+lofarcat['LR']) <= lLR_thresh,
+    M_small_nisol_nclustered_S_nlr = M_small_nisol_nclustered_S.submask(np.log10(1+lofarcat['LR']) <= lLR_thresh,
                         'nlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR'.format(s=size_large, nn=separation1),
                         edgelabel='N',
@@ -773,17 +793,17 @@ if __name__=='__main__':
                         masterlist=masterlist)
 
     # compact not isolated, nnsmall, nlr, NNlr
-    M_small_nisol_nclustered_NNsmall_nlr_NNlr = M_small_nisol_nclustered_NNsmall_nlr.submask(np.log10(1+lofarcat['NN_LR']) > lLR_thresh,
+    M_small_nisol_nclustered_S_nlr_NNlr = M_small_nisol_nclustered_S_nlr.submask(np.log10(1+lofarcat['NN_LR']) > lLR_thresh,
                         'NNlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN good lr'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
                         color='red',
                         qlabel='accept no LR',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_NNsmall_nlr_NNlr.mask] = 1
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNlr.mask] = 1
 
     # compact not isolated, nnsmall, nlr, NNnlr - there are possible doubles here!!
-    M_small_nisol_nclustered_NNsmall_nlr_NNnlr = M_small_nisol_nclustered_NNsmall_nlr.submask(np.log10(1+lofarcat['NN_LR']) <= lLR_thresh,
+    M_small_nisol_nclustered_S_nlr_NNnlr = M_small_nisol_nclustered_S_nlr.submask(np.log10(1+lofarcat['NN_LR']) <= lLR_thresh,
                         'NNnlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN bad lr'.format(s=size_large, nn=separation1),
                         edgelabel='N',
@@ -792,42 +812,42 @@ if __name__=='__main__':
                         masterlist=masterlist)
 
     C1_simflux = (lofarcat['NN_Frat'] <= 10) & (lofarcat['NN_Frat'] > 0.1)
-    M_small_nisol_nclustered_NNsmall_nlr_NNnlr_simflux = M_small_nisol_nclustered_NNsmall_nlr_NNnlr.submask(C1_simflux,
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux = M_small_nisol_nclustered_S_nlr_NNnlr.submask(C1_simflux,
                         'simflux',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN bad lr, sim flux'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
                         #color='red',
                         qlabel='S1+S2 >= 50*(sep/100)**2 ?',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_NNsmall_nlr_NNnlr_simflux.mask] = 5
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux.mask] = 5
 
-    M_small_nisol_nclustered_NNsmall_nlr_NNnlr_diffflux = M_small_nisol_nclustered_NNsmall_nlr_NNnlr.submask(~C1_simflux,
+    M_small_nisol_nclustered_S_nlr_NNnlr_diffflux = M_small_nisol_nclustered_S_nlr_NNnlr.submask(~C1_simflux,
                         'diffflux',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN bad lr, diffflux'.format(s=size_large, nn=separation1),
                         edgelabel='N',
                         color='red',
                         qlabel='accept no LR',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_NNsmall_nlr_NNnlr_diffflux.mask] = 1
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_diffflux.mask] = 1
 
     C2_dist = ((lofarcat['NN_Total_flux']+lofarcat['Total_flux']) >= 50*(lofarcat['NN_sep']/100.)**2.)
-    M_small_nisol_nclustered_NNsmall_nlr_NNnlr_simflux_sep = M_small_nisol_nclustered_NNsmall_nlr_NNnlr_simflux.submask(C2_dist,
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep = M_small_nisol_nclustered_S_nlr_NNnlr_simflux.submask(C2_dist,
                         'dist',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN bad lr, sim flux'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
                         color='cyan',
                         qlabel='check?',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_NNsmall_nlr_NNnlr_simflux_sep.mask] = 5
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.mask] = 5
 
-    M_small_nisol_nclustered_NNsmall_nlr_NNnlr_simflux_nsep = M_small_nisol_nclustered_NNsmall_nlr_NNnlr_simflux.submask(~C2_dist,
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_nsep = M_small_nisol_nclustered_S_nlr_NNnlr_simflux.submask(~C2_dist,
                         'ndist',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN bad lr, sim flux'.format(s=size_large, nn=separation1),
                         edgelabel='N',
                         color='red',
                         qlabel='accept no LR?',
                         masterlist=masterlist)    
-    lofarcat['ID_flag'][M_small_nisol_nclustered_NNsmall_nlr_NNnlr_simflux_nsep.mask] = 1
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_nsep.mask] = 1
     
     
     # other masks
