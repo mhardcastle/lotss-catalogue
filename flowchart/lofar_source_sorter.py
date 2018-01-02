@@ -277,6 +277,7 @@ if __name__=='__main__':
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng'))
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G_LR_max'))
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng_LR_good'))
+    lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'N_G_LR_matchsource'))
     lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=bool), 'Flag_G_LR_problem'))
     if add_G:
         lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=list), 'G_ind'))
@@ -290,13 +291,15 @@ if __name__=='__main__':
         igi = np.argmax(lofargcat['LR'][ig])
         # for now, if one of the gaussian LR is better, take that
         if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
-            lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
-            lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
-            lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
-            lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
-            lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
+            #lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
+            #lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
+            #lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
+            #lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
+            #lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
+            pass
         # how many unique acceptable matches are there for the gaussian components
         matches_ra = np.unique(lofargcat['LR_ra'][ig][np.log10(1+lofargcat['LR'][ig]) > 0.36])
+        lofarcat['N_G_LR_matchsource'][i] =  1*np.sum(lofargcat['LR_ra'][ig] == lofarcat['LR_ra'][i])
         n_matches_ra = len(matches_ra)
         if n_matches_ra > 1:
             lofarcat['Flag_G_LR_problem'][i] = True
