@@ -274,32 +274,57 @@ if __name__=='__main__':
     lofargcat.add_column(Column(lrgcol, 'LR_name_ps'))
 
     add_G = False   # add the gaussian information
-    lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng'))
+    
+    if 'Ng' not in lofarcat.colnames:
+        raise  RuntimeError('need the Gaussian count and max separation -- run add_gaus_info.py')
+    if 'G_max_sep' not in lofarcat.colnames:
+        raise  RuntimeError('need the Gaussian count and max separation -- run add_gaus_info.py')
+    # these two added with add_gaus_info.py
+    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng'))
+    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G_max_sep'))
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G_LR_max'))
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng_LR_good'))
+    lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng_LR_good_unique'))
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'N_G_LR_matchsource'))
     lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=bool), 'Flag_G_LR_problem'))
-    if add_G:
-        lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=list), 'G_ind'))
+    
+    
+    lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=int), 'G_LR_case1'))
+    lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=int), 'G_LR_case2'))
+    lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=int), 'G_LR_case3'))
+    
+    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G1_LR'))
+    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G1_LR_ra'))
+    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G1_LR_dec'))
+    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G2_LR'))
+    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G2_LR_ra'))
+    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G2_LR_dec'))
+    
+    #if add_G:
+        #lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=list), 'G_ind'))
+
+    iCC = 0
 
     m_S = lofarcat['S_Code'] =='S'
     minds = np.where(~m_S)[0]
     for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
         ig = np.where(lofargcat['Source_Name']==sid)[0]
-        lofarcat['Ng'][i]= len(ig)
+        #Ng = len(ig)
+        #lofarcat['Ng'][i]= Ng
         lofarcat['G_LR_max'][i]= np.nanmax(lofargcat['LR'][ig])
-        igi = np.argmax(lofargcat['LR'][ig])
+        #igi = np.argmax(lofargcat['LR'][ig])
         # for now, if one of the gaussian LR is better, take that
-        if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
+        #if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
             #lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
             #lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
             #lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
             #lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
             #lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
-            pass
+            #pass
         # how many unique acceptable matches are there for the gaussian components
         matches_ra = np.unique(lofargcat['LR_ra'][ig][lofargcat['LR'][ig] >= 0.36])
-        lofarcat['N_G_LR_matchsource'][i] =  1*np.sum(lofargcat['LR_ra'][ig] == lofarcat['LR_ra'][i])
+        matches_src_ra = (lofargcat['LR_ra'][ig] == lofarcat['LR_ra'][i])
+        lofarcat['N_G_LR_matchsource'][i] =  1*np.sum(matches_src_ra)
         n_matches_ra = len(matches_ra)
         if n_matches_ra > 1:
             lofarcat['Flag_G_LR_problem'][i] = True
@@ -307,17 +332,73 @@ if __name__=='__main__':
         if np.sum(matches_ra != lofarcat['LR_ra'][i]):
             lofarcat['Flag_G_LR_problem'][i] = True
         lofarcat['Ng_LR_good'][i]= np.nansum(lofargcat['LR'][ig] >= 0.36)
+        lofarcat['Ng_LR_good_unique'][i]= n_matches_ra
         
-        if add_G:
-            lofarcat['G_ind'][i]= ig
+        ## this is slow... only do it for the special case it is needed for (no source match and no gaus match)
+        
+        #if (lofarcat['LR'][i] < 0.36) and (lofarcat['Ng_LR_good'][i] == 0):
+            #iCC +=  1
+            #print iCC
+            #gcoords = ac.SkyCoord(lofargcat['RA'][ig], lofargcat['DEC'][ig])
+            #_, sep, _ = gcoords.match_to_catalog_sky(gcoords, nthneighbor=Ng)
+            #lofarcat['G_max_sep'][i] = np.max(sep.to('arcsec').value)
+            #sys.exit()
+        
+        # special case 1:
+        # source with lr, 1 gaus with lr diff to source
+        
+        if (lofarcat['LR'][i] >= 0.36) and (lofarcat['Ng_LR_good'][i] == 1) and (lofarcat['N_G_LR_matchsource'][i] == 0):
+            #compare LRsource and LRgaus
+            
+            igi = ig[(lofargcat['LR'][ig] )>= 0.36]
+            if ((lofarcat['LR'][i] > 10 ) & (lofargcat['LR'][igi] < 10 ) & (lofarcat['LR'][i] > 10 * lofargcat['LR'][igi]))[0]:
+                lofarcat['G_LR_case1'][i] = 1 # accept ML source
+                #print '1'
+            elif ((lofarcat['LR'][i] < 10 ) & (lofargcat['LR'][igi] > 10 ) & (lofargcat['LR'][igi] > 10 * lofarcat['LR'][i]))[0]:
+                lofarcat['G_LR_case1'][i] = 2 # accept ML gaus
+                #print '2'
+            else:
+                lofarcat['G_LR_case1'][i] = 3 # lgz
+                #print '3'
+            
+        # special case 2:
+        # source with lr, 2 gaus with lr, 1 diff to source
+        
+        elif (lofarcat['LR'][i] >= 0.36) and (lofarcat['Ng_LR_good'][i] == 2) and (lofarcat['N_G_LR_matchsource'][i] == 1):
+            # compare LRsource and LRgaus's
+            igi = ig[(lofargcat['LR'][ig] )>= 0.36]
+            igs = igi[lofargcat['LR_ra'][igi] == lofarcat['LR_ra'][i]]
+            ign = igi[lofargcat['LR_ra'][igi] != lofarcat['LR_ra'][i]]
+            
+            
+            ## nb using max here not min as written in flowchart
+            if ((lofarcat['LR'][i] > 100 ) and (lofargcat['LR'][igs] > 5*lofargcat['LR'][ign]) ):
+                lofarcat['G_LR_case2'][i] = 1  # accept ML source
+            elif (( lofarcat['LR'][i] < 30 ) and (lofargcat['LR'][igs] > np.max([10, lofarcat['LR'][i]]) ) and (lofargcat['LR'][ign] > np.max([10, lofarcat['LR'][i]]) ) ):
+                lofarcat['G_LR_case2'][i] = 2  # deblend into 2 gaus with both ML
+            else:
+                lofarcat['G_LR_case2'][i] = 3  # lgz
+        
+        # special case 3:
+        elif (lofarcat['LR'][i] < 0.36) and (lofarcat['Ng_LR_good'][i] == 1):
+            igi = ig[(lofargcat['LR'][ig] )>= 0.36]
+            if (lofargcat['LR'][igi] >  10*0.36) and (lofargcat['Maj'][igi] < 10):
+                lofarcat['G_LR_case3'][i] = 1  # accept match
+            else:
+                lofarcat['G_LR_case3'][i] = 2  # lgz
+                
+        
+        #if add_G:
+            #lofarcat['G_ind'][i]= ig
     lofarcat['G_LR_max'][m_S] = lofarcat['LR'][m_S]
     lofarcat['Ng_LR_good'][m_S] = 1*(lofarcat['LR'][m_S] >= 0.36)
+    #lofarcat['Ng_LR_good_unique'][m_S] = n_matches_ra
 
     # some flags for mult_gaus sources:
     # source has good LR match, and no gaus
     # multiple matches to different sources
     # source has no good LR match, but one gaus does
-    
+
 
     #sys.exit()
 
