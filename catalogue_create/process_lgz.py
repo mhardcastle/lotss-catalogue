@@ -77,6 +77,17 @@ for k in ss.cdict:
         print 'Source',k,'has not changed'
         # source has not changed, which means it can be copied from the corresponding entry in the lgz table
         r=lgz[ss.idict[k]]
+        # assoc should match new component list, so just check that part
+        pfilter=np.array([False]*len(pyb))
+        cnames=ss.get_comps(k)
+        for n in cnames:
+            pfilter|=(pyb['Source_Name']==n)
+        clist=pyb[pfilter]
+        assert(len(cnames)==len(clist))
+        if len(clist)==1:
+            r['Assoc']=0
+        else:
+            r['Assoc']=len(clist)
     else:
         # source has changed, or was only ever present in zooms text
         print 'Source',k,'is flagged as having changed'
@@ -186,6 +197,6 @@ for k in ss.cdict:
         for j in comps:
             remove.write('%s %s %i\n' % (j,r['Source_Name'],ss.mdict[k]))
         
-olgz.write('HETDEX-LGZ-cat-v0.6-filtered-zooms.fits',overwrite=True)
+olgz.write('HETDEX-LGZ-cat-v0.7-filtered-zooms.fits',overwrite=True)
 
 remove.close()
