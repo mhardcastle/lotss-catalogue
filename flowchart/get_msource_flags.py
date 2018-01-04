@@ -41,7 +41,7 @@ msource_cat = Table.read(msource_cat_file)
 if 'msource1_flag' in lofarcat.colnames:
     lofarcat.remove_column('msource1_flag')
 lofarcat.sort('Source_Name')
-tt=join(lofarcat, msource_cat, join_type='left')
+tt=join(lofarcat, msource_cat, join_type='left', keys=['Source_Name'])
 tt['Diagnosis_Code'].fill_value = -1
 tt = tt.filled()
 tt.sort('Source_Name')
