@@ -275,13 +275,11 @@ if __name__=='__main__':
 
     add_G = False   # add the gaussian information
     
+    # these two added with add_gaus_info.py
     if 'Ng' not in lofarcat.colnames:
         raise  RuntimeError('need the Gaussian count and max separation -- run add_gaus_info.py')
     if 'G_max_sep' not in lofarcat.colnames:
         raise  RuntimeError('need the Gaussian count and max separation -- run add_gaus_info.py')
-    # these two added with add_gaus_info.py
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng'))
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G_max_sep'))
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G_LR_max'))
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng_LR_good'))
     lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng_LR_good_unique'))
@@ -309,8 +307,6 @@ if __name__=='__main__':
     minds = np.where(~m_S)[0]
     for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
         ig = np.where(lofargcat['Source_Name']==sid)[0]
-        #Ng = len(ig)
-        #lofarcat['Ng'][i]= Ng
         lofarcat['G_LR_max'][i]= np.nanmax(lofargcat['LR'][ig])
         #igi = np.argmax(lofargcat['LR'][ig])
         # for now, if one of the gaussian LR is better, take that
@@ -334,15 +330,6 @@ if __name__=='__main__':
         lofarcat['Ng_LR_good'][i]= np.nansum(lofargcat['LR'][ig] >= 0.36)
         lofarcat['Ng_LR_good_unique'][i]= n_matches_ra
         
-        ## this is slow... only do it for the special case it is needed for (no source match and no gaus match)
-        
-        #if (lofarcat['LR'][i] < 0.36) and (lofarcat['Ng_LR_good'][i] == 0):
-            #iCC +=  1
-            #print iCC
-            #gcoords = ac.SkyCoord(lofargcat['RA'][ig], lofargcat['DEC'][ig])
-            #_, sep, _ = gcoords.match_to_catalog_sky(gcoords, nthneighbor=Ng)
-            #lofarcat['G_max_sep'][i] = np.max(sep.to('arcsec').value)
-            #sys.exit()
         
         # special case 1:
         # source with lr, 1 gaus with lr diff to source
