@@ -141,7 +141,7 @@ class Interactive(object):
             for c in self.components:
                 outfile.write(c+'\n')
             outfile.write('\n')
-        if not(np.isnan(self.optra)) and (self.orig_optra!=self.optra or self.orig_optdec!=self.optdec):
+        if not(np.isnan(self.optra)):
             outfile.write('## OptID\n%f %f\n\n' % (self.optra,self.optdec))
         if not(np.isnan(self.size)):
             outfile.write('## Size\n%f\n\n' % (self.size))
@@ -175,11 +175,18 @@ if __name__=='__main__':
     wisemaps=[l[3] for l in lines]
     firstmaps=[l[4] for l in lines]
 
-    clines=open('components.txt').readlines()
-    ss=Source()
-    for c in clines:
-        bits=c.split()
-        ss.add(bits[0],bits[1].rstrip())                 
+    if len(sys.argv)>1:
+        clines=open('../lgz_v1/lgz_components.txt').readlines()
+        ss=Source()
+        for c in clines:
+            bits=c.split()
+            ss.add(bits[1],bits[0].rstrip())                 
+    else:
+        clines=open('components.txt').readlines()
+        ss=Source()
+        for c in clines:
+            bits=c.split()
+            ss.add(bits[0],bits[1].rstrip())                 
 
     for r in t:
         #ss.add(r['Source_Name'],r['Source_Name'])
@@ -197,18 +204,26 @@ if __name__=='__main__':
                 ss.set_size(r['Source_Name'],r['LGZ_Size'])
             except:
                 pass
-            
-        
-    # now parse existing files to the structure
-    for n in names:
-        if os.path.isfile(n+'.txt'):
-            parsefile(n,ss)
 
+    # now parse existing files to the structure
+    dir='/data/lofar/mjh/hetdex_v4/zoom/'
+    g=glob.glob(dir+'ILT*.txt')
+    for f in g:
+        if 'table-list' in f:
+            continue
+        n=f.split('/')[-1].replace('.txt','')
+        print 'Parsing file for source',n
+        parsefile(n,ss,dir=dir)
+        ss.mdict[n]=2
+
+    
     for i in range(len(t)):
         sourcename=names[i]
         if os.path.isfile(sourcename+'.txt'):
+            print sourcename,'already has a zoom file'
             continue
         if len(ss.get_comps(sourcename))==0:
+            print sourcename,'has no components!'
             continue
         r=t[i]
         print i,r

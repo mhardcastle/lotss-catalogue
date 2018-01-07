@@ -59,11 +59,11 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # Annotated PyBDSF table
-    ot=Table.read('/data/lofar/wwilliams/hetdex/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_v0.6.comp.fits')
+    ot=Table.read('/data/lofar/wwilliams/hetdex/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_v0.7.comp.fits')
     # large source table for neighbours
     lt=ot[(ot['Total_flux']>3) & (ot['Maj']>8)]
     # ID catalogue so we can check for a source with existing ML or other ID
-    it=Table.read('/data/lofar/wwilliams/hetdex/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_v0.6.fits')
+    it=Table.read('/data/lofar/wwilliams/hetdex/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_v0.7.fits')
     # read lists
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     lofarmaps=[l[1] for l in lines]
