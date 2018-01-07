@@ -35,10 +35,6 @@ def ellipse(x0,y0,a,b,pa,n=200):
 class Make_Shape(object):
     '''Basic idea taken from remove_lgz_sources.py -- maybe should be merged with this one day
     but the FITS keywords are different.
-
-    In future we might add here width, position angle functions since
-    in length() we effectively determine a vector not just a scalar.
-
     '''
     def __init__(self,clist):
         '''
