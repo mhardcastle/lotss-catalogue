@@ -12,6 +12,9 @@ ID_flag
 312 - lgz v1 zoom
 4 - no id possible
 5 - TBC
+6 - deblending
+61 - deblend directly
+62 - deblend workflow
 '''
 
 
@@ -74,7 +77,7 @@ if __name__=='__main__':
 
     ### Required INPUTS
     
-    version =  '0.7'
+    version =  '0.8'
     
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
@@ -92,7 +95,7 @@ if __name__=='__main__':
     lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
     # LGZ output
-    lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.7-filtered-zooms.fits') 
+    lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.8-filtered-zooms.fits') 
     lgz_component_file = os.path.join(path,'lgz_v1/lgz_components.txt')
 
     comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
@@ -337,10 +340,14 @@ if __name__=='__main__':
     lgz_cat.rename_column('optRA','ID_ra')
     lgz_cat.rename_column('optDec','ID_dec')
     lgz_cat.rename_column('OptID_Name','ID_name')
-    lgz_cat.rename_column('Size','LGZ_Size')
+    #lgz_cat.rename_column('Size','LGZ_Size')
     lgz_cat.rename_column('Assoc','LGZ_Assoc')
     lgz_cat.rename_column('Assoc_Qual','LGZ_Assoc_Qual')
     lgz_cat.rename_column('ID_Qual','LGZ_ID_Qual')
+    
+    lgz_cat.rename_column('New_size','LGZ_Size')
+    lgz_cat.rename_column('New_width','LGZ_Width')
+    lgz_cat.rename_column('New_PA','LGZ_PA')
     
     lgz_cat.add_column(Column(3*np.ones(len(lgz_cat),dtype=int),'ID_flag'))
     for lgzci in lgz_components:
@@ -370,23 +377,15 @@ if __name__=='__main__':
     count_flags(mergecat, 'ID_flag')
     count_flags(lofarcat_sorted_antd, 'ID_flag')
         
+    lofarcat_sorted_antd.write(comp_out_file, overwrite=True)
 
-    if os.path.isfile(comp_out_file):
-        os.remove(comp_out_file)
-    lofarcat_sorted_antd.write(comp_out_file)
-
-    if os.path.isfile(merge_out_full_file):
-        os.remove(merge_out_full_file)
-    mergecat.write(merge_out_full_file)
+    mergecat.write(merge_out_full_file, overwrite=True)
 
 
     ## throw away extra columns
-    mergecat.keep_columns(['Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'DC_Maj', 'E_DC_Maj', 'DC_Min', 'E_DC_Min', 'DC_PA', 'E_DC_PA', 'Isl_rms', 'S_Code', 'Mosaic_ID', 'Number_Masked', 'Number_Pointings', 'Masked_Fraction', 'ID_flag', 'ID_name', 'ID_ra', 'ID_dec', 'ML_LR', 'LGZ_Size', 'LGZ_Assoc', 'LGZ_Assoc_Qual', 'LGZ_ID_Qual'])
+    mergecat.keep_columns(['Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'DC_Maj', 'E_DC_Maj', 'DC_Min', 'E_DC_Min', 'DC_PA', 'E_DC_PA', 'Isl_rms', 'S_Code', 'Mosaic_ID', 'Number_Masked', 'Number_Pointings', 'Masked_Fraction', 'ID_flag', 'ID_name', 'ID_ra', 'ID_dec', 'ML_LR', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'LGZ_Assoc', 'LGZ_Assoc_Qual', 'LGZ_ID_Qual'])
 
-    
-    if os.path.isfile(merge_out_file):
-        os.remove(merge_out_file)
-    mergecat.write(merge_out_file)
+    mergecat.write(merge_out_file, overwrite=True)
     
     sys.exit()
     tt = mergecat['ID_name']
