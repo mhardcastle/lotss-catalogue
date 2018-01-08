@@ -385,7 +385,7 @@ if __name__=='__main__':
         #in this case take the ML of the gaussian with highest ML
         #but don't do this if you want to run the handle_m_source code...
         if (lofarcat['msource1_flag'][i] == 2) or (lofarcat['msource2_flag'][i] == 2):
-            igi = np.argmax(lofargcat['LR'][ig])
+            igi = np.nanargmax(lofargcat['LR'][ig])
             lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
             lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
             lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
