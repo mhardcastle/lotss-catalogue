@@ -2,6 +2,9 @@ import os
 from astropy.table import Table, Column, join, vstack
 from astropy.coordinates import SkyCoord
 import numpy as np
+
+from catalogue_create.process_lgz import Make_Shape
+#from catalogue_create import process_lgz
 '''
 ID_flag
 1 - ML
@@ -12,6 +15,9 @@ ID_flag
 312 - lgz v1 zoom
 4 - no id possible
 5 - TBC
+6 - deblending
+61 - deblend directly
+62 - deblend workflow
 '''
 
 
@@ -74,7 +80,7 @@ if __name__=='__main__':
 
     ### Required INPUTS
     
-    version =  '0.7'
+    version =  '0.8'
     
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
@@ -92,7 +98,7 @@ if __name__=='__main__':
     lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
     # LGZ output
-    lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.7-filtered-zooms.fits') 
+    lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.8-filtered-zooms.fits') 
     lgz_component_file = os.path.join(path,'lgz_v1/lgz_components.txt')
 
     comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
@@ -190,6 +196,9 @@ if __name__=='__main__':
     lofarcat_sorted['ID_ra'][sel2mass] = lofarcat_sorted['2MASX_ra'][sel2mass]
     lofarcat_sorted['ID_dec'][sel2mass] = lofarcat_sorted['2MASX_dec'][sel2mass]
     
+    #lofarcat_sorted['LGZ_Assoc'][sel2mass] = 1
+    #lofarcat_sorted['LGZ_Assoc_Qual'][sel2mass] = 1.
+    #lofarcat_sorted['LGZ_ID_Qual'][sel2mass] = 1.
     
     # some sources come from a tag 'match to bright galaxy' - not necesarily 2MASX - look in SDSS for these:
     sel2masssdss = (lofarcat_sorted['ID_flag']==2) & (lofarcat_sorted['ID_name']=='2MASX J')
@@ -236,7 +245,13 @@ if __name__=='__main__':
     lofarcat_sorted['ID_dec'][sel2masssdss] = sdss_dec
     
     lofarcat_sorted.add_column(Column(np.nan*np.zeros(len(lofarcat_sorted),dtype=float),'LGZ_Size'))
+    lofarcat_sorted.add_column(Column(np.nan*np.zeros(len(lofarcat_sorted),dtype=float),'LGZ_Width'))
+    lofarcat_sorted.add_column(Column(np.nan*np.zeros(len(lofarcat_sorted),dtype=float),'LGZ_PA'))
     lofarcat_sorted.add_column(Column(np.nan*np.zeros(len(lofarcat_sorted),dtype=float),'LGZ_Assoc'))
+    
+    
+    lofarcat_sorted.add_column(Column(np.nan*np.zeros(len(lofarcat_sorted),dtype=float),'LGZ_Assoc_Qual'))
+    lofarcat_sorted.add_column(Column(np.nan*np.zeros(len(lofarcat_sorted),dtype=float),'LGZ_ID_Qual'))
 
     ok_matches =  (names != '2MASXJ')
     
@@ -245,7 +260,7 @@ if __name__=='__main__':
     lofarcat_add_2mass_mult = lofarcat_sorted[1:1]
     nmerge = np.sum(ucounts>1)
     nn = 0
-    for n in unames[ucounts>1]:
+    for n in unames: #[ucounts>1]:
         
         i = np.where(lofarcat_sorted['ID_name'] == n)[0]
         nn += len(i)
@@ -254,6 +269,7 @@ if __name__=='__main__':
         
         complist = lofarcat_sorted[i]
         assoc_2mass = lofarcat_sorted[i[0]]
+        
         
         assoc_2mass['RA']=np.average(complist['RA'], weights=complist['Total_flux'])
         assoc_2mass['DEC']=np.average(complist['DEC'], weights=complist['Total_flux'])
@@ -272,17 +288,29 @@ if __name__=='__main__':
         assoc_2mass['E_Peak_flux']=complist[maxpk]['E_Peak_flux']
         # merging multiple S/M will be M
         assoc_2mass['S_Code'] = 'M'
-        for t in ['Maj', 'Min', 'PA','E_Maj', 'E_Min', 'E_PA']:
+        for t in ['Maj', 'Min', 'PA']:
             assoc_2mass[t] = np.nan
+            assoc_2mass['E_'+t] = np.nan
+            assoc_2mass['DC_'+t] = np.nan
+            assoc_2mass['E_DC_'+t] = np.nan
+            
         assoc_2mass['Isl_id'] = -99
         
-        c =SkyCoord(complist['RA'], complist['DEC'], unit='deg')
-                
-
-        # size is max of Maj or sep between centres
-        assoc_2mass['LGZ_Size']=np.max([np.max(complist['Maj']) , np.max([ci.separation(c).max().to('arcsec').value for ci in c])])
+        #c =SkyCoord(complist['RA'], complist['DEC'], unit='deg')
         # TBD 'Mosiac_ID'
+        
+        # size is taken from convex hull of components - as in LGZ process
+        cshape = Make_Shape(complist)
+        assoc_2mass['LGZ_Size'] = cshape.length()
+        assoc_2mass['LGZ_Width'] = cshape.width()
+        assoc_2mass['LGZ_PA'] = cshape.pa()
+        
+        
         assoc_2mass['LGZ_Assoc'] = len(complist)
+        
+        # give them quality flags like LGZ
+        assoc_2mass['LGZ_Assoc_Qual'] = 1.
+        assoc_2mass['LGZ_ID_Qual'] = 1.
                 
         # to save the new names
         for c in complist:
@@ -337,10 +365,14 @@ if __name__=='__main__':
     lgz_cat.rename_column('optRA','ID_ra')
     lgz_cat.rename_column('optDec','ID_dec')
     lgz_cat.rename_column('OptID_Name','ID_name')
-    lgz_cat.rename_column('Size','LGZ_Size')
+    #lgz_cat.rename_column('Size','LGZ_Size')
     lgz_cat.rename_column('Assoc','LGZ_Assoc')
     lgz_cat.rename_column('Assoc_Qual','LGZ_Assoc_Qual')
     lgz_cat.rename_column('ID_Qual','LGZ_ID_Qual')
+    
+    lgz_cat.rename_column('New_size','LGZ_Size')
+    lgz_cat.rename_column('New_width','LGZ_Width')
+    lgz_cat.rename_column('New_PA','LGZ_PA')
     
     lgz_cat.add_column(Column(3*np.ones(len(lgz_cat),dtype=int),'ID_flag'))
     for lgzci in lgz_components:
@@ -370,23 +402,15 @@ if __name__=='__main__':
     count_flags(mergecat, 'ID_flag')
     count_flags(lofarcat_sorted_antd, 'ID_flag')
         
+    lofarcat_sorted_antd.write(comp_out_file, overwrite=True)
 
-    if os.path.isfile(comp_out_file):
-        os.remove(comp_out_file)
-    lofarcat_sorted_antd.write(comp_out_file)
-
-    if os.path.isfile(merge_out_full_file):
-        os.remove(merge_out_full_file)
-    mergecat.write(merge_out_full_file)
+    mergecat.write(merge_out_full_file, overwrite=True)
 
 
     ## throw away extra columns
-    mergecat.keep_columns(['Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'DC_Maj', 'E_DC_Maj', 'DC_Min', 'E_DC_Min', 'DC_PA', 'E_DC_PA', 'Isl_rms', 'S_Code', 'Mosaic_ID', 'Number_Masked', 'Number_Pointings', 'Masked_Fraction', 'ID_flag', 'ID_name', 'ID_ra', 'ID_dec', 'ML_LR', 'LGZ_Size', 'LGZ_Assoc', 'LGZ_Assoc_Qual', 'LGZ_ID_Qual'])
+    mergecat.keep_columns(['Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'DC_Maj', 'E_DC_Maj', 'DC_Min', 'E_DC_Min', 'DC_PA', 'E_DC_PA', 'Isl_rms', 'S_Code', 'Mosaic_ID', 'Number_Masked', 'Number_Pointings', 'Masked_Fraction', 'ID_flag', 'ID_name', 'ID_ra', 'ID_dec', 'ML_LR', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'LGZ_Assoc', 'LGZ_Assoc_Qual', 'LGZ_ID_Qual'])
 
-    
-    if os.path.isfile(merge_out_file):
-        os.remove(merge_out_file)
-    mergecat.write(merge_out_file)
+    mergecat.write(merge_out_file, overwrite=True)
     
     sys.exit()
     tt = mergecat['ID_name']
