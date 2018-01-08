@@ -174,6 +174,9 @@ if __name__=='__main__':
                 r['OptID_Name']='None'
                 r['optRA']=np.nan
                 r['optDec']=np.nan
+                r['Assoc_Qual']=1 # these should come from zoom files and are therefore perfect
+                if k in ss.blends:
+                    r['Blend_prob']=1
 
             r['New_size']=ms.length()
             r['New_width']=ms.width()
@@ -241,10 +244,6 @@ if __name__=='__main__':
 
                 print 'sizes:',maxsep,maxsize
                 r['Size']=maxsize
-
-            r['Assoc_Qual']=1
-            if k in ss.blends:
-                r['Blend_prob']=1
 
             r['Zoom_prob']=0 # since these should all have been resolved
             if ora is not None and do_optical:
