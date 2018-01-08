@@ -1,4 +1,5 @@
 from astropy.table import Table
+import sys
 
 # run the following
 
@@ -6,14 +7,29 @@ from astropy.table import Table
 
 # and then run this to clean up afterwards.
 
+print 'Reading table'
 t=Table.read('merge.fits')
 
+print 'Rename columns'
 t['RA_1'].name='RA'
 t['DEC_1'].name='DEC'
-
 t['ID_ra']=t['ra_2']
 t['ID_dec']=t['dec_2']
 
+print 'Remove unnecessary columns'
 t.remove_columns(['ra_2','dec_2','GroupID','GroupSize','Separation','raMean','decMean','class','id','z_good','Number_Masked','Number_Pointings','Masked_Fraction'])
+
+print 'Remove whitespace padding:',
+sys.stdout.flush()
+stringcols=[n for (n,ty) in t.dtype.descr if 'S' in ty]
+for c in stringcols:
+    print c,
+    sys.stdout.flush()
+    t[c]=[s.rstrip() for s in t[c]]
+print
+    
+print 'Sorting'
 t.sort('RA')
-t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v0.5.fits',overwrite=True)
+
+print 'Writing to disk'
+t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v0.6.fits',overwrite=True)
