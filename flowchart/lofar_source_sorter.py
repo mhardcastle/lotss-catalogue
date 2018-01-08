@@ -302,6 +302,12 @@ if __name__=='__main__':
         #lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=list), 'G_ind'))
 
     iCC = 0
+    
+    if 'msource1_flag' not in lofarcat.colnames:
+        raise  RuntimeError('need the msource1_flag -- run get_msource_flag.py')
+    if 'msource2_flag' not in lofarcat.colnames:
+        raise  RuntimeError('need the msource2_flag -- run get_msource_flag.py')
+    
 
     m_S = lofarcat['S_Code'] =='S'
     minds = np.where(~m_S)[0]
@@ -374,6 +380,20 @@ if __name__=='__main__':
             else:
                 lofarcat['G_LR_case3'][i] = 2  # lgz
                 
+        
+        
+        #in this case take the ML of the gaussian with highest ML
+        #but don't do this if you want to run the handle_m_source code...
+        if (lofarcat['msource1_flag'][i] == 2) or (lofarcat['msource2_flag'][i] == 2):
+            igi = np.argmax(lofargcat['LR'][ig])
+            lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
+            lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
+            lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
+            lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
+            lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
+            
+            
+        
         
         #if add_G:
             #lofarcat['G_ind'][i]= ig
@@ -712,38 +732,19 @@ if __name__=='__main__':
                         color='orange',
                         qlabel='TBC?\nprob w LR',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_isol_nS.mask] = 5
+    lofarcat['ID_flag'][M_small_isol_nS.mask] = 5  # - these should all be overwritten below, but leave it here to doublecheck (there should be no 5's in the end)
+    # the ID_flags here depend on the output of Philips flow chart:
+    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 0) ] = 1
+    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 1) ] = 1
+    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 2) ] = 1
+    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 3) ] = 61
+    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 4) ] = 62
+    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 5) ] = 3210
+    lofarcat['LGZ_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 5) ] = 20
 
-    ## compact isolated good lr
-    #M_small_isol_nS_gprob = M_small_isol_nS.submask(lofarcat['Flag_G_LR_problem'],
-                        #'gprob',
-                        #color='orange',
-                        #qlabel='problem',
-                        #edgelabel='Y',
-                        #masterlist=masterlist)
-
-    ## compact isolated good lr
-    #M_small_isol_nS_nprob = M_small_isol_nS.submask(~lofarcat['Flag_G_LR_problem'],
-                        #'nprob',
-                        #qlabel='LR?',
-                        #edgelabel='N',
-                        #masterlist=masterlist)
-
-    ## compact isolated good lr
-    #M_small_isol_nS_nprob_lr = M_small_isol_nS_nprob.submask(np.log10(1+lofarcat['LR']) > lLR_thresh,
-                        #'lr',
-                        #qlabel='accept LR',
-                        #edgelabel='Y',
-                        #color='blue',
-                        #masterlist=masterlist)
     
-    ## compact isolated good lr
-    #M_small_isol_nS_nprob_nlr = M_small_isol_nS_nprob.submask(np.log10(1+lofarcat['LR']) <= lLR_thresh,
-                        #'nlr',
-                        #qlabel='accept no LR',
-                        #edgelabel='N',
-                        #color='red',
-                        #masterlist=masterlist)
+
+
 
     # compact not isolated
     M_small_nisol = M_small.submask(lofarcat['NN_sep'] <= separation1,
@@ -784,7 +785,18 @@ if __name__=='__main__':
                         edgelabel='N',
                         qlabel='?'.format(l=lLR_thresh),
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask] = 5
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask] = 5  # - these should all be overwritten below, but leave it here to doublecheck (there should be no 5's in the end)
+    
+    # the ID_flags here depend on the output of Philips flow chart:
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 0) ] = 1
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 1) ] = 1
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 2) ] = 1
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 3) ] = 61
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 4) ] = 62
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 5) ] = 5 #3210
+    #lofarcat['LGZ_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 5) ] = 20
+
+    
 
     # compact not isolated, nnlarge
     M_small_nisol_nclustered_S = M_small_nisol_nclustered.submask(lofarcat['S_Code'] == 'S',
@@ -891,7 +903,7 @@ if __name__=='__main__':
                         #color='red',
                         qlabel='S1+S2 >= 50*(sep/100)**2 ?',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux.mask] = 5
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux.mask] = 1
 
     M_small_nisol_nclustered_S_nlr_NNnlr_diffflux = M_small_nisol_nclustered_S_nlr_NNnlr.submask(~C1_simflux,
                         'diffflux',
@@ -910,7 +922,7 @@ if __name__=='__main__':
                         color='cyan',
                         qlabel='check?',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.mask] = 5
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.mask] = 1
 
     M_small_nisol_nclustered_S_nlr_NNnlr_simflux_nsep = M_small_nisol_nclustered_S_nlr_NNnlr_simflux.submask(~C2_dist,
                         'ndist',
@@ -983,10 +995,7 @@ if __name__=='__main__':
             
 
     ## write output file
-
-    if os.path.exists(lofarcat_file_srt):
-        os.remove(lofarcat_file_srt)
-    lofarcat.write(lofarcat_file_srt)
+    lofarcat.write(lofarcat_file_srt, overwrite=True)
 
     # make flowchart from list of masks
     plot_flowchart = True
