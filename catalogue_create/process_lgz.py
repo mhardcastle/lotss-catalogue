@@ -197,10 +197,10 @@ if __name__=='__main__':
             if size is not None:
                 print '      Updated size',size
 
+            r['Assoc']=len(clist)
             if len(clist)==1:
                 # only one component, so we can use its properties
                 c=clist[0]
-                r['Assoc']=0
                 for key in ['RA','DEC','Total_flux','E_Total_flux','Peak_flux','E_Peak_flux','E_RA','E_DEC','Isl_rms','S_Code','Mosaic_ID','Source_Name']:
                     r[key]=c[key]
                 r['Size']=c['DC_Maj']
@@ -209,7 +209,6 @@ if __name__=='__main__':
                     if size>r['New_size']:
                         r['New_size']=size
             else:
-                r['Assoc']=len(clist)
                 ra=np.mean(clist['RA'])
                 dec=np.mean(clist['DEC'])
                 sname=sourcename(ra,dec)
