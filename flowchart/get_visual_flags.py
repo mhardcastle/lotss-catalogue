@@ -196,6 +196,53 @@ tt.rename_column('visual_flag','nhuge_faint_flag')
 lofarcat.add_column(tt['nhuge_faint_flag'])
 
 
+
+#################################################################################
+#sample_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nnnartefact.txt
+#1 Complex (lgz)
+#2 complex (lgz - should be done already)
+#3 No match
+#4 artefact
+#5 no match, but NN is artefact
+#6 other (redo)
+
+m_nisol_sel_cat_file = 'msources_nisol/sample_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nnnartefact-vflag.fits'
+m_nisol_sel_cat = Table.read(m_nisol_sel_cat_file)
+
+if 'm_nisol_flag_vc1' in lofarcat.colnames:
+    lofarcat.remove_column('m_nisol_flag_vc1')
+lofarcat.sort('Source_Name')
+tt=join(lofarcat, m_nisol_sel_cat, join_type='left')
+tt['visual_flag'].fill_value = 0
+tt = tt.filled()
+tt.sort('Source_Name')
+tt.rename_column('visual_flag','m_nisol_flag_vc1')
+
+
+lofarcat.add_column(tt['m_nisol_flag_vc1'])
+
+#################################################################################
+#sample_all_src_clean_small_nisol_nclustered_S_nlr_NNnlr_simflux_dist-vflag.fits
+#1 isolated, no match
+#2 pair / complex (to lgz)
+#3 artefact
+#4 other (revisit)
+
+double_cat_file = 'doubles/sample_all_src_clean_small_nisol_nclustered_S_nlr_NNnlr_simflux_dist-vflag-vflag.fits'
+double_cat = Table.read(double_cat_file)
+
+if 'double_flag' in lofarcat.colnames:
+    lofarcat.remove_column('double_flag')
+lofarcat.sort('Source_Name')
+tt=join(lofarcat, m_double_cat, join_type='left')
+tt['visual_flag'].fill_value = 0
+tt = tt.filled()
+tt.sort('Source_Name')
+tt.rename_column('visual_flag','double_flag')
+
+
+lofarcat.add_column(tt['double_flag'])
+
 #################################################################################
 
 
