@@ -431,7 +431,12 @@ if __name__=='__main__':
     if 'nhuge_2masx_flag' not in lofarcat.colnames:
         raise  RuntimeError('need the visual flag information for the large_nhuge_2masx sources')
     nhuge_2masx_flag = lofarcat['nhuge_2masx_flag']
-        
+
+
+    if 'double_flag' not in lofarcat.colnames:
+        raise  RuntimeError('need the visual flag information for the double sources')
+    clustered_flag = lofarcat['double_flag']
+                
 
     # get the large 2masx sources (must run match_2masx for these)
     if '2MASX_match_large' not in lofarcat.colnames:
@@ -920,10 +925,46 @@ if __name__=='__main__':
                         'dist',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN bad lr, sim flux'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
-                        color='cyan',
-                        qlabel='check?',
+                        qlabel='visual confirmation?',
                         masterlist=masterlist)
     lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.mask] = 1
+    
+    
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 2,
+                        'lgz',
+                        edgelabel='complex',
+                        color='green',
+                        qlabel='lgz',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz.mask] = 3210
+    
+    
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_noid = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 1,
+                        'noid',
+                        edgelabel='no match',
+                        color='red',
+                        qlabel='accept no LR',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_noid.mask] = 1
+    
+    
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_art = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 3,
+                        'artefact',
+                        edgelabel='artefact',
+                        color='grey',
+                        qlabel='artefact',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_art.mask] = -1
+    
+    
+    
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_prob = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 4,
+                        'prob',
+                        edgelabel='problem',
+                        color='red',
+                        qlabel='problem',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_prob.mask] = 1
 
     M_small_nisol_nclustered_S_nlr_NNnlr_simflux_nsep = M_small_nisol_nclustered_S_nlr_NNnlr_simflux.submask(~C2_dist,
                         'ndist',

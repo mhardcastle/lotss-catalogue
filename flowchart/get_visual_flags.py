@@ -228,13 +228,13 @@ lofarcat.add_column(tt['m_nisol_flag_vc1'])
 #3 artefact
 #4 other (revisit)
 
-double_cat_file = 'doubles/sample_all_src_clean_small_nisol_nclustered_S_nlr_NNnlr_simflux_dist-vflag-vflag.fits'
+double_cat_file = 'doubles/sample_all_src_clean_small_nisol_nclustered_S_nlr_NNnlr_simflux_dist-vflag.fits'
 double_cat = Table.read(double_cat_file)
 
 if 'double_flag' in lofarcat.colnames:
     lofarcat.remove_column('double_flag')
 lofarcat.sort('Source_Name')
-tt=join(lofarcat, m_double_cat, join_type='left')
+tt=join(lofarcat, double_cat, join_type='left')
 tt['visual_flag'].fill_value = 0
 tt = tt.filled()
 tt.sort('Source_Name')
