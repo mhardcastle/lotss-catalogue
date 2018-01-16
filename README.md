@@ -24,3 +24,9 @@ Directories contain README files which give more information on what scripts to 
 * utils: generally useful code which needs to be on the PYTHONPATH for some other routines
 
 * zoom: interactively deal with too-zoomed-in sources.
+
+Development takes place in the master branch at the moment. When a new
+release of the catalogue is made please tag the code at that point:
+
+`git tag -a cat0.6 -m 'Catalogue version 0.6 release'`
+
