@@ -2,7 +2,7 @@ from astropy.io import fits
 from astropy.wcs import WCS
 import numpy as np
 
-def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3):
+def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
     """ 
     Flatten a fits file so that it becomes a 2D image. Return new header and
     data
@@ -13,7 +13,8 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3):
     if naxis<2:
         raise OverlayException('Can\'t make map from this')
 
-    print f[hduid].data.shape
+    if verbose:
+        print f[hduid].data.shape
     ds=f[hduid].data.shape[-2:]
     by,bx=ds
     xmin=int(x-size)
@@ -62,7 +63,8 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3):
             slice.append(channel)
         else:
             slice.append(0)
-    print slice
+    if verbose:
+        print slice
 
     hdu=fits.PrimaryHDU(f[hduid].data[slice],header)
     copy=('EQUINOX','EPOCH','BMAJ','BMIN','BPA')
@@ -75,8 +77,9 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3):
     hdulist=fits.HDUList([hdu])
     return hdulist
 
-def extract_subim(filename,ra,dec,size,hduid=0):
-    print 'Opening',filename
+def extract_subim(filename,ra,dec,size,hduid=0,verbose=True):
+    if verbose:
+        print 'Opening',filename
     orighdu=fits.open(filename)
     psize=int(size/orighdu[hduid].header['CDELT2'])
     ndims=orighdu[hduid].header['NAXIS']
@@ -87,5 +90,5 @@ def extract_subim(filename,ra,dec,size,hduid=0):
     imc=lwcs.wcs_world2pix(pvect,0)
     x=imc[0][0]
     y=imc[0][1]
-    hdu=flatten(orighdu,ra,dec,x,y,psize,hduid=hduid)
+    hdu=flatten(orighdu,ra,dec,x,y,psize,hduid=hduid,verbose=verbose)
     return hdu

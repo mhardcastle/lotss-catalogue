@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+'''
+flag_edge_sources.py
+check all sources for proximity to edge (by presence of nan pixels within Maj), further check these sources for actual overlap with edge using presence of nanpixels within mask defined by the pybdsf ellipse shape. 
+'''
+
 import matplotlib
 matplotlib.use('Agg')
 from astropy.table import Table,vstack,Column
@@ -9,118 +14,16 @@ import numpy as np
 import sys
 import os
 import glob
-#from subim import extract_subim
+from subim import extract_subim
 import multiprocessing as mp 
 import itertools
 import time
 import matplotlib.pyplot as plt
+import pyregion
 
 IMAGEDIR='/data/lofar/mjh/hetdex_v4'
 
-from astropy.io import fits
-from astropy.wcs import WCS
-import numpy as np
-import pyregion
 
-def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3):
-    """ 
-    Flatten a fits file so that it becomes a 2D image. Return new header and
-    data
-    This version also makes a sub-image of specified size.
-    """
-
-    naxis=f[hduid].header['NAXIS']
-    if naxis<2:
-        raise OverlayException('Can\'t make map from this')
-
-    #print f[hduid].data.shape
-    ds=f[hduid].data.shape[-2:]
-    by,bx=ds
-    xmin=int(x-size)
-    if xmin<0:
-        xmin=0
-    xmax=int(x+size)
-    if xmax>bx:
-        xmax=bx
-    ymin=int(y-size)
-    if ymin<0:
-        ymin=0
-    ymax=int(y+size)
-    if ymax>by:
-        ymax=by
-    
-    if ymax<=ymin or xmax<=xmin:
-        # this can only happen if the required position is not on the map
-        print 'Failed to make subimage!'
-        print xmin,xmax,ymin,ymax
-        return None
-
-    w = WCS(f[hduid].header)
-    wn=WCS(naxis=2)
-    
-    wn.wcs.crpix[0]=w.wcs.crpix[0]-xmin
-    wn.wcs.crpix[1]=w.wcs.crpix[1]-ymin
-    wn.wcs.cdelt=w.wcs.cdelt[0:2]
-    try:
-        wn.wcs.pc=w.wcs.pc[0:2,0:2]
-    except AttributeError:
-        pass # pc is not present
-    wn.wcs.crval=w.wcs.crval[0:2]
-    wn.wcs.ctype[0]=w.wcs.ctype[0]
-    wn.wcs.ctype[1]=w.wcs.ctype[1]
-    
-    header = wn.to_header()
-    header["NAXIS"]=2
-
-    slice=[]
-    for i in range(naxis,0,-1):
-        if i==1:
-            slice.append(np.s_[xmin:xmax+1])
-        elif i==2:
-            slice.append(np.s_[ymin:ymax+1])
-        elif i==freqaxis:
-            slice.append(channel)
-        else:
-            slice.append(0)
-    #print slice
-
-    hdu=fits.PrimaryHDU(f[hduid].data[slice],header)
-    copy=('EQUINOX','EPOCH','BMAJ','BMIN','BPA')
-    for k in copy:
-        r=f[hduid].header.get(k)
-        if r:
-            hdu.header[k]=r
-    if 'TAN' in hdu.header['CTYPE1']:
-        hdu.header['LATPOLE']=f[hduid].header['CRVAL2']
-    hdulist=fits.HDUList([hdu])
-    return hdulist
-
-def extract_subim(filename,ra,dec,size,hduid=0):
-    #print 'Opening',filename
-    orighdu=fits.open(filename)
-    psize=int(size/orighdu[hduid].header['CDELT2'])
-    ndims=orighdu[hduid].header['NAXIS']
-    pvect=np.zeros((1,ndims))
-    lwcs=WCS(orighdu[hduid].header)
-    pvect[0][0]=ra
-    pvect[0][1]=dec
-    imc=lwcs.wcs_world2pix(pvect,0)
-    x=imc[0][0]
-    y=imc[0][1]
-    hdu=flatten(orighdu,ra,dec,x,y,psize,hduid=hduid)
-    return hdu
-
-
-#def get_mosaic_name(name):
-    #globst=IMAGEDIR+'/mosaics/'+name.rstrip()+'*'
-    #g=glob.glob(globst)
-    #if len(g)==1:
-        #return g[0]
-    #elif len(g)==0:
-        #raise RuntimeError('No mosaic called '+name)
-    #else:
-        #raise RuntimeError('Mosaic name ambiguous')
-    
 def get_mosaic_name(name):
     if name == 'P21':
         name = 'P21-mosaic'
@@ -137,19 +40,16 @@ def check_flagged(mosaicname,ra,dec,size):
     mosaicfile = get_mosaic_name(mosaicname)
     
     size = np.max((size, 0.001))
-    lhdu = extract_subim(mosaicfile,ra,dec,size)
-    
+    lhdu = extract_subim(mosaicfile,ra,dec,size,verbose=False)
     
     if lhdu is None:
         print mosaicname,ra,dec,size
         return True
-        
     
     data = lhdu[0].data
     
     flagged = np.any(np.isnan(data))
         
-    
     return flagged
 
 
@@ -158,24 +58,18 @@ def check_flagged_region(mosaicname,ra,dec,maj,min,pa):
     mosaicfile = get_mosaic_name(mosaicname)
     
     maj = np.max((maj, 0.001))
-    lhdu = extract_subim(mosaicfile,ra,dec,2*maj)
-    
+    lhdu = extract_subim(mosaicfile,ra,dec,2*maj,verbose=False)
     
     if lhdu is None:
         print mosaicname,ra,dec,maj
         return True
         
-    
-    
     region = pyregion.parse('fk5;ellipse({ra},{dec},{a},{b},{pa})'.format(ra=ra,dec=dec,a=maj,b=min,pa=pa))
     
     data = lhdu[0].data
     region_mask = region.get_mask(lhdu[0])
     
-    
     flagged = np.any(np.isnan(data[region_mask]))
-    
-        
     
     return flagged
 
@@ -208,8 +102,6 @@ if __name__ == '__main__':
         endtime = time.time()
     
         print 'Took {} seconds for {} sources' .format(endtime-starttime, len(lofarcat))
-    
-    
     
     # take a closer look at the ones that have been flagged as having a nanpixel within Maj
     # apply region mask and check for nan pixels inside that only
