@@ -153,6 +153,8 @@ class Interactive(object):
     def delete(self,name):
         outfile=open(name+'.txt','w')
         outfile.write('## Deleted\n')
+        for c in self.components:
+            outfile.write(c+'\n')
         outfile.close()
 
                 
@@ -224,7 +226,13 @@ if __name__=='__main__':
             continue
         if len(ss.get_comps(sourcename))==0:
             print sourcename,'has no components!'
-            continue
+            for source in ss.cdict:
+                if sourcename in ss.cdict[source]:
+                    break # it's already in some other source
+            else:
+                ss.add(sourcename,sourcename)
+            if sourcename in ss.cdict[source]:
+                continue
         r=t[i]
         print i,r
         assert(sourcename==r['Source_Name'])
@@ -344,10 +352,6 @@ if __name__=='__main__':
 
         plt.ion()
         plt.show(block=False)
-        try:
-            print 'Blend probability',r['Blend_prob']
-        except:
-            pass
         
         stop=False
         while not(stop):
