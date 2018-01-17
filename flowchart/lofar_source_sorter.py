@@ -449,9 +449,17 @@ if __name__=='__main__':
         raise  RuntimeError('need the artefact information')
     artefact_flag = lofarcat['artefact_flag']
         
+        
+        
+    ## get edge_flag information (must run flag_edge_sources.py and get_visual_flags for these)
+    if 'edge_flag' not in lofarcat.colnames:
+        raise  RuntimeError('need the edge flags from get_visual_flags')
+    edge_flag = lofarcat['edge_flag']
+        
+        
     # combine the artefact flags
     # artefacts have been identified through various routes of visual checking
-    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5)
+    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5) | (edge_flag==True)
 
 
     lofarcat.add_column(Column(Artefact_flag, 'Artefact_flag'))

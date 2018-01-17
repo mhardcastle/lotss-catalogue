@@ -57,6 +57,24 @@ for n in artefactlist['Source_Name']:
     lofarcat['artefact_flag'][ni] = True    
 
 
+#################################################################################
+# edge flags 
+## produced in flowchart/flag_edge_sources.py
+edge_flag_file = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.edgeflags.fits'
+
+edge_flag_cat = Table.read(edge_flag_file)
+
+if 'edge_flag' in lofarcat.colnames:
+    lofarcat.remove_column('edge_flag')
+lofarcat.sort('Source_Name')
+tt=join(lofarcat, edge_flag_cat, join_type='left')
+tt['Edge_flag2'].fill_value = False
+tt = tt.filled()
+tt.sort('Source_Name')
+tt.rename_column('Edge_flag2','edge_flag')
+
+lofarcat.add_column(tt['edge_flag'])
+
 
 #################################################################################
 # sources with E_RA are all artefacts (visually confirmed as such)
