@@ -477,7 +477,7 @@ if __name__=='__main__':
     #f_nn6_idx,f_nn6_sep2d,_ = ac.match_coordinates_sky(c,c,nthneighbor=6)
 
     # now exclude artefacts - just put them far away always at the south pole
-    dec = lofarcat['DEC']
+    dec = lofarcat['DEC'].copy()
     dec[Artefact_flag] = -90
     cclean = ac.SkyCoord(lofarcat['RA'], dec, unit="deg")
     f_nnc_idx,f_nnc_sep2d,_ = ac.match_coordinates_sky(cclean,cclean,nthneighbor=2)
@@ -936,7 +936,7 @@ if __name__=='__main__':
                         color='green',
                         qlabel='lgz',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz.mask] = 3210
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz.mask] = 32100
     
     
     M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_noid = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 1,
