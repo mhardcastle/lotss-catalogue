@@ -382,15 +382,16 @@ if __name__=='__main__':
                 
         
         
-        #in this case take the ML of the gaussian with highest ML
-        #but don't do this if you want to run the handle_m_source code...
-        if (lofarcat['msource1_flag'][i] == 2) or (lofarcat['msource2_flag'][i] == 2):
-            igi = np.nanargmax(lofargcat['LR'][ig])
-            lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
-            lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
-            lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
-            lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
-            lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
+        ##in this case take the ML of the gaussian with highest ML
+        ##but don't do this if you want to run the handle_m_source code...
+        ## this should go in the merge script...
+        #if (lofarcat['msource1_flag'][i] == 2) or (lofarcat['msource2_flag'][i] == 2):
+            #igi = np.nanargmax(lofargcat['LR'][ig])
+            #lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
+            #lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
+            #lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
+            #lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
+            #lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
             
             
         
@@ -430,7 +431,12 @@ if __name__=='__main__':
     if 'nhuge_2masx_flag' not in lofarcat.colnames:
         raise  RuntimeError('need the visual flag information for the large_nhuge_2masx sources')
     nhuge_2masx_flag = lofarcat['nhuge_2masx_flag']
-        
+
+
+    if 'double_flag' not in lofarcat.colnames:
+        raise  RuntimeError('need the visual flag information for the double sources')
+    clustered_flag = lofarcat['double_flag']
+                
 
     # get the large 2masx sources (must run match_2masx for these)
     if '2MASX_match_large' not in lofarcat.colnames:
@@ -443,9 +449,17 @@ if __name__=='__main__':
         raise  RuntimeError('need the artefact information')
     artefact_flag = lofarcat['artefact_flag']
         
+        
+        
+    ## get edge_flag information (must run flag_edge_sources.py and get_visual_flags for these)
+    if 'edge_flag' not in lofarcat.colnames:
+        raise  RuntimeError('need the edge flags from get_visual_flags')
+    edge_flag = lofarcat['edge_flag']
+        
+        
     # combine the artefact flags
     # artefacts have been identified through various routes of visual checking
-    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5)
+    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5) | (edge_flag==True)
 
 
     lofarcat.add_column(Column(Artefact_flag, 'Artefact_flag'))
@@ -471,7 +485,7 @@ if __name__=='__main__':
     #f_nn6_idx,f_nn6_sep2d,_ = ac.match_coordinates_sky(c,c,nthneighbor=6)
 
     # now exclude artefacts - just put them far away always at the south pole
-    dec = lofarcat['DEC']
+    dec = lofarcat['DEC'].copy()
     dec[Artefact_flag] = -90
     cclean = ac.SkyCoord(lofarcat['RA'], dec, unit="deg")
     f_nnc_idx,f_nnc_sep2d,_ = ac.match_coordinates_sky(cclean,cclean,nthneighbor=2)
@@ -919,10 +933,46 @@ if __name__=='__main__':
                         'dist',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN bad lr, sim flux'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
-                        color='cyan',
-                        qlabel='check?',
+                        qlabel='visual confirmation?',
                         masterlist=masterlist)
     lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.mask] = 1
+    
+    
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 2,
+                        'lgz',
+                        edgelabel='complex',
+                        color='green',
+                        qlabel='lgz',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz.mask] = 32100
+    
+    
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_noid = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 1,
+                        'noid',
+                        edgelabel='no match',
+                        color='red',
+                        qlabel='accept no LR',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_noid.mask] = 1
+    
+    
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_art = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 3,
+                        'artefact',
+                        edgelabel='artefact',
+                        color='grey',
+                        qlabel='artefact',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_art.mask] = -1
+    
+    
+    
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_prob = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 4,
+                        'prob',
+                        edgelabel='problem',
+                        color='red',
+                        qlabel='problem',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_prob.mask] = 1
 
     M_small_nisol_nclustered_S_nlr_NNnlr_simflux_nsep = M_small_nisol_nclustered_S_nlr_NNnlr_simflux.submask(~C2_dist,
                         'ndist',

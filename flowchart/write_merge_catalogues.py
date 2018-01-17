@@ -113,7 +113,7 @@ if __name__=='__main__':
     #psmlcat = Table.read(psmlcat_file)
     
     #lgz_compcat = Table.read(lgz_compcat_file)
-    lgz_cat = Table.read(lgz_cat_file)
+    lgz_cat_full = Table.read(lgz_cat_file)
     
     
     print 'Starting with {:d} sources'.format(len(lofarcat_sorted))
@@ -359,9 +359,9 @@ if __name__=='__main__':
 
     ## add LGz v1 associated sources
     # 
-    lgz_select = (lgz_cat['Compoverlap']==0)&(lgz_cat['Art_prob']<0.5)&(lgz_cat['Zoom_prob']<0.5)&(lgz_cat['Blend_prob']<0.5)&(lgz_cat['Hostbroken_prob']<0.5)
-    print 'Selecting {n2:d} of {n1:d} sources in the LGZv1 catalogue to add'.format(n1=len(lgz_cat),n2=np.sum(lgz_select))
-    lgz_cat = lgz_cat[lgz_select]
+    lgz_select = (lgz_cat_full['Compoverlap']==0)&(lgz_cat_full['Art_prob']<0.5)&(lgz_cat_full['Zoom_prob']<0.5)&(lgz_cat_full['Blend_prob']<0.5)&(lgz_cat_full['Hostbroken_prob']<0.5)
+    print 'Selecting {n2:d} of {n1:d} sources in the LGZv1 catalogue to add'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select))
+    lgz_cat = lgz_cat_full[lgz_select]
     lgz_cat.rename_column('optRA','ID_ra')
     lgz_cat.rename_column('optDec','ID_dec')
     lgz_cat.rename_column('OptID_Name','ID_name')
@@ -398,7 +398,25 @@ if __name__=='__main__':
     mergecat = vstack([lofarcat_sorted, lgz_cat])
     print 'now we have {n:d} sources'.format(n=len(mergecat))
 
-        
+
+    # remove the artefact components from the component file
+    lgz_select_art = (lgz_cat_full['Art_prob']>=0.5)
+    print 'Selecting {n2:d} of {n1:d} artefact sources in the LGZv1 catalogue to remove their componnents'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select_art))
+    lgz_cat_art = lgz_cat_full[lgz_select_art]
+    for s in lgz_cat_art['Source_Name']:
+        # look up component names
+        si = (lgz_components['lgz_src'] == s)
+        lgz_c = lgz_components['lgz_component'][si]
+        for c in lgz_c:
+            ci = lofarcat_sorted_antd['Source_Name'] == c
+            lofarcat_sorted_antd['New_Source_Name'][ci] == ''
+            
+    
+    comp_arts = (lofarcat_sorted_antd['New_Source_Name'] == '')
+    print 'removing {0:d} components that are artefacts'.format(np.sum(comp_arts))
+    lofarcat_sorted_antd = lofarcat_sorted_antd[~comp_arts]
+    
+    # write some flag counts for both catalogues    
     count_flags(mergecat, 'ID_flag')
     count_flags(lofarcat_sorted_antd, 'ID_flag')
         
