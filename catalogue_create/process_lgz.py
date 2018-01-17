@@ -212,8 +212,9 @@ if __name__=='__main__':
                     if size>r['New_size']:
                         r['New_size']=size
             else:
-                ra=np.mean(clist['RA'])
-                dec=np.mean(clist['DEC'])
+                tfluxsum=np.sum(clist['Total_flux'])
+                ra=np.sum(clist['RA']*clist['Total_flux'])/tfluxsum
+                dec=np.sum(clist['DEC']*clist['Total_flux'])/tfluxsum
                 sname=sourcename(ra,dec)
                 print '      New sourcename is',sname
                 r['RA']=ra
