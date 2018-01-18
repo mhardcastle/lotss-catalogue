@@ -56,6 +56,17 @@ for n in artefactlist['Source_Name']:
     ni = np.where(lofarcat['Source_Name']==n)[0][0]
     lofarcat['artefact_flag'][ni] = True    
 
+# some more artefacts from lgz and various visual checks (these are stored as a list of names in a simple text file...)
+artefactlistfile = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/lgz_v1/artefacts.txt'
+with open(artefactlistfile,'r') as f:
+    artefacts = [line.strip() for line in f]
+for n in artefacts:
+    if n in lofarcat['Source_Name']: 
+        ni = np.where(lofarcat['Source_Name']==n)[0][0]
+        lofarcat['artefact_flag'][ni] = True    
+    else:
+        print n
+    
 
 #################################################################################
 # edge flags 
