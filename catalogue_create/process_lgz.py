@@ -212,8 +212,9 @@ if __name__=='__main__':
                     if size>r['New_size']:
                         r['New_size']=size
             else:
-                ra=np.mean(clist['RA'])
-                dec=np.mean(clist['DEC'])
+                tfluxsum=np.sum(clist['Total_flux'])
+                ra=np.sum(clist['RA']*clist['Total_flux'])/tfluxsum
+                dec=np.sum(clist['DEC']*clist['Total_flux'])/tfluxsum
                 sname=sourcename(ra,dec)
                 print '      New sourcename is',sname
                 r['RA']=ra
@@ -278,6 +279,6 @@ if __name__=='__main__':
             for j in comps:
                 remove.write('%s %s %i\n' % (j,r['Source_Name'],ss.mdict[k]))
 
-    olgz.write('HETDEX-LGZ-cat-v0.8-filtered-zooms.fits',overwrite=True)
+    olgz.write('HETDEX-LGZ-cat-v0.9-filtered-zooms.fits',overwrite=True)
 
     remove.close()

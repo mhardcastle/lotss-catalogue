@@ -123,43 +123,45 @@ if __name__=='__main__':
         marker_ra=None
         marker_dec=None
 
-    try:
-        title='LR = %f' % r['lr_pc_7th']
-    except:
-        title=None
-
-    # resize the image to look for interesting neighbours
-    iter=0
-    while True:
-        startra,startdec=ra,dec
-        tcopy=lt
-        tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
-        tcopy=tcopy[tcopy['dist']<180]
-        print 'Iter',iter,'found',len(tcopy),'neighbours'
-
-        # make sure the original source is in there
-        for nr in tcopy:
-            if sourcename==nr['Source_Name']:
-                break
-        else:
-            if 'Maj' in r.columns:
-                tcopy=vstack((tcopy,r))
-
-        ra=np.mean(tcopy['RA'])
-        dec=np.mean(tcopy['DEC'])
-
-        if startra==ra and startdec==dec:
-            break
-        iter+=1
-        if iter==10:
-            break
-
-    print 'here comes tcopy...'
-    print tcopy
+    title=None
         
-    # now find the bounding box of the resulting collection
-    ra,dec,size=find_bbox(tcopy)
+    # if externally supplied information about size and position is present, use it
+    if 'Cent_RA' in t.colnames and 'Cent_DEC' in t.colnames and 'Size' in t.colnames:
+        ra=r['Cent_RA']
+        dec=r['Cent_DEC']
+        size=r['Size']*1.5
+    else:
+        # resize the image to look for interesting neighbours
+        iter=0
+        while True:
+            startra,startdec=ra,dec
+            tcopy=lt
+            tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
+            tcopy=tcopy[tcopy['dist']<180]
+            print 'Iter',iter,'found',len(tcopy),'neighbours'
 
+            # make sure the original source is in there
+            for nr in tcopy:
+                if sourcename==nr['Source_Name']:
+                    break
+            else:
+                if 'Maj' in r.columns:
+                    tcopy=vstack((tcopy,r))
+
+            ra=np.mean(tcopy['RA'])
+            dec=np.mean(tcopy['DEC'])
+
+            if startra==ra and startdec==dec:
+                break
+            iter+=1
+            if iter==10:
+                break
+
+        # now find the bounding box of the resulting collection
+        ra,dec,size=find_bbox(tcopy)
+
+
+    
     if np.isnan(size):
         ra=r['RA']
         dec=r['DEC']
