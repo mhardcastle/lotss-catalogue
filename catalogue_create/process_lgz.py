@@ -105,7 +105,7 @@ if __name__=='__main__':
 
     print 'Reading tables, please wait...'
     pyb=Table.read('../LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fits')
-    lgz=Table.read('HETDEX-LGZ-cat-v0.6-filtered.fits')
+    lgz=Table.read('HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits')
     lgz['New_size']=np.nan
     lgz['New_width']=np.nan
     lgz['New_PA']=np.nan
@@ -175,6 +175,8 @@ if __name__=='__main__':
                 r['optRA']=np.nan
                 r['optDec']=np.nan
                 r['Assoc_Qual']=1 # these should come from zoom files and are therefore perfect
+                r['Hostbroken_prob']=0
+                r['Zoom_prob']=0 # since these should all have been resolved
                 if k in ss.blends:
                     r['Blend_prob']=1
 
@@ -246,7 +248,6 @@ if __name__=='__main__':
                 print 'sizes:',maxsep,maxsize
                 r['Size']=maxsize
 
-            r['Zoom_prob']=0 # since these should all have been resolved
             if ora is not None and do_optical:
                 # check opt position
                 sep=separation(ora,odec,r['optRA'],r['optDec'])
