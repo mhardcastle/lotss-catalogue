@@ -168,7 +168,9 @@ if __name__=='__main__':
     ot=Table.read('/data/lofar/mjh/hetdex_v4/lgzmatch/LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits')
     # large source table
     lt=ot[(ot['Total_flux']>8) & (ot['Maj']>6)]
-
+    # galaxies if needed
+    gals=Table.read(imagedir+'/wise/allwise_HETDEX_full_radec.fits')
+    
     # read lists
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     names=[l[0] for l in lines]
@@ -221,9 +223,9 @@ if __name__=='__main__':
     
     for i in range(len(t)):
         sourcename=names[i]
-        if os.path.isfile(sourcename+'.txt'):
-            print sourcename,'already has a zoom file'
-            continue
+        #if os.path.isfile(sourcename+'.txt'):
+        #    print sourcename,'already has a zoom file'
+        #    continue
         if len(ss.get_comps(sourcename))==0:
             print sourcename,'has no components!'
             for source in ss.cdict:
@@ -323,10 +325,8 @@ if __name__=='__main__':
         pg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
         del(gals)
 
-        gals=Table.read(imagedir+'/wise/allwise_HETDEX_full_radec.fits')
-        pwg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
-        del(gals)
         '''
+        pwg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
 
         ots=ot[separation(ra,dec,ot['RA'],ot['DEC'])<(size*2)]
 
@@ -340,7 +340,7 @@ if __name__=='__main__':
         except:
             peak=None
         
-        f=show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,block=False,interactive=False,drlimit=8000,peak=peak)
+        f=show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,block=False,interactive=False,drlimit=8000,peak=peak,plotpos=[(pwg,'+')])
 
         ora,odec=ss.odict[sourcename]
         components=ss.get_comps(sourcename)
