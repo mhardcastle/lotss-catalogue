@@ -361,7 +361,7 @@ if __name__=='__main__':
 
     ## add LGz v1 associated sources
     # 
-    lgz_select = (lgz_cat_full['Compoverlap']==0)&(lgz_cat_full['Art_prob']<0.5)&(lgz_cat_full['Zoom_prob']<0.5)&(lgz_cat_full['Blend_prob']<0.5)&(lgz_cat_full['Hostbroken_prob']<0.5)
+    lgz_select = (lgz_cat_full['Compoverlap']==0)&(lgz_cat_full['Art_prob']<0.5)&(lgz_cat_full['Zoom_prob']<0.5)
     print 'Selecting {n2:d} of {n1:d} sources in the LGZv1 catalogue to add'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select))
     lgz_cat = lgz_cat_full[lgz_select]
     lgz_cat.rename_column('optRA','ID_ra')
