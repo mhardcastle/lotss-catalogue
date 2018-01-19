@@ -27,7 +27,7 @@ lofarcat = Table.read(lofarcat_file_srt)
 # the following come from outputs from Lara/Philip for compact isolated m sources
 
 #################################################################################
-### nhuge_2masx
+### msource1_flag
 #0: no match
 #1: accept ML of the source
 #2: accept ML of the gaussian with highest ML
@@ -49,6 +49,25 @@ tt.rename_column('Diagnosis_Code','msource1_flag')
 
 
 lofarcat.add_column(tt['msource1_flag'])
+
+# 
+# the following come from outputs from Lara/Philip for compact non-isolated m sources
+msource_cat_file = path+'msources/nonisolated_msources_flowchart.fits'
+msource_cat = Table.read(msource_cat_file)
+
+if 'msource2_flag' in lofarcat.colnames:
+    lofarcat.remove_column('msource2_flag')
+lofarcat.sort('Source_Name')
+tt=join(lofarcat, msource_cat, join_type='left', keys=['Source_Name'])
+tt['M_Diagnosis_Code'].fill_value = -1
+tt = tt.filled()
+tt.sort('Source_Name')
+tt.rename_column('M_Diagnosis_Code','msource2_flag')
+
+
+lofarcat.add_column(tt['msource2_flag'])
+
+
 
 #################################################################################
 

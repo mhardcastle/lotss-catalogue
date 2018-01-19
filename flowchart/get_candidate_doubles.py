@@ -186,6 +186,13 @@ outtable.add_column(Column(outtable['NLR']==2, 'lr2'))
 
 outtable.write('LOFAR_HBA_T1_DR1_catalog_v0.95_pairs.fits', overwrite=True)
 
+
+### output from pepe
+lrpaircat = Table.read('/local/wwilliams/projects/radio_imaging/lofar_surveys/source_class/doubles/lofar_pairs_pw.fits')
+
+outtable = lrpaircat
+
+
 #sys.exit()
 
 
@@ -219,6 +226,14 @@ lr2 = outtable['lr2']
 
 
 
+
+
+plt.figure()
+plt.hist(np.log10(outtable['lr'][ssource]), range=(0,3), bins=100, histtype='step')
+plt.hist(np.log10(outtable['lr'][ssource&nlr]), range=(0,3), bins=100, histtype='step', label='0')
+plt.hist(np.log10(outtable['lr'][ssource&lr]), range=(0,3), bins=100, histtype='step', label='1')
+plt.hist(np.log10(outtable['lr'][ssource&lr2]), range=(0,3), bins=100, histtype='step', label='2')
+plt.legend()
 
 
 
