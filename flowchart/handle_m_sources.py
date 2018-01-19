@@ -9,6 +9,24 @@ import os
 
 from lofar_source_sorter import Mask
 
+
+'''
+M_Diagnosis_Code
+ 1 - accept ML source
+ 2 - accept ML gaus (there should be only one or best one...
+ 3 -
+ 4 - 
+ 5 - lgz
+ 6 -
+>> 0: no match
+>> 1: accept ML of the source
+>> 2: accept ML of the gaussian with highest ML
+>> 3: deblend and accept both gaussians
+>> 4: deblend workflow
+>> 5: LOFAR galaxy zoo
+ 
+'''
+
 if __name__=='__main__':
     
     size_large = 15.           # in arcsec
@@ -52,7 +70,7 @@ if __name__=='__main__':
     lofarcat = lofarcat_full[lofarcat_full['FC_flag'] == 14]
 
 
-    lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'M_Diagnosis_Code'))
+    lofarcat.add_column(Column(99*np.ones(len(lofarcat),dtype=int), 'M_Diagnosis_Code'))
 
     source_nlr = lofarcat['LR'] < lLR_thresh
     source_lr = lofarcat['LR'] >= lLR_thresh
@@ -163,10 +181,39 @@ if __name__=='__main__':
     M_small_m_nisol_lr_glr_glr1_nges_3 = M_small_m_nisol_lr_glr_glr1_nges.submask(lofarcat['G_LR_case1'] == 3,
                                         'case3',
                                         edgelabel='3',
+                                        qlabel='visual inspection',
+                                        masterlist=masterlist)
+    
+    # lofarcat['m_nisol_flag_vc2'] = {1,4,5} = lgz, match, deblend
+    
+    
+    M_small_m_nisol_lr_glr_glr1_nges_3_lgz = M_small_m_nisol_lr_glr_glr1_nges_3.submask(lofarcat['m_nisol_flag_vc2'] == 1,
+                                        'lgz',
+                                        edgelabel='lgz',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr1_nges_3.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr1_nges_3_lgz.mask] = 5
+    
+    
+    M_small_m_nisol_lr_glr_glr1_nges_3_blend = M_small_m_nisol_lr_glr_glr1_nges_3.submask(lofarcat['m_nisol_flag_vc2'] == 5,
+                                        'blend',
+                                        edgelabel='blend',
+                                        qlabel='blend',
+                                        color='orange',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr1_nges_3_blend.mask] = 4
+    
+    
+    M_small_m_nisol_lr_glr_glr1_nges_3_match = M_small_m_nisol_lr_glr_glr1_nges_3.submask(lofarcat['m_nisol_flag_vc2'] == 4,
+                                        'match',
+                                        edgelabel='match',
+                                        qlabel='accept match',
+                                        color='blue',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr1_nges_3_match.mask] = 1
+    
+    #sys.exit()
     
     M_small_m_nisol_lr_glr_glr3p = M_small_m_nisol_lr_glr.submask(source_glr3p,
                                         'glr3p',
@@ -210,10 +257,37 @@ if __name__=='__main__':
     M_small_m_nisol_lr_glr_glr2_nges = M_small_m_nisol_lr_glr_glr2.submask(lofarcat['N_G_LR_matchsource'] == 0,
                                         'nges',
                                         edgelabel='neither G match S',
+                                        qlabel='visual inspection',
+                                        masterlist=masterlist)
+    
+    # lofarcat['m_nisol_flag_vc2'] = {1,4,5} = lgz, match, deblend
+    
+    #sys.exit()
+    M_small_m_nisol_lr_glr_glr2_nges_lgz = M_small_m_nisol_lr_glr_glr2_nges.submask(lofarcat['m_nisol_flag_vc2'] == 1,
+                                        'lgz',
+                                        edgelabel='lgz',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr2_nges.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr2_nges_lgz.mask] = 5
+    
+    M_small_m_nisol_lr_glr_glr2_nges_blend = M_small_m_nisol_lr_glr_glr2_nges.submask(lofarcat['m_nisol_flag_vc2'] == 5,
+                                        'blend',
+                                        edgelabel='blend',
+                                        qlabel='blend',
+                                        color='orange',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr2_nges_blend.mask] = 4
+    
+    M_small_m_nisol_lr_glr_glr2_nges_match = M_small_m_nisol_lr_glr_glr2_nges.submask(lofarcat['m_nisol_flag_vc2'] == 4,
+                                        'match',
+                                        edgelabel='match',
+                                        qlabel='accept match',
+                                        color='blue',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr2_nges_match.mask] = 1
+    
+    
     
     M_small_m_nisol_lr_glr_glr2_nges1 = M_small_m_nisol_lr_glr_glr2.submask(lofarcat['N_G_LR_matchsource'] == 1,
                                         'nges1',
@@ -266,10 +340,47 @@ if __name__=='__main__':
     M_small_m_nisol_lr_nglr_nlr2 = M_small_m_nisol_lr_nglr.submask(~source_lr2,
                                         'nslr',
                                         edgelabel='N',
+                                        qlabel='visual check',
+                                        masterlist=masterlist)
+    
+   
+    # lofarcat['m_nisol_flag_vc2'] = {1,3,4,6} = lgz, no match, match, artefact
+    
+    
+    M_small_m_nisol_lr_nglr_nlr2_lgz = M_small_m_nisol_lr_nglr_nlr2.submask(lofarcat['m_nisol_flag_vc2'] == 1,
+                                        'lgz',
+                                        edgelabel='lgz',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_nglr_nlr2.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_nglr_nlr2_lgz.mask] = 5
+    
+    
+    M_small_m_nisol_lr_nglr_nlr2_no_match = M_small_m_nisol_lr_nglr_nlr2.submask(lofarcat['m_nisol_flag_vc2'] == 3 ,
+                                        'no_match',
+                                        edgelabel='no_match',
+                                        qlabel='accept no match',
+                                        color='red',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_nglr_nlr2_no_match.mask] = 0
+    
+    M_small_m_nisol_lr_nglr_nlr2_match = M_small_m_nisol_lr_nglr_nlr2.submask(lofarcat['m_nisol_flag_vc2'] == 4,
+                                        'match',
+                                        edgelabel='match',
+                                        qlabel='match',
+                                        color='blue',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_nglr_nlr2_match.mask] = 1
+    
+    M_small_m_nisol_lr_nglr_nlr2_artefact = M_small_m_nisol_lr_nglr_nlr2.submask(lofarcat['m_nisol_flag_vc2'] == 6,
+                                        'artefact',
+                                        edgelabel='artefact',
+                                        qlabel='artefact',
+                                        color='grey',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_nglr_nlr2_artefact.mask] = -1
+    
+    
     
     M_small_m_nisol_nlr = M_small_m_nisol.submask(source_nlr,
                                         'nlr',
@@ -302,10 +413,58 @@ if __name__=='__main__':
     M_small_m_nisol_nlr_glr_glr1_case2 = M_small_m_nisol_nlr_glr_glr1.submask(lofarcat['G_LR_case3']==2,
                                         'case2',
                                         edgelabel='N',
+                                        qlabel='visual check',
+                                        masterlist=masterlist)
+    
+    
+    
+    #sys.exit()
+    
+    # lofarcat['m_nisol_flag_vc2'] = {1,3,4,5,6} = lgz, no match, match, deblend, artefact
+    
+    M_small_m_nisol_nlr_glr_glr1_case2_lgz = M_small_m_nisol_nlr_glr_glr1_case2.submask(lofarcat['m_nisol_flag_vc2']==1,
+                                        'lgz',
+                                        edgelabel='lgz',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr1_case2.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr1_case2_lgz.mask] = 5
+    
+    
+    M_small_m_nisol_nlr_glr_glr1_case2_no_match = M_small_m_nisol_nlr_glr_glr1_case2.submask(lofarcat['m_nisol_flag_vc2']==3,
+                                        'no_match',
+                                        edgelabel='no_match',
+                                        qlabel='accept no match',
+                                        color='red',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr1_case2_no_match.mask] = 0
+    
+    M_small_m_nisol_nlr_glr_glr1_case2_match = M_small_m_nisol_nlr_glr_glr1_case2.submask(lofarcat['m_nisol_flag_vc2']==4,
+                                        'match',
+                                        edgelabel='match',
+                                        qlabel='match',
+                                        color='blue',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr1_case2_match.mask] = 2
+    
+    M_small_m_nisol_nlr_glr_glr1_case2_deblend = M_small_m_nisol_nlr_glr_glr1_case2.submask(lofarcat['m_nisol_flag_vc2']==5,
+                                        'deblend',
+                                        edgelabel='deblend',
+                                        qlabel='deblend',
+                                        color='orange',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr1_case2_deblend.mask] = 4
+    
+    M_small_m_nisol_nlr_glr_glr1_case2_artefact = M_small_m_nisol_nlr_glr_glr1_case2.submask(lofarcat['m_nisol_flag_vc2']==6,
+                                        'artefact',
+                                        edgelabel='artefact',
+                                        qlabel='artefact',
+                                        color='grey',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr1_case2_artefact.mask] = -1
+    
+    
+    
     
     M_small_m_nisol_nlr_glr_glr2 = M_small_m_nisol_nlr_glr.submask(source_glr2,
                                         'glr2',
@@ -316,12 +475,38 @@ if __name__=='__main__':
     
     M_small_m_nisol_nlr_glr_glr2_same = M_small_m_nisol_nlr_glr_glr2.submask(lofarcat['Ng_LR_good_unique'] == 1,
                                         'same',
-                                        qlabel='lgz',
-                                        color='green',
+                                        qlabel='visual check',
                                         edgelabel='Y',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr2_same.mask] = 5
     
+    
+    # lofarcat['m_nisol_flag_vc2'] = {1,3,4} = lgz, no match, match
+    
+    
+    
+    M_small_m_nisol_nlr_glr_glr2_same_lgz = M_small_m_nisol_nlr_glr_glr2_same.submask(lofarcat['m_nisol_flag_vc2'] == 1,
+                                        'lgz',
+                                        qlabel='lgz',
+                                        color='green',
+                                        edgelabel='lgz',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr2_same_lgz.mask] = 5
+    
+    M_small_m_nisol_nlr_glr_glr2_same_no_match = M_small_m_nisol_nlr_glr_glr2_same.submask(lofarcat['m_nisol_flag_vc2'] == 3,
+                                        'no_match',
+                                        qlabel='accept no match',
+                                        color='red',
+                                        edgelabel='no_match',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr2_same_no_match.mask] = 0
+    
+    M_small_m_nisol_nlr_glr_glr2_same_match = M_small_m_nisol_nlr_glr_glr2_same.submask(lofarcat['m_nisol_flag_vc2'] == 4,
+                                        'match',
+                                        qlabel='match',
+                                        color='blue',
+                                        edgelabel='match',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr2_same_match.mask] = 2
     
     M_small_m_nisol_nlr_glr_glr2_diff = M_small_m_nisol_nlr_glr_glr2.submask(lofarcat['Ng_LR_good_unique'] != 1,
                                         'diff',
@@ -369,7 +554,6 @@ if __name__=='__main__':
                                         edgelabel='Y',
                                         qlabel='NN is artefact?',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex.mask] = 5
     
     
     M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_art = M_small_m_nisol_nlr_nglr_nglargesep_nncomplex.submask(nnartefact,
@@ -387,7 +571,6 @@ if __name__=='__main__':
                                         qlabel='visual check',
                                         #color='green',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart.mask] = 5
     #1 Complex (lgz)
     #2 complex (lgz - should be done already)
     #3 No match
@@ -424,10 +607,53 @@ if __name__=='__main__':
     M_small_m_nisol_nlr_nglr_glargesep = M_small_m_nisol_nlr_nglr.submask(glarge_sep,
                                         'glargesep',
                                         edgelabel='N',
+                                        qlabel='visual check',
+                                        masterlist=masterlist)
+    
+    #sys.exit()
+    # lofarcat['m_nisol_flag_vc2'] = {1,3,6} = lgz, no match, artefact
+    
+    
+    M_small_m_nisol_nlr_nglr_glargesep_lgz = M_small_m_nisol_nlr_nglr_glargesep.submask(lofarcat['m_nisol_flag_vc2']==1,
+                                        'lgz',
+                                        edgelabel='lgz',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_glargesep.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_glargesep_lgz.mask] = 5
+    
+    
+    M_small_m_nisol_nlr_nglr_glargesep_no_match = M_small_m_nisol_nlr_nglr_glargesep.submask(lofarcat['m_nisol_flag_vc2']==3,
+                                        'no_match',
+                                        edgelabel='no_match',
+                                        qlabel='accept no match',
+                                        color='red',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_glargesep_no_match.mask] = 0
+    
+    
+    M_small_m_nisol_nlr_nglr_glargesep_artefact = M_small_m_nisol_nlr_nglr_glargesep.submask(lofarcat['m_nisol_flag_vc2']==6,
+                                        'artefact',
+                                        edgelabel='artefact',
+                                        qlabel='artefact',
+                                        color='grey',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_glargesep_artefact.mask] = -1
+    
+    
+    if 'FC_flag' not in lofarcat.colnames:
+        lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'FC_flag'))
+    else:
+        lofarcat['FC_flag']=Column(-1*np.ones(len(lofarcat),dtype=int))
+
+    #i = 0
+    #for t in masterlist:
+        #if not t.has_children:
+            #lofarcat['FC_flag'][t.mask] = i
+            #print i, t, np.unique(np.array(lofarcat['M_Diagnosis_Code'][lofarcat['FC_flag']==i])), np.unique(np.array(lofarcat['M_Diagnosis_Code'][t.mask])), t.qlabel
+
+            #i += 1
+            
     
     
     # make flowchart from list of masks
