@@ -273,6 +273,37 @@ tt.rename_column('visual_flag','double_flag')
 lofarcat.add_column(tt['double_flag'])
 
 #################################################################################
+# from visual inspection of samples of m non-isolated sources (pre-check for lgz)
+  #(1) Complex (lgz)
+  #(2) complex (lgz - should be done already)
+  #(3) No match
+  #(4) match
+  #(5) deblend
+  #(6) artefact
+  #(7) no match, but NN is artefact
+  #(8) other (redo)
+#counts:
+#1 358
+#3 204
+#4 61
+#5 18
+#6 9
+
+mnisol_cat_file = 'check_msources_lgz/sample_small_m_nisol_vflags.fits'
+
+mnisol_cat = Table.read(mnisol_cat_file)
+
+if 'm_nisol_flag_vc2' in lofarcat.colnames:
+    lofarcat.remove_column('m_nisol_flag_vc2')
+lofarcat.sort('Source_Name')
+tt=join(lofarcat, mnisol_cat, join_type='left')
+tt['visual_flag'].fill_value = 0
+tt = tt.filled()
+tt.sort('Source_Name')
+tt.rename_column('visual_flag','m_nisol_flag_vc2')
+
+
+lofarcat.add_column(tt['m_nisol_flag_vc2'])
 
 
 ## write output file

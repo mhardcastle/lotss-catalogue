@@ -80,7 +80,7 @@ if __name__=='__main__':
 
     ### Required INPUTS
     
-    version =  '0.8'
+    version =  '0.9'
     
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
@@ -98,7 +98,7 @@ if __name__=='__main__':
     lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
     # LGZ output
-    lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.8-filtered-zooms.fits') 
+    lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.9-filtered-zooms.fits') 
     lgz_component_file = os.path.join(path,'lgz_v1/lgz_components.txt')
 
     comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
@@ -411,10 +411,23 @@ if __name__=='__main__':
             ci = lofarcat_sorted_antd['Source_Name'] == c
             lofarcat_sorted_antd['New_Source_Name'][ci] == ''
             
+            
     
     comp_arts = (lofarcat_sorted_antd['New_Source_Name'] == '')
     print 'removing {0:d} components that are artefacts'.format(np.sum(comp_arts))
     lofarcat_sorted_antd = lofarcat_sorted_antd[~comp_arts]
+    
+    
+    ## look at the hostbroken up sources:
+    lgz_select_host = (lgz_cat_full['Hostbroken_prob']>=0.5)
+    lgz_cat_host = lgz_cat_full[lgz_select_host]
+    for s in lgz_cat_host['Source_Name']:
+        si = (lgz_components['lgz_src'] == s)
+        lgz_c = lgz_components['lgz_component'][si]
+        print '#', s
+        for c in lgz_c:
+            ci = np.where(lofarcat_sorted_antd['Source_Name'] == c)[0][0]
+            print s,c, lofarcat_sorted_antd['2MASX_name'][ci]
     
     # write some flag counts for both catalogues    
     count_flags(mergecat, 'ID_flag')
