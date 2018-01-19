@@ -253,6 +253,8 @@ if __name__=='__main__':
     lofarcat_sorted.add_column(Column(np.nan*np.zeros(len(lofarcat_sorted),dtype=float),'LGZ_Assoc_Qual'))
     lofarcat_sorted.add_column(Column(np.nan*np.zeros(len(lofarcat_sorted),dtype=float),'LGZ_ID_Qual'))
 
+    print 'going to merge'
+    
     ok_matches =  (names != '2MASXJ')
     
     unames, ucounts = np.unique(lofarcat_sorted['ID_name'][sel2mass ][ok_matches], return_counts=True)
@@ -411,23 +413,10 @@ if __name__=='__main__':
             ci = lofarcat_sorted_antd['Source_Name'] == c
             lofarcat_sorted_antd['New_Source_Name'][ci] == ''
             
-            
-    
     comp_arts = (lofarcat_sorted_antd['New_Source_Name'] == '')
     print 'removing {0:d} components that are artefacts'.format(np.sum(comp_arts))
     lofarcat_sorted_antd = lofarcat_sorted_antd[~comp_arts]
     
-    
-    ## look at the hostbroken up sources:
-    lgz_select_host = (lgz_cat_full['Hostbroken_prob']>=0.5)
-    lgz_cat_host = lgz_cat_full[lgz_select_host]
-    for s in lgz_cat_host['Source_Name']:
-        si = (lgz_components['lgz_src'] == s)
-        lgz_c = lgz_components['lgz_component'][si]
-        print '#', s
-        for c in lgz_c:
-            ci = np.where(lofarcat_sorted_antd['Source_Name'] == c)[0][0]
-            print s,c, lofarcat_sorted_antd['2MASX_name'][ci]
     
     # write some flag counts for both catalogues    
     count_flags(mergecat, 'ID_flag')
