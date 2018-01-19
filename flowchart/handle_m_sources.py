@@ -29,7 +29,8 @@ if __name__=='__main__':
 
     lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
-    lofar_msource_flowchart_file = path + 'msources/LOFAR_flowchart.fixed.fits'
+    #lofar_msource_flowchart_file = path + 'msources/LOFAR_flowchart.fixed.fits'
+    lofar_msource_flowchart_file = path + 'msources/nonisolated_msources_flowchart.fits'
 
     # Gaus catalogue
     lofargcat = Table.read(lofargcat_file)
@@ -37,114 +38,21 @@ if __name__=='__main__':
     lofargcat = lofargcat[lofargcat['S_Code'] != 'S']
 
     # Source catalogue
-    lofarcat = Table.read(lofarcat_file_srt)
+    lofarcat_full = Table.read(lofarcat_file_srt)
 
     # PS ML - matches for sources and gaussians
     psmlcat = Table.read(psmlcat_file)
     psmlgcat = Table.read(psmlgcat_file)
 
     # from Lara/Philip - classifications of compact isolated m sources
-    lofar_msource_flowchart = Table.read(lofar_msource_flowchart_file)
+    #lofar_msource_flowchart = Table.read(lofar_msource_flowchart_file)
 
 
-    ### get the panstarrs ML information
-
-    ## join the ps ml cat  - they have identical RA/DEC (source_names were wrong)
-    #c = ac.SkyCoord(lofarcat['RA'], lofarcat['DEC'], unit="deg")
-    #cpsml = ac.SkyCoord(psmlcat['RA'], psmlcat['DEC'], unit="deg")
-    #f_nn_idx,f_nn_sep2d,f_nn_dist3d = ac.match_coordinates_sky(c,cpsml,nthneighbor=1)
-
-    ##psmlcat = psmlcat[f_nn_idx][f_nn_sep2d==0]
-    ##lofarcat = lofarcat[f_nn_sep2d==0]
-
-    ## note the large sources are missing from the ML catalogue
-    #lrcol = np.zeros(len(lofarcat),dtype=float)
-    #lrcol[f_nn_sep2d==0] = psmlcat['lr'][f_nn_idx][f_nn_sep2d==0]
-
-    ##lofarcat.add_column(Column(psmlcat['lr_pc_7th'], 'LR'))
-    #lofarcat.add_column(Column(lrcol, 'cLR'))
-    #lrcol[np.isnan(lrcol)] = 0
-    #lofarcat.add_column(Column(lrcol, 'LR'))
-    #lrcol = np.zeros(len(lofarcat),dtype='S19')
-    #lrcol[f_nn_sep2d==0] = psmlcat['AllWISE'][f_nn_idx][f_nn_sep2d==0]
-    #lofarcat.add_column(Column(lrcol, 'LR_name_wise'))
-    #lrcol = np.zeros(len(lofarcat),dtype=int)
-    #lrcol[f_nn_sep2d==0] = psmlcat['objID'][f_nn_idx][f_nn_sep2d==0]
-    #lofarcat.add_column(Column(lrcol, 'LR_name_ps'))
-    #lrcol = np.zeros(len(lofarcat),dtype=float)
-    #lrcol[f_nn_sep2d==0] = psmlcat['ra'][f_nn_idx][f_nn_sep2d==0]
-    #lofarcat.add_column(Column(lrcol, 'LR_ra'))
-    #lrcol = np.zeros(len(lofarcat),dtype=float)
-    #lrcol[f_nn_sep2d==0] = psmlcat['dec'][f_nn_idx][f_nn_sep2d==0]
-    #lofarcat.add_column(Column(lrcol, 'LR_dec'))
+    ## select only relevant sources
+    lofarcat = lofarcat_full[lofarcat_full['FC_flag'] == 14]
 
 
-    ## join the ps ml gaus cat  - they have identical RA/DEC (source_names were wrong)
-    #cg = ac.SkyCoord(lofargcat['RA'], lofargcat['DEC'], unit="deg")
-    #cpsmlg = ac.SkyCoord(psmlgcat['RA'], psmlgcat['DEC'], unit="deg")
-    #f_nn_idx_g,f_nn_sep2d_g,f_nn_dist3d_g = ac.match_coordinates_sky(cg,cpsmlg,nthneighbor=1)
-
-    ## note the large sources are missing from the ML catalogue
-    #lrgcol = np.zeros(len(lofargcat),dtype=float)
-    #lrgcol[f_nn_sep2d_g==0] = psmlgcat['lr'][f_nn_idx_g][f_nn_sep2d_g==0]
-    ##lofarcat.add_column(Column(psmlcat['lr_pc_7th'], 'LR'))
-    #lofargcat.add_column(Column(lrgcol, 'LR'))
-    #lrgcol = np.zeros(len(lofargcat),dtype=float)
-    #lrgcol[f_nn_sep2d_g==0] = psmlgcat['ra'][f_nn_idx_g][f_nn_sep2d_g==0]
-    #lofargcat.add_column(Column(lrgcol, 'LR_ra'))
-    #lrgcol = np.zeros(len(lofargcat),dtype=float)
-    #lrgcol[f_nn_sep2d_g==0] = psmlgcat['dec'][f_nn_idx_g][f_nn_sep2d_g==0]
-    #lofargcat.add_column(Column(lrgcol, 'LR_dec'))
-    #lrgcol = np.zeros(len(lofargcat),dtype='S19')
-    #lrgcol[f_nn_sep2d_g==0] = psmlgcat['AllWISE'][f_nn_idx_g][f_nn_sep2d_g==0]
-    #lofargcat.add_column(Column(lrgcol, 'LR_name_wise'))
-    #lrgcol = np.zeros(len(lofargcat),dtype=int)
-    #lrgcol[f_nn_sep2d_g==0] = psmlgcat['objID'][f_nn_idx_g][f_nn_sep2d_g==0]
-    #lofargcat.add_column(Column(lrgcol, 'LR_name_ps'))
-
-
-
-
-    #add_G = False   # add the gaussian information
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng'))
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G_LR_max'))
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng_LR_good'))
-    #lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=bool), 'Flag_G_LR_problem'))
-    #if add_G:
-        #lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=list), 'G_ind'))
-
-    #m_S = lofarcat['S_Code'] =='S'
-    #minds = np.where(~m_S)[0]
-    #for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
-        #ig = np.where(lofargcat['Source_Name']==sid)[0]
-        #lofarcat['Ng'][i]= len(ig)
-        #lofarcat['G_LR_max'][i]= np.nanmax(lofargcat['LR'][ig])
-        #igi = np.argmax(lofargcat['LR'][ig])
-        ## for now, if one of the gaussian LR is better, take that
-        #if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
-            #lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
-            #lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
-            #lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
-            #lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
-            #lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
-        ## how many unique acceptable matches are there for the gaussian components
-        #matches_ra = np.unique(lofargcat['LR_ra'][ig][np.log10(1+lofargcat['LR'][ig]) > lLR_thresh])
-        #n_matches_ra = len(matches_ra)
-        #if n_matches_ra > 1:
-            #lofarcat['Flag_G_LR_problem'][i] = True
-        ## any different to source match
-        #if np.sum(matches_ra != lofarcat['LR_ra'][i]):
-            #lofarcat['Flag_G_LR_problem'][i] = True
-        #lofarcat['Ng_LR_good'][i]= np.nansum(np.log10(1+lofargcat['LR'][ig]) > lLR_thresh)
-        
-        #if add_G:
-            #lofarcat['G_ind'][i]= ig
-    #lofarcat['G_LR_max'][m_S] = lofarcat['LR'][m_S]
-    #lofarcat['Ng_LR_good'][m_S] = 1*(np.log10(1+lofarcat['LR'][m_S]) > lLR_thresh)
-
-
-
-    lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'M_diag'))
+    lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'M_Diagnosis_Code'))
 
     source_nlr = lofarcat['LR'] < lLR_thresh
     source_lr = lofarcat['LR'] >= lLR_thresh
@@ -159,6 +67,7 @@ if __name__=='__main__':
     glarge_sep = lofarcat['G_max_sep'] >= 15.
     
     nncomplex = (lofarcat['NN_sep'] < 100.) & (lofarcat['NN_Maj'] > 10.)
+    nnartefact = (lofarcat_full['Artefact_flag'][lofarcat['NN_idx']])
     
     m_S_small = (lofarcat['S_Code'] !='S') & (lofarcat['Maj'] <= 15.)
     m_S_small_isol = m_S_small & (lofarcat['NN_sep'] > 45.)
@@ -172,297 +81,353 @@ if __name__=='__main__':
     
     
     masterlist = []
-    M_small_m = Mask(m_S_small,
+    #M_small_m = Mask(m_S_small,
+                    #'small_m',
+                    #qlabel='isolated',
+                    #masterlist=masterlist)
+    
+    
+    ##lofarcat['NN_sep'] <= 45.
+    #M_small_m_isol = M_small_m.submask(lofarcat['FC_flag'] == 14,
+                                        #'nisol',
+                                        #edgelabel='N',
+                                        #masterlist=masterlist)
+    
+    
+    M_small_m = Mask(lofarcat['FC_flag'] == 14,
                     'small_m',
-                    qlabel='isolated',
+                    qlabel='small\nnon-isolated\nm\n',
                     masterlist=masterlist)
     
     
-    
-    M_small_m_isol = M_small_m.submask(lofarcat['NN_sep'] <= 45.,
+    #lofarcat['NN_sep'] > 45.
+    M_small_m_nisol = M_small_m.submask(lofarcat['FC_flag'] == 14,
                                         'nisol',
-                                        edgelabel='N',
-                                        masterlist=masterlist)
-    
-    M_small_m_nisol = M_small_m.submask(lofarcat['NN_sep'] > 45.,
-                                        'isol',
                                         qlabel='LRs >= 0.36??',
                                         edgelabel='Y',
                                         masterlist=masterlist)
     
-    M_small_m_isol_lr = M_small_m_isol.submask(source_lr,
+    M_small_m_nisol_lr = M_small_m_nisol.submask(source_lr,
                                         'lr',
-                                        edgelabel='Y',
+                                        edgelabel='Y (SLR)',
                                         qlabel='N(LRg >= 0.36) >= 1?',
                                         masterlist=masterlist)
     
     
-    M_small_m_isol_lr_glr = M_small_m_isol_lr.submask(source_glr,
+    M_small_m_nisol_lr_glr = M_small_m_nisol_lr.submask(source_glr,
                                         'glr',
-                                        edgelabel='Y',
+                                        edgelabel='Y (GLRSLR)',
                                         qlabel='N guassian lr?',
                                         masterlist=masterlist)
     
     
-    M_small_m_isol_lr_glr_glr1 = M_small_m_isol_lr_glr.submask(source_glr1,
+    M_small_m_nisol_lr_glr_glr1 = M_small_m_nisol_lr_glr.submask(source_glr1,
                                         'glr1',
                                         edgelabel='1',
                                         qlabel='same as source?',
                                         masterlist=masterlist)
     
-    M_small_m_isol_lr_glr_glr1_ges = M_small_m_isol_lr_glr_glr1.submask(lofarcat['N_G_LR_matchsource'] == 1,
+    M_small_m_nisol_lr_glr_glr1_ges = M_small_m_nisol_lr_glr_glr1.submask(lofarcat['N_G_LR_matchsource'] == 1,
                                         'ges',
                                         edgelabel='Y',
                                         qlabel='accept ML source',
                                         color='blue',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr1_ges.mask] = 1
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr1_ges.mask] = 1
     
-    M_small_m_isol_lr_glr_glr1_nges = M_small_m_isol_lr_glr_glr1.submask(lofarcat['N_G_LR_matchsource'] != 1,
+    M_small_m_nisol_lr_glr_glr1_nges = M_small_m_nisol_lr_glr_glr1.submask(lofarcat['N_G_LR_matchsource'] != 1,
                                         'nges',
                                         edgelabel='N',
                                         qlabel='compare LRs and LRg',
                                         masterlist=masterlist)
     
     
-    M_small_m_isol_lr_glr_glr1_nges_1 = M_small_m_isol_lr_glr_glr1_nges.submask(lofarcat['G_LR_case1'] == 1,
+    M_small_m_nisol_lr_glr_glr1_nges_1 = M_small_m_nisol_lr_glr_glr1_nges.submask(lofarcat['G_LR_case1'] == 1,
                                         'case1',
                                         edgelabel='1',
                                         qlabel='accept ML source',
                                         color='blue',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr1_nges_1.mask] = 1
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr1_nges_1.mask] = 1
     
     
-    M_small_m_isol_lr_glr_glr1_nges_2 = M_small_m_isol_lr_glr_glr1_nges.submask(lofarcat['G_LR_case1'] == 2,
+    M_small_m_nisol_lr_glr_glr1_nges_2 = M_small_m_nisol_lr_glr_glr1_nges.submask(lofarcat['G_LR_case1'] == 2,
                                         'case2',
                                         edgelabel='2',
                                         qlabel='accept ML gaus',
                                         color='blue',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr1_nges_2.mask] = 2
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr1_nges_2.mask] = 2
     
     
-    M_small_m_isol_lr_glr_glr1_nges_3 = M_small_m_isol_lr_glr_glr1_nges.submask(lofarcat['G_LR_case1'] == 3,
+    M_small_m_nisol_lr_glr_glr1_nges_3 = M_small_m_nisol_lr_glr_glr1_nges.submask(lofarcat['G_LR_case1'] == 3,
                                         'case3',
                                         edgelabel='3',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr1_nges_3.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr1_nges_3.mask] = 5
     
-    M_small_m_isol_lr_glr_glr3p = M_small_m_isol_lr_glr.submask(source_glr3p,
+    M_small_m_nisol_lr_glr_glr3p = M_small_m_nisol_lr_glr.submask(source_glr3p,
                                         'glr3p',
                                         qlabel='all G match S?',
                                         edgelabel='3+',
                                         masterlist=masterlist)
 
     
-    M_small_m_isol_lr_glr_glr3p_ges = M_small_m_isol_lr_glr_glr3p.submask(lofarcat['N_G_LR_matchsource'] == lofarcat['Ng_LR_good'],
+    M_small_m_nisol_lr_glr_glr3p_ges = M_small_m_nisol_lr_glr_glr3p.submask(lofarcat['N_G_LR_matchsource'] == lofarcat['Ng_LR_good'],
                                         'ges',
                                         edgelabel='Y',
                                         color='blue',
                                         qlabel='accept ML source',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr3p_ges.mask] = 1
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr3p_ges.mask] = 1
     
-    M_small_m_isol_lr_glr_glr3p_nges = M_small_m_isol_lr_glr_glr3p.submask(lofarcat['N_G_LR_matchsource'] != lofarcat['Ng_LR_good'],
+    M_small_m_nisol_lr_glr_glr3p_nges = M_small_m_nisol_lr_glr_glr3p.submask(lofarcat['N_G_LR_matchsource'] != lofarcat['Ng_LR_good'],
                                         'nges',
                                         edgelabel='N',
                                         qlabel='deblend',
                                         color='orange',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr3p_nges.mask] = 4
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr3p_nges.mask] = 4
     
     
-    M_small_m_isol_lr_glr_glr2 = M_small_m_isol_lr_glr.submask(source_glr2,
+    M_small_m_nisol_lr_glr_glr2 = M_small_m_nisol_lr_glr.submask(source_glr2,
+                                        'glr2',
                                         'compare G/S matches',
                                         edgelabel='2',
                                         masterlist=masterlist)
     
     
-    M_small_m_isol_lr_glr_glr2_ges = M_small_m_isol_lr_glr_glr2.submask(lofarcat['N_G_LR_matchsource'] == 2,
+    M_small_m_nisol_lr_glr_glr2_ges = M_small_m_nisol_lr_glr_glr2.submask(lofarcat['N_G_LR_matchsource'] == 2,
                                         'ges',
                                         edgelabel='both G match S',
                                         qlabel='accept ML source',
                                         color='blue',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr2_ges.mask] = 1
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr2_ges.mask] = 1
     
-    M_small_m_isol_lr_glr_glr2_nges = M_small_m_isol_lr_glr_glr2.submask(lofarcat['N_G_LR_matchsource'] == 0,
+    M_small_m_nisol_lr_glr_glr2_nges = M_small_m_nisol_lr_glr_glr2.submask(lofarcat['N_G_LR_matchsource'] == 0,
                                         'nges',
                                         edgelabel='neither G match S',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr2_nges.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr2_nges.mask] = 5
     
-    M_small_m_isol_lr_glr_glr2_nges1 = M_small_m_isol_lr_glr_glr2.submask(lofarcat['N_G_LR_matchsource'] == 1,
+    M_small_m_nisol_lr_glr_glr2_nges1 = M_small_m_nisol_lr_glr_glr2.submask(lofarcat['N_G_LR_matchsource'] == 1,
                                         'nges1',
                                         edgelabel='One G matches S',
                                         qlabel='compare LRsource and LRgaus\'s',
                                         #color='red',
                                         masterlist=masterlist)
     
-    M_small_m_isol_lr_glr_glr2_nges1_case1 = M_small_m_isol_lr_glr_glr2_nges1.submask(lofarcat['G_LR_case2'] == 1,
+    M_small_m_nisol_lr_glr_glr2_nges1_case1 = M_small_m_nisol_lr_glr_glr2_nges1.submask(lofarcat['G_LR_case2'] == 1,
                                         'case1',
                                         edgelabel='1',
                                         qlabel='accept ML source',
                                         color='blue',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr2_nges1_case1.mask] = 1
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr2_nges1_case1.mask] = 1
     
     
-    M_small_m_isol_lr_glr_glr2_nges1_case2 = M_small_m_isol_lr_glr_glr2_nges1.submask(lofarcat['G_LR_case2'] == 2,
+    M_small_m_nisol_lr_glr_glr2_nges1_case2 = M_small_m_nisol_lr_glr_glr2_nges1.submask(lofarcat['G_LR_case2'] == 2,
                                         'case2',
                                         edgelabel='2',
                                         qlabel='deblend (direct)',
                                         color='orange',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr2_nges1_case2.mask] = 3
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr2_nges1_case2.mask] = 3
     
     
-    M_small_m_isol_lr_glr_glr2_nges1_case3 = M_small_m_isol_lr_glr_glr2_nges1.submask(lofarcat['G_LR_case2'] == 3,
+    M_small_m_nisol_lr_glr_glr2_nges1_case3 = M_small_m_nisol_lr_glr_glr2_nges1.submask(lofarcat['G_LR_case2'] == 3,
                                         'case3',
                                         edgelabel='3',
                                         qlabel='deblend',
                                         color='orange',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_glr_glr2_nges1_case3.mask] = 4
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_glr_glr2_nges1_case3.mask] = 4
     
     
-    M_small_m_isol_lr_nglr = M_small_m_isol_lr.submask(source_nglr,
+    M_small_m_nisol_lr_nglr = M_small_m_nisol_lr.submask(source_nglr,
                                         'nglr',
-                                        edgelabel='N',
+                                        edgelabel='N (nGLRSLR)',
                                         qlabel='LRs >= 10*0.36?',
                                         masterlist=masterlist)
     
-    M_small_m_isol_lr_nglr_lr2 = M_small_m_isol_lr_nglr.submask(source_lr2,
+    M_small_m_nisol_lr_nglr_lr2 = M_small_m_nisol_lr_nglr.submask(source_lr2,
                                         'slr',
                                         edgelabel='Y',
                                         qlabel='accept ML source',
                                         color='blue',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_nglr_lr2.mask] = 1
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_nglr_lr2.mask] = 1
     
-    M_small_m_isol_lr_nglr_nlr2 = M_small_m_isol_lr_nglr.submask(~source_lr2,
+    M_small_m_nisol_lr_nglr_nlr2 = M_small_m_nisol_lr_nglr.submask(~source_lr2,
                                         'nslr',
                                         edgelabel='N',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_lr_nglr_nlr2.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_lr_nglr_nlr2.mask] = 5
     
-    M_small_m_isol_nlr = M_small_m_isol.submask(source_nlr,
+    M_small_m_nisol_nlr = M_small_m_nisol.submask(source_nlr,
                                         'nlr',
-                                        edgelabel='N',
+                                        edgelabel='N (nSLR)',
                                         qlabel='N(LRg >= 0.36) >= 1?',
                                         masterlist=masterlist)
     
 
-    M_small_m_isol_nlr_glr = M_small_m_isol_nlr.submask(source_glr,
+    M_small_m_nisol_nlr_glr = M_small_m_nisol_nlr.submask(source_glr,
                                         'glr',
-                                        edgelabel='Y',
+                                        edgelabel='Y (GLRnSLR)',
                                         qlabel='N(LRg >= 0.36)?',
                                         masterlist=masterlist)
     
     
-    M_small_m_isol_nlr_glr_glr1 = M_small_m_isol_nlr_glr.submask(source_glr1,
+    M_small_m_nisol_nlr_glr_glr1 = M_small_m_nisol_nlr_glr.submask(source_glr1,
                                         'glr1',
                                         edgelabel='1',
                                         qlabel='LRgaus > 10*0.36 & \nMaj_gaus< 10"?',
                                         masterlist=masterlist)
     
-    M_small_m_isol_nlr_glr_glr1_case1 = M_small_m_isol_nlr_glr_glr1.submask(lofarcat['G_LR_case3']==1,
+    M_small_m_nisol_nlr_glr_glr1_case1 = M_small_m_nisol_nlr_glr_glr1.submask(lofarcat['G_LR_case3']==1,
                                         'case1',
                                         edgelabel='Y',
                                         qlabel='accept ML gaus',
                                         color='blue',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_nlr_glr_glr1_case1.mask] = 2
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr1_case1.mask] = 2
     
-    M_small_m_isol_nlr_glr_glr1_case2 = M_small_m_isol_nlr_glr_glr1.submask(lofarcat['G_LR_case3']==2,
+    M_small_m_nisol_nlr_glr_glr1_case2 = M_small_m_nisol_nlr_glr_glr1.submask(lofarcat['G_LR_case3']==2,
                                         'case2',
                                         edgelabel='N',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_nlr_glr_glr1_case2.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr1_case2.mask] = 5
     
-    M_small_m_isol_nlr_glr_glr2 = M_small_m_isol_nlr_glr.submask(source_glr2,
+    M_small_m_nisol_nlr_glr_glr2 = M_small_m_nisol_nlr_glr.submask(source_glr2,
                                         'glr2',
                                         qlabel='match same gal?',
                                         edgelabel='2',
                                         masterlist=masterlist)
     
     
-    M_small_m_isol_nlr_glr_glr2_same = M_small_m_isol_nlr_glr_glr2.submask(lofarcat['Ng_LR_good_unique'] == 1,
+    M_small_m_nisol_nlr_glr_glr2_same = M_small_m_nisol_nlr_glr_glr2.submask(lofarcat['Ng_LR_good_unique'] == 1,
                                         'same',
                                         qlabel='lgz',
                                         color='green',
                                         edgelabel='Y',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_nlr_glr_glr2_same.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr2_same.mask] = 5
     
     
-    M_small_m_isol_nlr_glr_glr2_diff = M_small_m_isol_nlr_glr_glr2.submask(lofarcat['Ng_LR_good_unique'] != 1,
+    M_small_m_nisol_nlr_glr_glr2_diff = M_small_m_nisol_nlr_glr_glr2.submask(lofarcat['Ng_LR_good_unique'] != 1,
                                         'diff',
                                         qlabel='deblend',
                                         color='orange',
                                         edgelabel='N',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_nlr_glr_glr2_diff.mask] = 4
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr2_diff.mask] = 4
     
-    M_small_m_isol_nlr_glr_glr3p = M_small_m_isol_nlr_glr.submask(source_glr3p,
+    M_small_m_nisol_nlr_glr_glr3p = M_small_m_nisol_nlr_glr.submask(source_glr3p,
                                         'glr3p',
                                         edgelabel='3+',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_nlr_glr_glr3p.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_glr_glr3p.mask] = 5
 
 
-    M_small_m_isol_nlr_nglr = M_small_m_isol_nlr.submask(source_nglr,
+    M_small_m_nisol_nlr_nglr = M_small_m_nisol_nlr.submask(source_nglr,
                                         'nglr',
-                                        edgelabel='N',
+                                        edgelabel='N   (nGLRnSLR)',
                                         qlabel='max(sep_g) < 15"?',
                                         masterlist=masterlist)
     
     
     
-    M_small_m_isol_nlr_nglr_nglargesep = M_small_m_isol_nlr_nglr.submask(~glarge_sep,
+    M_small_m_nisol_nlr_nglr_nglargesep = M_small_m_nisol_nlr_nglr.submask(~glarge_sep,
                                         'nglargesep',
                                         edgelabel='Y',
                                         qlabel='NNsep<100" & NNsize>10"?',
                                         masterlist=masterlist)
     
     
-    M_small_m_isol_nlr_nglr_nglargesep_nnncomplex = M_small_m_isol_nlr_nglr_nglargesep.submask(~nncomplex,
+    M_small_m_nisol_nlr_nglr_nglargesep_nnncomplex = M_small_m_nisol_nlr_nglr_nglargesep.submask(~nncomplex,
                                         'nnncomplex',
                                         edgelabel='N',
                                         qlabel='accept no match',
                                         color='red',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_nlr_nglr_nglargesep_nnncomplex.mask] = 0
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nnncomplex.mask] = 0
     
     
-    M_small_m_isol_nlr_nglr_nglargesep_nncomplex = M_small_m_isol_nlr_nglr_nglargesep.submask(nncomplex,
+    M_small_m_nisol_nlr_nglr_nglargesep_nncomplex = M_small_m_nisol_nlr_nglr_nglargesep.submask(nncomplex,
                                         'nncomplex',
+                                        edgelabel='Y',
+                                        qlabel='NN is artefact?',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex.mask] = 5
+    
+    
+    M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_art = M_small_m_nisol_nlr_nglr_nglargesep_nncomplex.submask(nnartefact,
+                                        'nnartefact',
+                                        edgelabel='Y',
+                                        qlabel='accept no match',
+                                        color='red',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_art.mask] = 0
+    
+    
+    M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart = M_small_m_nisol_nlr_nglr_nglargesep_nncomplex.submask(~nnartefact,
+                                        'nnnartefact',
+                                        edgelabel='N',
+                                        qlabel='visual check',
+                                        #color='green',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart.mask] = 5
+    #1 Complex (lgz)
+    #2 complex (lgz - should be done already)
+    #3 No match
+    #4 artefact
+    #5 no match, but NN is artefact
+    #6 other (redo)
+    #m_nisol_flag_vc1
+    
+    M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_lgz = M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart.submask(lofarcat['m_nisol_flag_vc1']==1,
+                                        'lgz',
                                         edgelabel='Y',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_nlr_nglr_nglargesep_nncomplex.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_lgz.mask] = 51
+    
+    M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_lgz1 = M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart.submask(lofarcat['m_nisol_flag_vc1']==2,
+                                        'lgz1',
+                                        edgelabel='Y',
+                                        qlabel='lgz (already)',
+                                        color='green',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_lgz1.mask] = 52
+    
+    M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_nlgz = M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart.submask(lofarcat['m_nisol_flag_vc1']>2,
+                                        'nlgz',
+                                        edgelabel='N',
+                                        qlabel='tbc',
+                                        color='orange',
+                                        masterlist=masterlist)
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_nlgz.mask] = 53
     
     
-    
-    M_small_m_isol_nlr_nglr_glargesep = M_small_m_isol_nlr_nglr.submask(glarge_sep,
+    M_small_m_nisol_nlr_nglr_glargesep = M_small_m_nisol_nlr_nglr.submask(glarge_sep,
                                         'glargesep',
                                         edgelabel='N',
                                         qlabel='lgz',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_diag'][M_small_m_isol_nlr_nglr_glargesep.mask] = 5
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_glargesep.mask] = 5
     
     
     # make flowchart from list of masks
@@ -475,7 +440,7 @@ if __name__=='__main__':
         plot_flowchart = False
     if plot_flowchart:
 
-        PW = 1500.
+        PW = 75.
 
         A=pgv.AGraph(directed=True, strict=True)
         A.edge_attr['arrowhead']='none'
@@ -541,3 +506,14 @@ if __name__=='__main__':
         A.write('flow_s{s:.0f}_nn{nn:.0f}_msources_nisol.dot'.format(s=size_large,nn=separation1)) # write to file
 
         
+    # make a test sample for each final mask
+    makesample = 1
+    if makesample:
+        for t in masterlist:
+            if not t.has_children :
+                print t.name
+                t.make_sample(lofarcat,Nsample=None)
+        
+        
+    lofarcat.keep_columns(['Source_Name','M_Diagnosis_Code'])
+    lofarcat[M_small_m_nisol.mask].write(lofar_msource_flowchart_file, overwrite=True)
