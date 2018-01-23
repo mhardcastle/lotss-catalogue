@@ -250,6 +250,28 @@ if __name__=='__main__':
     lofarcat.add_column(Column(lrcol, 'LR_dec'))
 
 
+    # note the large sources are missing from the ML catalogue
+    lrcol = np.zeros(len(lofarcat),dtype=float)
+    lrcol[f_nn_sep2d==0] = psmlcat['lr'][f_nn_idx][f_nn_sep2d==0]
+
+    #lofarcat.add_column(Column(psmlcat['lr_pc_7th'], 'gLR'))
+    lofarcat.add_column(Column(lrcol, 'cgLR'))
+    lrcol[np.isnan(lrcol)] = 0
+    lofarcat.add_column(Column(lrcol, 'gLR'))
+    lrcol = np.zeros(len(lofarcat),dtype='S19')
+    lrcol[f_nn_sep2d==0] = psmlcat['AllWISE'][f_nn_idx][f_nn_sep2d==0]
+    lofarcat.add_column(Column(lrcol, 'gLR_name_wise'))
+    lrcol = np.zeros(len(lofarcat),dtype=int)
+    lrcol[f_nn_sep2d==0] = psmlcat['objID'][f_nn_idx][f_nn_sep2d==0]
+    lofarcat.add_column(Column(lrcol, 'gLR_name_ps'))
+    lrcol = np.zeros(len(lofarcat),dtype=float)
+    lrcol[f_nn_sep2d==0] = psmlcat['ra'][f_nn_idx][f_nn_sep2d==0]
+    lofarcat.add_column(Column(lrcol, 'gLR_ra'))
+    lrcol = np.zeros(len(lofarcat),dtype=float)
+    lrcol[f_nn_sep2d==0] = psmlcat['dec'][f_nn_idx][f_nn_sep2d==0]
+    lofarcat.add_column(Column(lrcol, 'gLR_dec'))
+
+
     # join the ps ml gaus cat  - they have identical RA/DEC (source_names were wrong)
     cg = ac.SkyCoord(lofargcat['RA'], lofargcat['DEC'], unit="deg")
     cpsmlg = ac.SkyCoord(psmlgcat['RA'], psmlgcat['DEC'], unit="deg")
@@ -314,14 +336,14 @@ if __name__=='__main__':
     for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
         ig = np.where(lofargcat['Source_Name']==sid)[0]
         lofarcat['G_LR_max'][i]= np.nanmax(lofargcat['LR'][ig])
-        #igi = np.argmax(lofargcat['LR'][ig])
-        # for now, if one of the gaussian LR is better, take that
-        #if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
-            #lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
-            #lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
-            #lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
-            #lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
-            #lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
+        igi = np.argmax(lofargcat['LR'][ig])
+        #for now, if one of the gaussian LR is better, take that
+        if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
+            lofarcat['gLR'][i] = lofarcat['G_LR_max'][i]
+            lofarcat['gLR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
+            lofarcat['gLR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
+            lofarcat['gLR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
+            lofarcat['gLR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
             #pass
         # how many unique acceptable matches are there for the gaussian components
         matches_ra = np.unique(lofargcat['LR_ra'][ig][lofargcat['LR'][ig] >= 0.36])

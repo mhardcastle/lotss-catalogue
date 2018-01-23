@@ -333,7 +333,7 @@ if __name__=='__main__':
     
     # handle ML sources
     lLR_thresh = 0.36
-    selml = (lofarcat_sorted['ID_flag']==1) & (np.log10(1+lofarcat_sorted['LR']) > lLR_thresh)
+    selml = ((lofarcat_sorted['ID_flag']==1) |(lofarcat_sorted['ID_flag']==61) | (lofarcat_sorted['ID_flag']==62)) & (np.log10(1+lofarcat_sorted['LR']) > lLR_thresh)
     print 'adding info for {n:d} ML source matches'.format(n=np.sum(selml))
     
 
@@ -351,6 +351,28 @@ if __name__=='__main__':
     lofarcat_sorted['ID_ra'][selml] = lofarcat_sorted['LR_ra'][selml]
     lofarcat_sorted['ID_dec'][selml] = lofarcat_sorted['LR_dec'][selml]
     lofarcat_sorted['ML_LR'][selml] = lofarcat_sorted['LR'][selml]
+    
+    # use gaus info where it is needed:
+    selml = ((lofarcat_sorted['ID_flag']==61) | (lofarcat_sorted['ID_flag']==62)) & (np.log10(1+lofarcat_sorted['LR']) <= lLR_thresh)
+    print 'adding info for {n:d} ML source matches'.format(n=np.sum(selml))
+    
+
+    # take the PS name over the WISE name
+    # why is PS name just some number ?? - pepe?
+    namesP = lofarcat_sorted['gLR_name_ps'][selml]
+    namesP = [ 'PS '+str(nP) if nP != 999999 else '' for nP in namesP ]
+    #namesP = [name_from_coords(ra,dec, prefix='PSO J') for ra,dec,n in zip(lofarcat_sorted['LR_ra'][selml],lofarcat_sorted['LR_dec'][selml],lofarcat_sorted['LR_name_ps'][selml])  ]
+    namesW = lofarcat_sorted['gLR_name_wise'][selml]
+    namesW = [ 'AllWISE'+nW  if nW != 'N/A' else '' for nW in namesW]
+    names = [nP if nP != '' else nW  for nP,nW in zip(namesP,namesW)]
+    
+    
+    lofarcat_sorted['ID_name'][selml] = names
+    lofarcat_sorted['ID_ra'][selml] = lofarcat_sorted['gLR_ra'][selml]
+    lofarcat_sorted['ID_dec'][selml] = lofarcat_sorted['gLR_dec'][selml]
+    lofarcat_sorted['ML_LR'][selml] = lofarcat_sorted['gLR'][selml]
+    
+    
     
     selml = (lofarcat_sorted['ID_flag']==1) & (np.log10(1+lofarcat_sorted['LR']) <= lLR_thresh)
     print 'adding info for {n:d} ML source non-matches'.format(n=np.sum(selml))
