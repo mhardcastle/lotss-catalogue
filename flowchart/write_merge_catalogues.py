@@ -302,10 +302,15 @@ if __name__=='__main__':
         # TBD 'Mosiac_ID'
         
         # size is taken from convex hull of components - as in LGZ process
-        cshape = Make_Shape(complist)
-        assoc_2mass['LGZ_Size'] = cshape.length()
-        assoc_2mass['LGZ_Width'] = cshape.width()
-        assoc_2mass['LGZ_PA'] = cshape.pa()
+        if len(complist) > 1:
+            cshape = Make_Shape(complist)
+            assoc_2mass['LGZ_Size'] = cshape.length()
+            assoc_2mass['LGZ_Width'] = cshape.width()
+            assoc_2mass['LGZ_PA'] = cshape.pa()
+        else:
+            assoc_2mass['LGZ_Size'] = complist['DC_Maj'][0]
+            assoc_2mass['LGZ_Width'] = complist['DC_Min'][0]
+            assoc_2mass['LGZ_PA'] = complist['DC_PA'][0]
         
         
         assoc_2mass['LGZ_Assoc'] = len(complist)
