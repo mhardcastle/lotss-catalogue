@@ -358,24 +358,28 @@ if __name__=='__main__':
     lofarcat_sorted['ML_LR'][selml] = lofarcat_sorted['LR'][selml]
     
     # use gaus info where it is needed:
-    selml = ((lofarcat_sorted['ID_flag']==61) | (lofarcat_sorted['ID_flag']==62)) & (np.log10(1+lofarcat_sorted['LR']) <= lLR_thresh)
-    print 'adding info for {n:d} ML source matches'.format(n=np.sum(selml))
+    # for the blends where there is no source match
+    selmlg_blend = ((lofarcat_sorted['ID_flag']==61) | (lofarcat_sorted['ID_flag']==62)) & (np.log10(1+lofarcat_sorted['LR']) <= lLR_thresh)
+    # and for the msources that are selected to have best G match
+    selmlg_auto = (lofarcat_sorted['ID_flag']==1) & ( ((lofarcat_sorted['msource1_flag']==2) | (lofarcat_sorted['msource2_flag']==2)))
+    selmlg = selmlg_blend | selmlg_auto
+    print 'adding info for {n:d} ML gaus source matches'.format(n=np.sum(selmlg))
     
 
     # take the PS name over the WISE name
     # why is PS name just some number ?? - pepe?
-    namesP = lofarcat_sorted['gLR_name_ps'][selml]
+    namesP = lofarcat_sorted['gLR_name_ps'][selmlg]
     namesP = [ 'PS '+str(nP) if nP != 999999 else '' for nP in namesP ]
-    #namesP = [name_from_coords(ra,dec, prefix='PSO J') for ra,dec,n in zip(lofarcat_sorted['LR_ra'][selml],lofarcat_sorted['LR_dec'][selml],lofarcat_sorted['LR_name_ps'][selml])  ]
-    namesW = lofarcat_sorted['gLR_name_wise'][selml]
+    #namesP = [name_from_coords(ra,dec, prefix='PSO J') for ra,dec,n in zip(lofarcat_sorted['LR_ra'][selmlg],lofarcat_sorted['LR_dec'][selmlg],lofarcat_sorted['LR_name_ps'][selmlg])  ]
+    namesW = lofarcat_sorted['gLR_name_wise'][selmlg]
     namesW = [ 'AllWISE'+nW  if nW != 'N/A' else '' for nW in namesW]
     names = [nP if nP != '' else nW  for nP,nW in zip(namesP,namesW)]
     
     
-    lofarcat_sorted['ID_name'][selml] = names
-    lofarcat_sorted['ID_ra'][selml] = lofarcat_sorted['gLR_ra'][selml]
-    lofarcat_sorted['ID_dec'][selml] = lofarcat_sorted['gLR_dec'][selml]
-    lofarcat_sorted['ML_LR'][selml] = lofarcat_sorted['gLR'][selml]
+    lofarcat_sorted['ID_name'][selmlg] = names
+    lofarcat_sorted['ID_ra'][selmlg] = lofarcat_sorted['gLR_ra'][selmlg]
+    lofarcat_sorted['ID_dec'][selmlg] = lofarcat_sorted['gLR_dec'][selmlg]
+    lofarcat_sorted['ML_LR'][selmlg] = lofarcat_sorted['gLR'][selmlg]
     
     
     
@@ -463,6 +467,7 @@ if __name__=='__main__':
         for c in lgz_c:
             ci = lofarcat_sorted_antd['Source_Name'] == c
             lofarcat_sorted_antd['ID_flag'][ci] = 63
+    
     
     
     # write some flag counts for both catalogues    
