@@ -457,7 +457,7 @@ if __name__=='__main__':
 
     if 'double_flag' not in lofarcat.colnames:
         raise  RuntimeError('need the visual flag information for the double sources')
-    clustered_flag = lofarcat['double_flag']
+    double_flag = lofarcat['double_flag']
                 
     if 'm_nisol_flag_vc2' not in lofarcat.colnames:
         raise  RuntimeError('need the  visual flag information for the m non-isol sources')
@@ -489,7 +489,7 @@ if __name__=='__main__':
         
     # combine the artefact flags
     # artefacts have been identified through various routes of visual checking
-    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5) | (edge_flag==True) | (mnisol_flag2 == 6)
+    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5) | (edge_flag==True) | (mnisol_flag2 == 6) | (double_flag == 3)
 
 
     lofarcat.add_column(Column(Artefact_flag, 'Artefact_flag'))
