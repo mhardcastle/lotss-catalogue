@@ -11,44 +11,9 @@ from subim import extract_subim
 import matplotlib.pyplot as plt
 from source_handler import Source,parsefile
 from separation import separation
+from image_utils import find_bbox,get_mosaic_name
 
 scale=3600.0 # scaling factor for region sizes
-
-def find_bbox(t):
-    # given a table t find the bounding box of the ellipses for the regions
-
-    boxes=[]
-    for r in t:
-        a=r['Maj']/scale
-        b=r['Min']/scale
-        th=(r['PA']+90)*np.pi/180.0
-        dx=np.sqrt((a*np.cos(th))**2.0+(b*np.sin(th))**2.0)
-        dy=np.sqrt((a*np.sin(th))**2.0+(b*np.cos(th))**2.0)
-        boxes.append([r['RA']-dx/np.cos(r['DEC']*np.pi/180.0),
-                      r['RA']+dx/np.cos(r['DEC']*np.pi/180.0),
-                      r['DEC']-dy, r['DEC']+dy])
-
-    boxes=np.array(boxes)
-
-    minra=np.nanmin(boxes[:,0])
-    maxra=np.nanmax(boxes[:,1])
-    mindec=np.nanmin(boxes[:,2])
-    maxdec=np.nanmax(boxes[:,3])
-    
-    ra=np.mean((minra,maxra))
-    dec=np.mean((mindec,maxdec))
-    size=1.2*3600.0*np.max((maxdec-mindec,(maxra-minra)*np.cos(dec*np.pi/180.0)))
-    return ra,dec,size
-
-def get_mosaic_name(name):
-    globst=os.environ['IMAGEDIR']+'/mosaics/'+name.rstrip()+'*'
-    g=glob.glob(globst)
-    if len(g)==1:
-        return g[0]
-    elif len(g)==0:
-        raise RuntimeError('No mosaic called '+name)
-    else:
-        raise RuntimeError('Mosaic name ambiguous')
 
 class Interactive(object):
     def __init__(self,f,optra,optdec,ots,components,notcomponents):
@@ -79,13 +44,13 @@ class Interactive(object):
             if r['Source_Name'] in self.components:
                 c.append('green')
                 #self.f.show_ellipses(r['RA'],r['DEC'],r['Maj']*2/scale,r['Min']*2/scale,angle=90+r['PA'],edgecolor='green',linewidth=3,zorder=101)
-            elif r['Source_Name'] in notcomponents:
+            elif r['Source_Name'] in self.notcomponents:
                 c.append('cyan')
                 #self.f.show_ellipses(r['RA'],r['DEC'],r['Maj']*2/scale,r['Min']*2/scale,angle=90+r['PA'],edgecolor='cyan',linewidth=3,zorder=101)
             else:
                 #self.f.show_ellipses(r['RA'],r['DEC'],r['Maj']*2/scale,r['Min']*2/scale,angle=90+r['PA'],edgecolor='red',linewidth=3,zorder=101)
                 c.append('red')
-        self.f.show_ellipses(ots['RA'],ots['DEC'],ots['Maj']*2/scale,ots['Min']*2/scale,angle=90+ots['PA'],edgecolor=c,linewidth=3,zorder=101,layer='Component_ellipse') 
+        self.f.show_ellipses(self.ots['RA'],self.ots['DEC'],self.ots['Maj']*2/scale,self.ots['Min']*2/scale,angle=90+self.ots['PA'],edgecolor=c,linewidth=3,zorder=101,layer='Component_ellipse') 
         f.refresh()
         
     def onclick(self,event):
@@ -100,10 +65,10 @@ class Interactive(object):
                 print 'Optical ID at',ra,dec
                 self.redraw()
             elif self.mode=='m':
-                sep=separation(ra,dec,ots['RA'],ots['DEC'])
+                sep=separation(ra,dec,self.ots['RA'],self.ots['DEC'])
                 index=np.argmin(sep)
-                name=ots[index]['Source_Name']
-                if ots[index]['Source_Name'] in self.components:
+                name=self.ots[index]['Source_Name']
+                if self.ots[index]['Source_Name'] in self.components:
                     self.components.remove(name)
                     print 'removed component',name
                 else:

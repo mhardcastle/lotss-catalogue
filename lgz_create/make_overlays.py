@@ -10,44 +10,10 @@ import sys
 import os
 import glob
 from subim import extract_subim
+from image_utils import find_bbox,get_mosaic_name
 
 scale=3600.0 # scaling factor for region sizes
 
-def find_bbox(t):
-    # given a table t find the bounding box of the ellipses for the regions
-
-    boxes=[]
-    for r in t:
-        a=r['Maj']/scale
-        b=r['Min']/scale
-        th=(r['PA']+90)*np.pi/180.0
-        dx=np.sqrt((a*np.cos(th))**2.0+(b*np.sin(th))**2.0)
-        dy=np.sqrt((a*np.sin(th))**2.0+(b*np.cos(th))**2.0)
-        boxes.append([r['RA']-dx/np.cos(r['DEC']*np.pi/180.0),
-                      r['RA']+dx/np.cos(r['DEC']*np.pi/180.0),
-                      r['DEC']-dy, r['DEC']+dy])
-
-    boxes=np.array(boxes)
-    print boxes
-    minra=np.min(boxes[:,0])
-    maxra=np.max(boxes[:,1])
-    mindec=np.min(boxes[:,2])
-    maxdec=np.max(boxes[:,3])
-    
-    ra=np.mean((minra,maxra))
-    dec=np.mean((mindec,maxdec))
-    size=1.2*3600.0*np.max((maxdec-mindec,(maxra-minra)*np.cos(dec*np.pi/180.0)))
-    print 'returned size is',size
-    return ra,dec,size
-
-def get_mosaic_name(name):
-    globst=os.environ['IMAGEDIR']+'/mosaics/'+name.rstrip()+'*'
-    print 'Looking for',globst
-    g=glob.glob(globst)
-    if len(g)>0:
-        return g[0]
-    else:
-        raise RuntimeError('No mosaic called '+name)
 
 if __name__=='__main__':
 
