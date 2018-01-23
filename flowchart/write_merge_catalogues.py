@@ -273,33 +273,35 @@ if __name__=='__main__':
         assoc_2mass = lofarcat_sorted[i[0]]
         
         
-        assoc_2mass['RA']=np.average(complist['RA'], weights=complist['Total_flux'])
-        assoc_2mass['DEC']=np.average(complist['DEC'], weights=complist['Total_flux'])
-        
-        assoc_2mass['Source_Name'] = name_from_coords(assoc_2mass['RA'],assoc_2mass['DEC'],prefix='ILTJ')
-        
-        assoc_2mass['E_RA']=np.sqrt(np.sum(complist['E_RA']**2.0))/len(complist)
-        assoc_2mass['E_DEC']=np.sqrt(np.sum(complist['E_DEC']**2.0))/len(complist)
-        assoc_2mass['Isl_rms']=np.mean(complist['Isl_rms'])
-        assoc_2mass['Total_flux']=np.sum(complist['Total_flux'])
-        # total flux error is error on the sum
-        assoc_2mass['E_Total_flux']=np.sqrt(np.sum(complist['E_Total_flux']**2.0))
-        # peak flux and error from brightest component
-        maxpk=np.argmax(complist['Peak_flux'])
-        assoc_2mass['Peak_flux']=complist[maxpk]['Peak_flux']
-        assoc_2mass['E_Peak_flux']=complist[maxpk]['E_Peak_flux']
         # merging multiple S/M will be M, unless merging 1 S source
         if len(complist) > 1:
+            
+            assoc_2mass['RA']=np.average(complist['RA'], weights=complist['Total_flux'])
+            assoc_2mass['DEC']=np.average(complist['DEC'], weights=complist['Total_flux'])
+            
+            assoc_2mass['Source_Name'] = name_from_coords(assoc_2mass['RA'],assoc_2mass['DEC'],prefix='ILTJ')
+            
+            assoc_2mass['E_RA']=np.sqrt(np.sum(complist['E_RA']**2.0))/len(complist)
+            assoc_2mass['E_DEC']=np.sqrt(np.sum(complist['E_DEC']**2.0))/len(complist)
+            assoc_2mass['Isl_rms']=np.mean(complist['Isl_rms'])
+            assoc_2mass['Total_flux']=np.sum(complist['Total_flux'])
+            # total flux error is error on the sum
+            assoc_2mass['E_Total_flux']=np.sqrt(np.sum(complist['E_Total_flux']**2.0))
+            # peak flux and error from brightest component
+            maxpk=np.argmax(complist['Peak_flux'])
+            assoc_2mass['Peak_flux']=complist[maxpk]['Peak_flux']
+            assoc_2mass['E_Peak_flux']=complist[maxpk]['E_Peak_flux']
+            
+            assoc_2mass['Isl_id'] = -99
+            
             assoc_2mass['S_Code'] = 'M'
-        else:
-            assoc_2mass['S_Code'] = complist['S_Code'][0]
+            
         for t in ['Maj', 'Min', 'PA']:
             assoc_2mass[t] = np.nan
             assoc_2mass['E_'+t] = np.nan
             assoc_2mass['DC_'+t] = np.nan
             assoc_2mass['E_DC_'+t] = np.nan
             
-        assoc_2mass['Isl_id'] = -99
         
         #c =SkyCoord(complist['RA'], complist['DEC'], unit='deg')
         # TBD 'Mosiac_ID'
