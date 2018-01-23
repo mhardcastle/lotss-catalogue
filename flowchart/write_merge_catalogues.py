@@ -392,6 +392,7 @@ if __name__=='__main__':
                 lgz_cat['ID_flag'][ind] = 312
         else:
             print 'error'
+            
         
 
     ## change None to ''
@@ -411,11 +412,30 @@ if __name__=='__main__':
         lgz_c = lgz_components['lgz_component'][si]
         for c in lgz_c:
             ci = lofarcat_sorted_antd['Source_Name'] == c
-            lofarcat_sorted_antd['New_Source_Name'][ci] == ''
+            lofarcat_sorted_antd['New_Source_Name'][ci] = ''
             
     comp_arts = (lofarcat_sorted_antd['New_Source_Name'] == '')
     print 'removing {0:d} components that are artefacts'.format(np.sum(comp_arts))
     lofarcat_sorted_antd = lofarcat_sorted_antd[~comp_arts]
+    
+    
+    
+    
+    ### this is blend and should be dealt with later:
+    # but update the ID_flag before we discard the Blend_prob column
+    mergecat['ID_flag'][mergecat['Blend_prob'] > 0.5] = 63
+    
+    # remove the artefact components from the component file
+    lgz_select_blend = (lgz_cat_full['Blend_prob']>=0.5)
+    print 'Selecting {n2:d} of {n1:d} artefact sources in the LGZv1 catalogue to update ID_flag'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select_blend))
+    lgz_cat_blend = lgz_cat_full[lgz_select_blend]
+    for s in lgz_cat_blend['Source_Name']:
+        # look up component names
+        si = (lgz_components['lgz_src'] == s)
+        lgz_c = lgz_components['lgz_component'][si]
+        for c in lgz_c:
+            ci = lofarcat_sorted_antd['Source_Name'] == c
+            lofarcat_sorted_antd['ID_flag'][ci] = 63
     
     
     # write some flag counts for both catalogues    
