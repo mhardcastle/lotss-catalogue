@@ -288,8 +288,11 @@ if __name__=='__main__':
         maxpk=np.argmax(complist['Peak_flux'])
         assoc_2mass['Peak_flux']=complist[maxpk]['Peak_flux']
         assoc_2mass['E_Peak_flux']=complist[maxpk]['E_Peak_flux']
-        # merging multiple S/M will be M
-        assoc_2mass['S_Code'] = 'M'
+        # merging multiple S/M will be M, unless merging 1 S source
+        if len(complist) > 1:
+            assoc_2mass['S_Code'] = 'M'
+        else:
+            assoc_2mass['S_Code'] = complist['S_Code'][0]
         for t in ['Maj', 'Min', 'PA']:
             assoc_2mass[t] = np.nan
             assoc_2mass['E_'+t] = np.nan
