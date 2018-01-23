@@ -126,9 +126,17 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
     if plotpos is not None:
         if not isinstance(plotpos,list):
             plotpos=[(plotpos,'x'),]
-        for t,marker in plotpos:
+        for element in plotpos:
+            # if a colour is specified assume it's for a filled shape and unfill it
+            if len(element)==3:
+                t,marker,edgecolor=element
+                facecolor='None'
+            else:
+                t,marker=element
+                edgecolor='white'
+                facecolor=edgecolor
             if len(t)>0:
-                f.show_markers(t['ra'],t['dec'],marker=marker,facecolor='white',edgecolor='white',linewidth=2,s=750)
+                f.show_markers(t['ra'],t['dec'],marker=marker,facecolor=facecolor,edgecolor=edgecolor,linewidth=2,s=750)
 
     if circle_radius is not None:
         f.show_circles([ra,],[dec,],[circle_radius,],facecolor='none',edgecolor='cyan',linewidth=5)
