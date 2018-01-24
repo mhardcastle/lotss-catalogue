@@ -150,6 +150,7 @@ if __name__ == '__main__':
     lofarcat_all.add_column(Column(nanflags2, 'Edge_flag2'))
     lofarcat_all.add_column(Column(nanflags3, 'Edge_flag3'))
     
+    lofarcat_all.keep_columns(['Source_Name', 'Edge_flag1','Edge_flag2','Edge_flag3'])
     lofarcat_all.write(lofarcat_flagged_file,overwrite=True)
     
     print '{} edge1 flags'.format(np.sum(lofarcat_all['Edge_flag1']))
