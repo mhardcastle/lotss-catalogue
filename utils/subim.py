@@ -11,7 +11,7 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
 
     naxis=f[hduid].header['NAXIS']
     if naxis<2:
-        raise OverlayException('Can\'t make map from this')
+        raise RuntimeError('Can\'t make map from this')
 
     if verbose:
         print f[hduid].data.shape
@@ -32,9 +32,8 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
     
     if ymax<=ymin or xmax<=xmin:
         # this can only happen if the required position is not on the map
-        print 'Failed to make subimage!'
         print xmin,xmax,ymin,ymax
-        return None
+        raise RuntimeError('Failed to make subimage!')
 
     w = WCS(f[hduid].header)
     wn=WCS(naxis=2)
