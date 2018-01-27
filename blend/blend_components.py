@@ -20,6 +20,7 @@ class GaussAssoc(object):
         self.optids={}
         self.assocs={}
         self.unchanged=True
+        self.flagged=False
         self.components=[r['Gaus_id'] for r in ots]
         for c in self.components:
             self.assocs[c]=1
@@ -65,7 +66,9 @@ class GaussAssoc(object):
         
     def write(self,name):
         outfile=open(name+'.txt','w')
-        if self.unchanged:
+        if self.flagged:
+            outfile.write('## Flagged\n')
+        elif self.unchanged:
             outfile.write('## Unchanged\n')
         else:
             outfile.write('## Components\n')
@@ -117,30 +120,34 @@ class Interactive(object):
                 c.append('red')
         self.f.show_ellipses(self.ots['RA'],self.ots['DEC'],self.ots['Maj']*2/scale,self.ots['Min']*2/scale,angle=90+self.ots['PA'],edgecolor=c,linewidth=3,zorder=101,layer='Component_ellipse') 
         f.refresh()
+
+    def clickon(self,ra,dec):
+        # do something which depends on mode
+        if self.mode=='o' or self.mode=='O':
+            self.ga.set_optid(self.c,ra,dec)
+            print '\nOptical ID at',ra,dec
+            if self.mode=='o': self.redraw()
+        if self.mode=='m' or self.mode=='O':
+            sep=separation(ra,dec,self.ots['RA'],self.ots['DEC'])
+            index=np.argmin(sep)
+            name=self.ots[index]['Gaus_id']
+            if self.ga.ismember(self.c,name):
+                self.ga.remove(name)
+                print '\nremoved component',name,'from source',self.c
+            else:
+                self.ga.add(self.c,name)
+                print '\nadded component',name,'to source',self.c
+            self.redraw()
+            if self.mode=='O':
+                self.set_mode('m')
+
         
     def onclick(self,event):
         xp=event.xdata
         yp=event.ydata
         ra,dec=self.f.pixel2world(xp,yp)
         if event.button==2:
-            # do something which depends on mode
-            if self.mode=='o' or self.mode=='O':
-                self.ga.set_optid(self.c,ra,dec)
-                print '\nOptical ID at',ra,dec
-                if self.mode=='o': self.redraw()
-            if self.mode=='m' or self.mode=='O':
-                sep=separation(ra,dec,self.ots['RA'],self.ots['DEC'])
-                index=np.argmin(sep)
-                name=self.ots[index]['Gaus_id']
-                if self.ga.ismember(self.c,name):
-                    self.ga.remove(name)
-                    print '\nremoved component',name,'from source',self.c
-                else:
-                    self.ga.add(self.c,name)
-                    print '\nadded component',name,'to source',self.c
-                self.redraw()
-                if self.mode=='O':
-                    self.set_mode('m')
+            self.clickon(ra,dec)
 
     def set_mode(self,mode):
         self.mode=mode
@@ -242,11 +249,15 @@ if __name__=='__main__':
             while not(stop):
                 print 'Source number %i, display mode %s, operation mode %s' % (I.c,display_mode,I.mode)
                 print 'Number keys -- select new source number'
-                print '(d)ump, (m)ark components (default), mark an (o)ptical ID,\n    display (p)an-STARRS, display (w)ISE, go to (n)ext, (s)ave and continue?',
+                print '(d)ump, (m)ark components (default), mark an (o)ptical ID, (f)lag,\n    display (p)an-STARRS, display (w)ISE, go to (n)ext, (r)emove opt ID, \n    automatically separate into (t)wo or (s)ave and continue?',
                 command=raw_input()
                 if command=='d':
                     ga.dump()
                 elif command=='s':
+                    ga.write(name)
+                    stop=True
+                elif command=='f':
+                    ga.flagged=True
                     ga.write(name)
                     stop=True
                 elif command>='0' and command<='9':
@@ -258,11 +269,28 @@ if __name__=='__main__':
                 elif command=='p':
                     display_mode='Pan-STARRS'
                     break
+                elif command=='r':
+                    del(ga.optids[I.c])
+                    ga.unchanged=False
+                    I.redraw()
                 elif command=='w':
                     display_mode='WISE'
                     break
                 elif command in ['m','o']:
                     I.set_mode(command)
+                elif command=='t':
+                    # Automatically select the other component of two
+                    if len(mlt)!=2:
+                        print 'There are more than two possibilities!'
+                    else:
+                        cra,cdec=ga.optpos(I.c)
+                        sep=separation(cra,cdec,mlt['ra'],mlt['dec'])
+                        index=np.argmax(sep)
+                        ra=mlt[index]['ra']
+                        dec=mlt[index]['dec']
+                        I.c=2
+                        I.set_mode('O')
+                        I.clickon(ra,dec)
 
             plt.close()
 
