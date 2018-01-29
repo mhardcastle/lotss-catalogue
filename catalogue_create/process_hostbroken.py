@@ -35,7 +35,7 @@ for i in range(len(t)):
 
     print '2MASS source found:',t2m[j]['designation']
     r['optRA']=t2m[j]['ra']
-    r['optDec']=t2m[j]['ra']
+    r['optDec']=t2m[j]['dec']
     r['OptID_Name']='2MASS '+t2m[j]['designation'].rstrip()
     r['Hostbroken_prob']=0
     t[i]=r
