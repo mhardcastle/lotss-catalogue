@@ -1,9 +1,10 @@
 from astropy.table import Table
+import numpy as np
 import sys
 
 # run the following
 
-# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=10 out=merge.fits find=best1 join=all1 in1=LOFAR_HBA_T1_DR1_merge_ID_v0.8.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.2.fits
+# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=10 out=merge.fits find=best1 join=all1 in1=../blend/merge_out.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.2.fits
 
 # and then run this to clean up afterwards.
 
@@ -28,8 +29,16 @@ for c in stringcols:
     t[c]=[s.rstrip() for s in t[c]]
 print
     
+print 'Fix broken ID names'
+for i,r in enumerate(t):
+    if (r['ID_name']=='Altered' or r['ID_name']=="") and ~np.isnan(r['ID_ra']):
+        if r['AllWISE']!="" and r['AllWISE']!="N/A":
+            t[i]['ID_name']='AllWISE'+r['AllWISE']
+        else:
+            t[i]['ID_name']='PS '+str(r['objID'])
+
 print 'Sorting'
 t.sort('RA')
 
 print 'Writing to disk'
-t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v0.6.fits',overwrite=True)
+t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v0.7.fits',overwrite=True)

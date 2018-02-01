@@ -70,6 +70,11 @@ flags:
     * 3220 for LGZv2 zoom
   * 4 for no match
   * 5 for TBD
+  * 600 for blend, resolved as unchanged
+  * 601 for blend, resolved as new optical ID
+  * 602 for blend, resolved as new source built from one Gaussian
+  * 603 for blend, resolved as new source built from >1 Gaussian
+  * 610 for blend, flagged as problematic
 * LGZ_flag - 1 for LGZv1 ; 2 for LGZv2 ; 20 for LGZv2_zoom
 * FC_flag - numeric value encodes endpoint of flowchart
 
