@@ -75,14 +75,16 @@ edge_flag_file = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR
 
 edge_flag_cat = Table.read(edge_flag_file)
 
+# hack to deal with that one duplicate source... causes problems on the join
+edge_flag_cat['Source_Name'][(edge_flag_cat['Source_Name']=='ILTJ132633.10+484745.7') ] = ''
 if 'edge_flag' in lofarcat.colnames:
     lofarcat.remove_column('edge_flag')
 lofarcat.sort('Source_Name')
 tt=join(lofarcat, edge_flag_cat, join_type='left')
-tt['Edge_flag2'].fill_value = False
+tt['Edge_flag3'].fill_value = False
 tt = tt.filled()
 tt.sort('Source_Name')
-tt.rename_column('Edge_flag2','edge_flag')
+tt.rename_column('Edge_flag3','edge_flag')
 
 lofarcat.add_column(tt['edge_flag'])
 

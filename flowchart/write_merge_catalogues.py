@@ -80,7 +80,7 @@ if __name__=='__main__':
 
     ### Required INPUTS
     
-    version =  '0.9'
+    version =  '0.10'
     
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
@@ -263,14 +263,20 @@ if __name__=='__main__':
     nmerge = np.sum(ucounts>1)
     nn = 0
     for n in unames: #[ucounts>1]:
+        if 'SDSS' in n: continue
         
-        i = np.where(lofarcat_sorted['ID_name'] == n)[0]
+        #ii = np.where(lofarcat_sorted['ID_name'] == n)[0]
+        
+        i = np.where(lofarcat_sorted['2MASX_name'] == n.replace('2MASX J',''))[0]
+        
+        #print len(ii), len(i)
+        
         nn += len(i)
         #print n, i
         remove_2mass_mult[i] = True
         
-        complist = lofarcat_sorted[i]
-        assoc_2mass = lofarcat_sorted[i[0]]
+        complist = lofarcat_sorted[i].copy()
+        assoc_2mass = lofarcat_sorted[i].copy()[0]
         
         
         # merging multiple S/M will be M, unless merging 1 S source
@@ -301,7 +307,7 @@ if __name__=='__main__':
             assoc_2mass['E_'+t] = np.nan
             assoc_2mass['DC_'+t] = np.nan
             assoc_2mass['E_DC_'+t] = np.nan
-            
+                        
         
         #c =SkyCoord(complist['RA'], complist['DEC'], unit='deg')
         # TBD 'Mosiac_ID'
@@ -312,6 +318,8 @@ if __name__=='__main__':
             assoc_2mass['LGZ_Size'] = cshape.length()
             assoc_2mass['LGZ_Width'] = cshape.width()
             assoc_2mass['LGZ_PA'] = cshape.pa()
+            
+            print np.array(complist['Source_Name']), np.array(complist['Maj']), cshape.length()
         else:
             assoc_2mass['LGZ_Size'] = complist['DC_Maj'][0]
             assoc_2mass['LGZ_Width'] = complist['DC_Min'][0]
@@ -328,6 +336,7 @@ if __name__=='__main__':
         for c in complist:
             ni = np.where(lofarcat_sorted_antd['Source_Name'] == c['Source_Name'])[0]
             lofarcat_sorted_antd['New_Source_Name'][ni] = assoc_2mass['Source_Name']
+            lofarcat_sorted_antd['ID_flag'][ni] = 2
         
         
         lofarcat_add_2mass_mult = vstack([lofarcat_add_2mass_mult, assoc_2mass]) 
