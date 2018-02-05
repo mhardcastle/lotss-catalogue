@@ -87,15 +87,16 @@ if __name__=='__main__':
 
     path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
 
-    lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits'
-    lofarcat_orig_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fits'
+    lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.gaus.fits'
+    lofarcat_orig_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.fits'
 
     # PS ML - matches for sources and gaussians
     psmlcat_file = path+'lofar_pw.fixed.fits'
     psmlgcat_file = path+'lofar_gaus_pw.fixed.fits'
 
     # sorted output from flowchart
-    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
+    #lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
+    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.sorted.fits'
 
     # LGZ output
     lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.9-filtered-zooms.fits') 
@@ -104,6 +105,7 @@ if __name__=='__main__':
     comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
     merge_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.fits'.format(v=version))
     merge_out_full_file = merge_out_file.replace('.fits','.full.fits')
+    comp_out_full_file = comp_out_file.replace('.fits','.full.fits')
 
     lofarcat_sorted = Table.read(lofarcat_file_srt)
     lofarcat_sorted_antd = Table.read(lofarcat_file_srt)
@@ -280,7 +282,7 @@ if __name__=='__main__':
         
         
         # merging multiple S/M will be M, unless merging 1 S source
-        if len(complist) > 1:
+        if len(complist) > 0:
             
             assoc_2mass['RA']=np.average(complist['RA'], weights=complist['Total_flux'])
             assoc_2mass['DEC']=np.average(complist['DEC'], weights=complist['Total_flux'])
@@ -299,8 +301,10 @@ if __name__=='__main__':
             assoc_2mass['E_Peak_flux']=complist[maxpk]['E_Peak_flux']
             
             assoc_2mass['Isl_id'] = -99
-            
-            assoc_2mass['S_Code'] = 'M'
+            if len(complist) > 1:
+                assoc_2mass['S_Code'] = 'M'
+            else:
+                assoc_2mass['S_Code'] = 'S'
             
         for t in ['Maj', 'Min', 'PA']:
             assoc_2mass[t] = np.nan
@@ -313,13 +317,15 @@ if __name__=='__main__':
         # TBD 'Mosiac_ID'
         
         # size is taken from convex hull of components - as in LGZ process
-        if len(complist) > 1:
+        if len(complist) > 0:
             cshape = Make_Shape(complist)
             assoc_2mass['LGZ_Size'] = cshape.length()
             assoc_2mass['LGZ_Width'] = cshape.width()
             assoc_2mass['LGZ_PA'] = cshape.pa()
             
-            print np.array(complist['Source_Name']), np.array(complist['Maj']), cshape.length()
+            if cshape.length() < 1:
+                print complist
+            #print np.array(complist['Source_Name']), np.array(complist['Maj']), cshape.length()
         else:
             assoc_2mass['LGZ_Size'] = complist['DC_Maj'][0]
             assoc_2mass['LGZ_Width'] = complist['DC_Min'][0]
@@ -488,6 +494,13 @@ if __name__=='__main__':
     count_flags(mergecat, 'ID_flag')
     count_flags(lofarcat_sorted_antd, 'ID_flag')
         
+    lofarcat_sorted_antd.write(comp_out_full_file, overwrite=True)
+    
+    lofarcat_sorted_antd.keep_columns(['New_Source_Name', 'Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'DC_Maj', 'E_DC_Maj', 'DC_Min', 'E_DC_Min', 'DC_PA', 'E_DC_PA', 'Isl_rms', 'S_Code', 'Ng', 'Mosaic_ID', 'Number_Masked', 'Number_Pointings', 'Masked_Fraction', 'ID_flag'])
+    lofarcat_sorted_antd.rename_column('Source_Name', 'Component_Name')
+    lofarcat_sorted_antd.rename_column('New_Source_Name', 'Source_Name')
+    
+    
     lofarcat_sorted_antd.write(comp_out_file, overwrite=True)
 
     mergecat.write(merge_out_full_file, overwrite=True)
