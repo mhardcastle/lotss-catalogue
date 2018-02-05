@@ -166,20 +166,13 @@ if __name__=='__main__':
     ### Required INPUTS
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
-    #path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/source_class/t1_dr1/'
-    #lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.1.gaus.fits'
-    #lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.1.srl.fits'
-    #psmlcat_file = path+'lofar_matched_all.fix.fits'
-    #psmlgcat_file = path+'lofar_matched_gaus.fits'
-
-
     path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
-    lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits'
-    lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.presort.fits'
+    lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.gaus.fits'
+    lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.presort.fits'
     psmlcat_file = path+'lofar_pw.fixed.fits'
     psmlgcat_file = path+'lofar_gaus_pw.fixed.fits'
 
-    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
+    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.sorted.fits'
 
 
 
@@ -194,28 +187,6 @@ if __name__=='__main__':
     # PS ML - matches for sources and gaussians
     psmlcat = Table.read(psmlcat_file)
     psmlgcat = Table.read(psmlgcat_file)
-
-    ## match the gaussians to the sources
-
-    ## quicker to generate new unique names than match on 2 columns
-    ## get new unique source_id by combining mosaic and src id
-    ## replace string mosaic ID with unique int (perhaps there is a more logical mapping of mosaic name to int value)
-    #mid = lofargcat['Mosaic_ID']
-    #mid_unique = np.unique(mid)
-    #mid_int = np.array([np.where(mid_unique==m)[0][0] for m in mid])
-    ## combine with Source_id for unique ID
-    #g_src_id_new =   10000*mid_int + lofargcat['Source_Name']
-    #lofargcat.add_column(Column(g_src_id_new, 'SID'))
-
-    #mid = lofarcat['Mosaic_ID']
-    #mid_unique = np.unique(mid)
-    #mid_int = np.array([np.where(mid_unique==m)[0][0] for m in mid])
-    ## combine with Source_id for unique ID
-    #src_id_new =   10000*mid_int + lofarcat['Source_Name']
-    #lofarcat.add_column(Column(src_id_new, 'SID'))
-
-
-
     
 
     ## get the panstarrs ML information
@@ -224,9 +195,6 @@ if __name__=='__main__':
     c = ac.SkyCoord(lofarcat['RA'], lofarcat['DEC'], unit="deg")
     cpsml = ac.SkyCoord(psmlcat['RA'], psmlcat['DEC'], unit="deg")
     f_nn_idx,f_nn_sep2d,f_nn_dist3d = ac.match_coordinates_sky(c,cpsml,nthneighbor=1)
-
-    #psmlcat = psmlcat[f_nn_idx][f_nn_sep2d==0]
-    #lofarcat = lofarcat[f_nn_sep2d==0]
 
     # note the large sources are missing from the ML catalogue
     lrcol = np.zeros(len(lofarcat),dtype=float)
@@ -313,13 +281,6 @@ if __name__=='__main__':
     lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=int), 'G_LR_case2'))
     lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=int), 'G_LR_case3'))
     
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G1_LR'))
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G1_LR_ra'))
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G1_LR_dec'))
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G2_LR'))
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G2_LR_ra'))
-    #lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G2_LR_dec'))
-    
     #if add_G:
         #lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=list), 'G_ind'))
 
@@ -404,18 +365,6 @@ if __name__=='__main__':
                 
         
         
-        ##in this case take the ML of the gaussian with highest ML
-        ##but don't do this if you want to run the handle_m_source code...
-        ## this should go in the merge script...
-        #if (lofarcat['msource1_flag'][i] == 2) or (lofarcat['msource2_flag'][i] == 2):
-            #igi = np.nanargmax(lofargcat['LR'][ig])
-            #lofarcat['LR'][i] = lofarcat['G_LR_max'][i]
-            #lofarcat['LR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
-            #lofarcat['LR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
-            #lofarcat['LR_ra'][i] = lofargcat['LR_ra'][ig[igi]]
-            #lofarcat['LR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
-            
-            
         
         
         #if add_G:
