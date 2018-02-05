@@ -80,7 +80,7 @@ if __name__=='__main__':
 
     ### Required INPUTS
     
-    version =  '0.10'
+    version =  '0.11'
     
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
@@ -99,8 +99,8 @@ if __name__=='__main__':
     lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.sorted.fits'
 
     # LGZ output
-    lgz_cat_file = os.path.join(path,'lgz_v1/HETDEX-LGZ-cat-v0.9-filtered-zooms.fits') 
-    lgz_component_file = os.path.join(path,'lgz_v1/lgz_components.txt')
+    lgz_cat_file = os.path.join(path,'lgz_v2/HETDEX-LGZ-cat-v0.10-filtered-zooms.fits') 
+    lgz_component_file = os.path.join(path,'lgz_v2/lgz_components.txt')
 
     comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
     merge_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.fits'.format(v=version))
@@ -136,7 +136,7 @@ if __name__=='__main__':
     tc.name = 'New_Source_Name'
     lofarcat_sorted_antd.add_column(tc)
 
-    ## remove sources associated/flagged by LGZ v1
+    ## remove sources associated/flagged by LGZ
     # ideally this would just remove the components in the LGZ comp catalogue  - but using legacy catalogues mean that these don't directly map onto the new sources
     # martin has produced lgz_components.txt to do this.
 
@@ -151,7 +151,7 @@ if __name__=='__main__':
     lgz_select = (tc['LGZ_remove']!=1)
 
 
-    print 'Removing {n:d} sources associated in LGZ v1'.format(n=np.sum(~lgz_select))
+    print 'Removing {n:d} sources associated in LGZ'.format(n=np.sum(~lgz_select))
     lofarcat_sorted = lofarcat_sorted[lgz_select]
     # we don't know what their new names are
     lofarcat_sorted_antd['New_Source_Name'][~lgz_select] = 'LGZ' # there shouldn't be any of these left afterwards!
@@ -303,8 +303,8 @@ if __name__=='__main__':
             assoc_2mass['Isl_id'] = -99
             if len(complist) > 1:
                 assoc_2mass['S_Code'] = 'M'
-            else:
-                assoc_2mass['S_Code'] = 'S'
+            #else:
+                #assoc_2mass['S_Code'] = 'S'
             
         for t in ['Maj', 'Min', 'PA']:
             assoc_2mass[t] = np.nan
@@ -413,7 +413,7 @@ if __name__=='__main__':
     ## add LGz v1 associated sources
     # 
     lgz_select = (lgz_cat_full['Compoverlap']==0)&(lgz_cat_full['Art_prob']<0.5)&(lgz_cat_full['Zoom_prob']<0.5)
-    print 'Selecting {n2:d} of {n1:d} sources in the LGZv1 catalogue to add'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select))
+    print 'Selecting {n2:d} of {n1:d} sources in the LGZ catalogue to add'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select))
     lgz_cat = lgz_cat_full[lgz_select]
     lgz_cat.rename_column('optRA','ID_ra')
     lgz_cat.rename_column('optDec','ID_dec')
@@ -455,7 +455,7 @@ if __name__=='__main__':
 
     # remove the artefact components from the component file
     lgz_select_art = (lgz_cat_full['Art_prob']>=0.5)
-    print 'Selecting {n2:d} of {n1:d} artefact sources in the LGZv1 catalogue to remove their componnents'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select_art))
+    print 'Selecting {n2:d} of {n1:d} artefact sources in the LGZ catalogue to remove their componnents'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select_art))
     lgz_cat_art = lgz_cat_full[lgz_select_art]
     for s in lgz_cat_art['Source_Name']:
         # look up component names
@@ -478,7 +478,7 @@ if __name__=='__main__':
     
     # remove the artefact components from the component file
     lgz_select_blend = (lgz_cat_full['Blend_prob']>=0.5)
-    print 'Selecting {n2:d} of {n1:d} artefact sources in the LGZv1 catalogue to update ID_flag'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select_blend))
+    print 'Selecting {n2:d} of {n1:d} artefact sources in the LGZ catalogue to update ID_flag'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select_blend))
     lgz_cat_blend = lgz_cat_full[lgz_select_blend]
     for s in lgz_cat_blend['Source_Name']:
         # look up component names
