@@ -44,5 +44,5 @@ print count,'total hostbroken'
 print np.sum(problems),'problems'
 
 tp=t[problems]
-tp.write('../zoom/hostbroken_problems.fits',overwrite=True)
+tp.write('../zoom_v2/hostbroken_problems.fits',overwrite=True)
 t.write('HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits',overwrite=True)

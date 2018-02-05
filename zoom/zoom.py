@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from source_handler import Source,parsefile
 from separation import separation
 from image_utils import find_bbox,get_mosaic_name
-
+from get_fits import save_fits
 scale=3600.0 # scaling factor for region sizes
 
 class Interactive(object):
@@ -92,6 +92,7 @@ class Interactive(object):
             print 'Selected optical ID mode'
             self.optra=np.nan
             self.optdec=np.nan
+            self.redraw()
         elif self.mode=='z':
             print 'Selected size mode'
             self.oldra=np.nan
@@ -130,7 +131,7 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # all LOFAR sources
-    ot=Table.read('/data/lofar/mjh/hetdex_v4/lgzmatch/LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits')
+    ot=Table.read('/data/lofar/mjh/hetdex_v4/LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.fits')
     # large source table
     lt=ot[(ot['Total_flux']>8) & (ot['Maj']>6)]
     # galaxies if needed
@@ -144,13 +145,14 @@ if __name__=='__main__':
     wisemaps=[l[3] for l in lines]
     firstmaps=[l[4] for l in lines]
 
-    if len(sys.argv)>1:
+    if len(sys.argv)>2:
         clines=open('../lgz_v1/lgz_components.txt').readlines()
         ss=Source()
         for c in clines:
             bits=c.split()
             ss.add(bits[1],bits[0].rstrip())                 
     else:
+        print 'Reading local components file'
         clines=open('components.txt').readlines()
         ss=Source()
         for c in clines:
@@ -175,7 +177,7 @@ if __name__=='__main__':
                 pass
 
     # now parse existing files to the structure
-    dir='/data/lofar/mjh/hetdex_v4/zoom/'
+    dir='/data/lofar/mjh/hetdex_v4/zoom_v2/'
     g=glob.glob(dir+'ILT*.txt')
     for f in g:
         if 'table-list' in f:
@@ -188,11 +190,13 @@ if __name__=='__main__':
     
     for i in range(len(t)):
         sourcename=names[i]
-        #if os.path.isfile(sourcename+'.txt'):
-        #    print sourcename,'already has a zoom file'
-        #    continue
+        if os.path.isfile(sourcename+'.txt'):
+            print sourcename,'already has a zoom file'
+            continue
         if len(ss.get_comps(sourcename))==0:
             print sourcename,'has no components!'
+            continue
+            '''
             for source in ss.cdict:
                 if sourcename in ss.cdict[source]:
                     break # it's already in some other source
@@ -200,6 +204,7 @@ if __name__=='__main__':
                 ss.add(sourcename,sourcename)
             if sourcename in ss.cdict[source]:
                 continue
+            '''
         r=t[i]
         print i,r
         assert(sourcename==r['Source_Name'])
@@ -293,12 +298,12 @@ if __name__=='__main__':
         '''
         pwg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
 
-        ots=ot[separation(ra,dec,ot['RA'],ot['DEC'])<(size*2)]
+        ots=ot[separation(ra,dec,ot['RA'],ot['DEC'])<(size*3)]
 
         #pshdu=extract_subim(imagedir+'/downloads/'+psmaps[i],ra,dec,size*2,hduid=1)
         print 'Lofarfile is',lofarfile
-        lhdu=extract_subim(lofarfile,ra,dec,size*2)
-        firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size*2)
+        lhdu=extract_subim(lofarfile,ra,dec,size*3)
+        firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size*3)
         whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
         try:
             peak==r['Peak_flux']/1000.0
@@ -320,7 +325,7 @@ if __name__=='__main__':
         
         stop=False
         while not(stop):
-            print '(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, go to (n)ext or (s)ave and continue?',
+            print '(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, save (f)its, go to (n)ext or (s)ave and continue?',
             command=raw_input()
             if command=='s':
                 stop=True
@@ -336,6 +341,9 @@ if __name__=='__main__':
                 I.blend=True
             elif command=='p':
                 continue
+            elif command=='f':
+                lhdu.writeto(r['Source_Name']+'.fits',overwrite=True)
+                print 'Saved as',r['Source_Name']+'.fits'
             else:
                 print 'Command not recognised!'
 

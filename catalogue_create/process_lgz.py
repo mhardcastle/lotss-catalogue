@@ -5,7 +5,7 @@
 # affected by the per-source files, we add or remove lines from the
 # table as appropriate.
 
-from astropy.table import Table
+from astropy.table import Table,vstack,Column
 import numpy as np
 import os
 from copy import deepcopy
@@ -104,44 +104,87 @@ if __name__=='__main__':
     do_optical=True # Set to false for testing purposes only
 
     print 'Reading tables, please wait...'
-    pyb=Table.read('../LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fits')
-    lgz=Table.read('HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits')
+    pyb=Table.read('../LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.artefacts.fits')
+    lgztnames=['../lgz_v1/HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits','HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits']
+    lgzt=[]
+    for i,n in enumerate(lgztnames):
+        t=Table.read(n)
+        t['Version']=i+1
+        lgzt.append(t)
+    lgz=vstack(lgzt)
+    lgz['Mosaic_ID']=Column(lgz['Mosaic_ID'],dtype='S11')
+
+    #lgz=Table.read('HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits')
     lgz['New_size']=np.nan
     lgz['New_width']=np.nan
     lgz['New_PA']=np.nan
+    lgz['Mismatch_flag']=False
     if do_optical:
         ocat=Table.read('/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.2.fits')
         opcat=SkyCoord(ocat['ra']*u.deg, ocat['dec']*u.deg)
 
-    ss=Source()
+    ss=Source(ctable=pyb)
 
     for i,r in enumerate(lgz):
         k=r['Source_Name']
         ss.set_components(k,[])
         ss.set_lgz_number(k,i)
+        ss.set_version(k,r['Version'])
 
-    # components.txt contains components for straight lgz outputs
+    for version in range(1,3):
+        print 'Doing version',version
+        # process things in the order: LGZv1 basic, LGZv1 zooms, LGZv2 basic, LGZv2 zooms
+        compname=['../lgz_v1/components.txt','components.txt'][version-1]
+        zoomdir=['/data/lofar/mjh/hetdex_v4/zoom/','/data/lofar/mjh/hetdex_v4/zoom_v2/'][version-1]
+        
+        # components.txt contains components for straight lgz outputs
+        # all sources in here should be in the table
+        
+        clines=open(compname).readlines()
+        for c in clines:
+            bits=c.split()
+            ss.add(bits[0],bits[1].rstrip())
+            ss.mdict[bits[0]]=1
 
-    clines=open('components.txt').readlines()
-    for c in clines:
-        bits=c.split()
-        ss.add(bits[0],bits[1].rstrip())
-        ss.mdict[bits[0]]=1
+        ss.reset_changes(version=version) # ignore all 'changes' from initialization
 
-    ss.reset_changes() # ignore all 'changes' from initialization
+        # zooms table includes overrides for all sources, including
+        # ones that may not have come from lgz. we set the version here
+        # explicitly to deal with the latter possibility
 
-    # zooms table includes overrides for all sources, including ones that may not have come from lgz
+        g=glob.glob(zoomdir+'ILT*.txt')
+        for f in g:
+            if 'table-list' in f:
+                continue
+            n=f.split('/')[-1].replace('.txt','')
+            print 'Parsing file for source',n
+            parsefile(n,ss,dir=zoomdir)
+            ss.mdict[n]=2
+            ss.set_version(n,version)
 
-    dir='/data/lofar/mjh/hetdex_v4/zoom/'
-    g=glob.glob(dir+'ILT*.txt')
-    for f in g:
-        if 'table-list' in f:
-            continue
-        n=f.split('/')[-1].replace('.txt','')
-        print 'Parsing file for source',n
-        parsefile(n,ss,dir=dir)
-        ss.mdict[n]=2
-
+        if version==1:
+            v1cd={}
+            badl=[]
+        tcount=0
+        count=0
+        bcount=0
+        for k in ss.cdict:
+            if ss.vdict[k]==1:
+                tcount+=1
+                c=len(ss.cdict[k])
+                if version==1:
+                    v1cd[k]=c
+                else:
+                    if c<v1cd[k] and c!=0:
+                        bcount+=1
+                        badl.append(k)
+                if c==0:
+                    count+=1
+        print 'Total V1 sources',tcount,'with zero components =',count
+        if version==2:
+            print 'Total V1 sources with reduced but NON-ZERO components after v2 =',bcount
+            print badl
+            
     olgz=lgz[:0].copy()
 
     remove=open('lgz_components.txt','w')
@@ -157,7 +200,11 @@ if __name__=='__main__':
             for n in cnames:
                 pfilter|=(pyb['Source_Name']==n)
             clist=pyb[pfilter]
-            assert(len(cnames)==len(clist))
+            if len(cnames)!=len(clist):
+                print 'Source is',k
+                print 'cnames is',cnames
+                print 'clist is',clist
+                stop
             ms=Make_Shape(clist)
 
             if not(ss.changed_dict[k]):
@@ -167,9 +214,12 @@ if __name__=='__main__':
             else:
                 # source has changed, or was only ever present in zooms text
                 print 'Source',k,'is flagged as having changed'
-                r=lgz[0]
+                if k in ss.idict:
+                    r=lgz[ss.idict[k]]
+                else:
+                    r=lgz[0]
                 # Clear some fields to default values
-                for j in ['Art_prob','Blend_prob','Zoom_prob','Hostbroken_prob','ID_Qual','Assoc_Qual','Assoc', 'Compoverlap']:
+                for j in ['Art_prob','Blend_prob','Zoom_prob','Hostbroken_prob','ID_Qual','Assoc_Qual','Assoc', 'Compoverlap', 'Version']:
                     r[j]=0
                 r['OptID_Name']='None'
                 r['optRA']=np.nan
@@ -274,12 +324,15 @@ if __name__=='__main__':
                         r['ID_Qual']=qual
 
         if r is not None:
+            if k in badl:
+                r['Mismatch_flag']=True
+
             olgz.add_row(r)
 
             comps=ss.get_comps(k)
             for j in comps:
                 remove.write('%s %s %i\n' % (j,r['Source_Name'],ss.mdict[k]))
 
-    olgz.write('HETDEX-LGZ-cat-v0.9-filtered-zooms.fits',overwrite=True)
+    olgz.write('HETDEX-LGZ-cat-v0.10-filtered-zooms.fits',overwrite=True)
 
     remove.close()
