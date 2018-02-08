@@ -40,12 +40,13 @@ if __name__=='__main__':
 
 
     path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
-    lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits'
-    lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.presort.fits'
+    lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.gaus.fits'
+    lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.presort.fits'
     psmlcat_file = path+'lofar_pw.fixed.fits'
     psmlgcat_file = path+'lofar_gaus_pw.fixed.fits'
 
-    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
+    lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.sorted.fits'
+    
 
     #lofar_msource_flowchart_file = path + 'msources/LOFAR_flowchart.fixed.fits'
     lofar_msource_flowchart_file = path + 'msources/nonisolated_msources_flowchart.fits'
@@ -593,16 +594,15 @@ if __name__=='__main__':
                                         qlabel='lgz (already)',
                                         color='green',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_lgz1.mask] = 52
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_lgz1.mask] = 0  # most of these get associated...
     
     M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_nlgz = M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart.submask(lofarcat['m_nisol_flag_vc1']>2,
                                         'nlgz',
                                         edgelabel='N',
-                                        qlabel='tbc',
-                                        color='orange',
+                                        qlabel='no match',
+                                        color='red',
                                         masterlist=masterlist)
-    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_nlgz.mask] = 53
-    
+    lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_nglargesep_nncomplex_nart_nlgz.mask] = 0
     
     M_small_m_nisol_nlr_nglr_glargesep = M_small_m_nisol_nlr_nglr.submask(glarge_sep,
                                         'glargesep',
@@ -641,10 +641,22 @@ if __name__=='__main__':
     lofarcat['M_Diagnosis_Code'][M_small_m_nisol_nlr_nglr_glargesep_artefact.mask] = -1
     
     
-    if 'FC_flag' not in lofarcat.colnames:
-        lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'FC_flag'))
-    else:
-        lofarcat['FC_flag']=Column(-1*np.ones(len(lofarcat),dtype=int))
+    #if 'FC_flag' not in lofarcat.colnames:
+        #lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'FC_flag'))
+    #else:
+        #lofarcat['FC_flag']=Column(-1*np.ones(len(lofarcat),dtype=int))
+
+
+
+    if 'MC_flag' not in lofarcat.colnames:
+        lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'MC_flag'))
+    i = 0
+    for t in masterlist:
+        if not t.has_children:
+            lofarcat['MC_flag'][t.mask] = i
+            i += 1
+    #sys.exit()
+            
 
     #i = 0
     #for t in masterlist:

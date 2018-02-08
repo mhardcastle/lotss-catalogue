@@ -259,7 +259,7 @@ lofarcat.add_column(tt['m_nisol_flag_vc1'])
 #3 artefact
 #4 other (revisit)
 
-double_cat_file = 'doubles/sample_all_src_clean_small_nisol_nclustered_S_nlr_NNnlr_simflux_dist-vflag.fits'
+double_cat_file = 'doubles/sample_all_src_clean_small_nisol_nclustered_S_nlr_NNnlr_simflux_dist-vflag-1.fits'
 double_cat = Table.read(double_cat_file)
 
 if 'double_flag' in lofarcat.colnames:
@@ -291,7 +291,7 @@ lofarcat.add_column(tt['double_flag'])
 #5 18
 #6 9
 
-mnisol_cat_file = 'check_msources_lgz/sample_small_m_nisol_vflags.fits'
+mnisol_cat_file = 'check_msources_lgz/sample_small_m_nisol_vflags-1.fits'
 
 mnisol_cat = Table.read(mnisol_cat_file)
 

@@ -51,7 +51,7 @@ tt.rename_column('Diagnosis_Code','msource1_flag')
 lofarcat.add_column(tt['msource1_flag'])
 
 # 
-# the following come from outputs from Lara/Philip for compact non-isolated m sources
+# compact non-isolated m sources
 msource_cat_file = path+'msources/nonisolated_msources_flowchart.fits'
 msource_cat = Table.read(msource_cat_file)
 

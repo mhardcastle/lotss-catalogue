@@ -163,10 +163,11 @@ if __name__=='__main__':
         if lf == 1:
             lofarcat_sorted_antd['ID_flag'][ind] = 311
         elif lf == 2:
-            if lofarcat_sorted_antd['ID_flag'][ind] == 3220:
-                lofarcat_sorted_antd['ID_flag'][ind] = 322  # we now have the zoomed in
-            else:
-                lofarcat_sorted_antd['ID_flag'][ind] = 312
+            lofarcat_sorted_antd['ID_flag'][ind] = 312
+            #if lofarcat_sorted_antd['ID_flag'][ind] == 3220:
+                #lofarcat_sorted_antd['ID_flag'][ind] = 322  # we now have the zoomed in
+            #else:
+                #lofarcat_sorted_antd['ID_flag'][ind] = 312
 
     ## remove artefacts
     # all the artefacts identified and visually confirmed in the flowchart process
@@ -175,6 +176,7 @@ if __name__=='__main__':
     
     # artefacts have no name in the merged catalogue cos they don't appear there
     # except for ones deemed to be part of another source by the wisdom of LGZ
+    # not true anymore - these are now removed from the associations
     lofarcat_sorted_antd['New_Source_Name'][(lofarcat_sorted_antd['Artefact_flag'] != 0) & (lofarcat_sorted_antd['New_Source_Name']==lofarcat_sorted_antd['Source_Name'])] = ''
     
     print 'left with {n:d} sources'.format(n=len(lofarcat_sorted))
@@ -323,8 +325,8 @@ if __name__=='__main__':
             assoc_2mass['LGZ_Width'] = cshape.width()
             assoc_2mass['LGZ_PA'] = cshape.pa()
             
-            if cshape.length() < 1:
-                print complist
+            #if cshape.length() < 1:
+                #print complist
             #print np.array(complist['Source_Name']), np.array(complist['Maj']), cshape.length()
         else:
             assoc_2mass['LGZ_Size'] = complist['DC_Maj'][0]
@@ -434,13 +436,14 @@ if __name__=='__main__':
         if lf == 1:
             lgz_cat['ID_flag'][ind] = 311
         elif lf == 2:
-            # check if it comes from v2
+            lgz_cat['ID_flag'][ind] = 312
+            ## check if it comes from v2
             
-            inds = np.where(ls == lofarcat_sorted_antd['New_Source_Name'])[0]
-            if np.any(lofarcat_sorted_antd['ID_flag'][inds] == 322):
-                lgz_cat['ID_flag'][ind] = 322
-            else:
-                lgz_cat['ID_flag'][ind] = 312
+            #inds = np.where(ls == lofarcat_sorted_antd['New_Source_Name'])[0]
+            #if np.any(lofarcat_sorted_antd['ID_flag'][inds] == 322):
+                #lgz_cat['ID_flag'][ind] = 322
+            #else:
+                #lgz_cat['ID_flag'][ind] = 312
         else:
             print 'error'
             
@@ -449,6 +452,7 @@ if __name__=='__main__':
     ## change None to ''
     lgz_cat['ID_name'][lgz_cat['ID_name']=='None'] = ''
 
+    lgz_cat.meta = lofarcat_sorted.meta
     mergecat = vstack([lofarcat_sorted, lgz_cat])
     print 'now we have {n:d} sources'.format(n=len(mergecat))
 

@@ -633,7 +633,7 @@ if __name__=='__main__':
                         qlabel='complex\n(LGZ)',
                         color='green',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_large_faint_complex.mask] = 3210
+    lofarcat['ID_flag'][M_large_faint_complex.mask] = 3
     lofarcat['LGZ_flag'][M_large_faint_complex.mask] = 2
     
     M_large_faint_complex_zoom = M_large_faint.submask(lf_complex_zoom,
@@ -642,7 +642,7 @@ if __name__=='__main__':
                         qlabel='LGZ-zoom',
                         color='green',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_large_faint_complex_zoom.mask] = 3220
+    lofarcat['ID_flag'][M_large_faint_complex_zoom.mask] = 3
     lofarcat['LGZ_flag'][M_large_faint_complex_zoom.mask] = 20
     
     
@@ -732,8 +732,8 @@ if __name__=='__main__':
     lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 2) ] = 1
     lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 3) ] = 61
     lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 4) ] = 62
-    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 5) ] = 3210
-    lofarcat['LGZ_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 5) ] = 20
+    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] >= 5) ] = 3
+    lofarcat['LGZ_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] >= 5) ] = 20
 
     
 
@@ -762,7 +762,7 @@ if __name__=='__main__':
                         qlabel='complex\n(LGZ)',
                         color='green',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_complex.mask] = 3210
+    lofarcat['ID_flag'][M_small_nisol_complex.mask] = 3
     lofarcat['LGZ_flag'][M_small_nisol_complex.mask] = 2
 
     M_small_nisol_nclustered = M_small_nisol.submask((lofarcat['NN5_sep'] > separation1) | ((lofarcat['NN5_sep'] <= separation1) & (clustered_flag == 3)),
@@ -786,8 +786,8 @@ if __name__=='__main__':
     lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 2) ] = 1
     lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 3) ] = 61
     lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 4) ] = 62
-    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 5) ] = 3210
-    lofarcat['LGZ_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 5) ] = 20
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] >= 5) ] = 3
+    lofarcat['LGZ_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] >= 5) ] = 20
 
     
 
@@ -923,7 +923,7 @@ if __name__=='__main__':
                         color='green',
                         qlabel='lgz',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz.mask] = 3210
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz.mask] = 3
     
     
     M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_noid = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 1,
@@ -947,7 +947,7 @@ if __name__=='__main__':
     
     M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_prob = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 4,
                         'prob',
-                        edgelabel='problem',
+                        edgelabel='problem - noid',
                         color='red',
                         qlabel='problem',
                         masterlist=masterlist)
