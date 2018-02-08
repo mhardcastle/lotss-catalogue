@@ -497,6 +497,10 @@ if __name__=='__main__':
     # write some flag counts for both catalogues    
     count_flags(mergecat, 'ID_flag')
     count_flags(lofarcat_sorted_antd, 'ID_flag')
+    
+    print 'dropping ID_flag 3 sources'
+    lofarcat_sorted_antd = lofarcat_sorted_antd[lofarcat_sorted_antd['ID_flag']!=3]
+    mergecat = mergecat[mergecat['ID_flag']!=3]
         
     lofarcat_sorted_antd.write(comp_out_full_file, overwrite=True)
     
