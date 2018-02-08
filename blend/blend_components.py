@@ -176,7 +176,7 @@ if __name__=='__main__':
     # galaxies if needed
     gals=Table.read(imagedir+'/wise/allwise_HETDEX_full_radec.fits')
     
-    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.9.comp.fits')
+    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.11.comp.fits')
     #gt=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits')
     gt=Table.read('lofar_gaus_pw.fixed.fits')
     display_mode='WISE'
@@ -189,12 +189,12 @@ if __name__=='__main__':
         gc=0
         gl=[]
         print name
-        ctf=(ct['New_Source_Name']==name)
+        ctf=(ct['Source_Name']==name)
         ctfl=ct[ctf]
         print '... has',len(ctfl),'components'
         for j,c in enumerate(ctfl):
             print '    Component',j,'has type',c['S_Code']
-            gtf=(gt['Source_Name']==c['Source_Name'])
+            gtf=(gt['Source_Name']==c['Component_Name'])
             gtfl=gt[gtf]
             print '    ... and contains',len(gtfl),'Gaussians'
             gl.append(gtfl)

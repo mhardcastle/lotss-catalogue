@@ -8,12 +8,12 @@ from process_lgz import sourcename,Make_Shape
 
 if __name__=='__main__':
 
-    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.9.fits')
+    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.11.fits')
     mask=(t['ID_flag']<61) | (t['ID_flag']>63)
     tout=t[mask]
     tb=t[~mask]
     # component table. This is modified too
-    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.9.comp.fits')
+    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.11.comp.fits')
     mask=(ct['ID_flag']<61) | (ct['ID_flag']>63)
     ctout=ct[mask]
     gt=Table.read('lofar_gaus_pw.fixed.fits')
@@ -23,12 +23,12 @@ if __name__=='__main__':
         gc=0
         gl=[]
         print name
-        ctf=(ct['New_Source_Name']==name)
+        ctf=(ct['Source_Name']==name)
         ctfl=ct[ctf]
         print '... has',len(ctfl),'components'
         for j,c in enumerate(ctfl):
             print '    Component',j,'has type',c['S_Code']
-            gtf=(gt['Source_Name']==c['Source_Name'])
+            gtf=(gt['Source_Name']==c['Component_Name'])
             gtfl=gt[gtf]
             print '    ... and contains',len(gtfl),'Gaussians'
             gl.append(gtfl)
@@ -170,22 +170,22 @@ if __name__=='__main__':
                     # Gaussians to new components to go in ctout
                     for g in clist:
                         c=ct[0]
-                        copy=['RA','E_RA','DEC','E_DEC','Peak_flux','E_Peak_flux','Total_flux','E_Total_flux','Maj','E_Maj','Min','E_Min','DC_Maj','DC_Min','PA','E_PA','Isl_rms','Mosaic_ID','Isl_id']
+                        copy=['RA','E_RA','DEC','E_DEC','Peak_flux','E_Peak_flux','Total_flux','E_Total_flux','Maj','E_Maj','Min','E_Min','DC_Maj','DC_Min','PA','E_PA','Isl_rms','Mosaic_ID']
                         for k in copy:
                             c[k]=g[k]
                         for k in ['Min','Maj','PA']:
                             c['E_DC_'+k]=c['E_'+k]
                         # Gaussians don't have names
-                        c['Source_Name']=sourcename(g['RA'],g['DEC'])
-                        c['New_Source_Name']=sname
+                        c['Component_Name']=sourcename(g['RA'],g['DEC'])
+                        c['Source_Name']=sname
                         c['ID_flag']=idflag
                         # now fix up a few other columns
-                        c['Artefact_flag']=False
-                        c['LGZ_flag']=0
-                        c['FC_flag']=0
+                        #c['Artefact_flag']=False
+                        #c['LGZ_flag']=0
+                        #c['FC_flag']=0
                         c['Ng']=1
                         c['S_Code']='S'
-                        c['G_max_sep']=np.nan
+                        #c['G_max_sep']=np.nan
                         for k,ty in ct.dtype.descr:
                             if k[0:2]=='NN' or 'LR' in k:
                                 if ty=='>f8':

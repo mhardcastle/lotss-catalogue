@@ -1,10 +1,11 @@
-from astropy.table import Table
+
+from astropy.table import Table,Column
 import numpy as np
 import sys
 
 # run the following
 
-# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=10 out=merge.fits find=best1 join=all1 in1=../blend/merge_out.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.2.fits
+# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=10 out=merge.fits find=best1 join=all1 in1=../blend/merge_out.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.5.fits
 
 # and then run this to clean up afterwards.
 
@@ -18,7 +19,16 @@ t['ID_ra']=t['ra_2']
 t['ID_dec']=t['dec_2']
 
 print 'Remove unnecessary columns'
-t.remove_columns(['ra_2','dec_2','GroupID','GroupSize','Separation','raMean','decMean','class','id','z_good','Number_Masked','Number_Pointings','Masked_Fraction'])
+t.remove_columns(['ra_2','dec_2','GroupID','GroupSize','Separation','raMean','decMean','class','id','z_good','Number_Masked','Number_Pointings'])
+
+print 'Update ID names'
+for i,r in enumerate(t):
+    if ~np.isnan(r['ID_ra']) and r['ID_flag']!=2:
+        psoname=r['objName'].rstrip()
+        if psoname!="" and psoname!="N/A":
+            t[i]['ID_name']=psoname
+        else:
+            t[i]['ID_name']='AllWISE '+r['AllWISE']
 
 print 'Remove whitespace padding:',
 sys.stdout.flush()
@@ -28,17 +38,18 @@ for c in stringcols:
     sys.stdout.flush()
     t[c]=[s.rstrip() for s in t[c]]
 print
-    
-print 'Fix broken ID names'
-for i,r in enumerate(t):
-    if (r['ID_name']=='Altered' or r['ID_name']=="") and ~np.isnan(r['ID_ra']):
-        if r['AllWISE']!="" and r['AllWISE']!="N/A":
-            t[i]['ID_name']='AllWISE'+r['AllWISE']
-        else:
-            t[i]['ID_name']='PS '+str(r['objID'])
+
+print 'Remove -99s'
+sys.stdout.flush()
+dblcols=[n for (n,ty) in t.dtype.descr if 'f8' in ty]
+for c in dblcols:
+    print c,
+    t[c]=np.where(t[c]==-99,np.nan,t[c])
+print
+
 
 print 'Sorting'
 t.sort('RA')
 
 print 'Writing to disk'
-t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v0.7.fits',overwrite=True)
+t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v0.8.fits',overwrite=True)

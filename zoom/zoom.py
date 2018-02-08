@@ -131,7 +131,7 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # all LOFAR sources
-    ot=Table.read('/data/lofar/mjh/hetdex_v4/LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.fits')
+    ot=Table.read('/data/lofar/mjh/hetdex_v4/LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.artefacts.fits')
     # large source table
     lt=ot[(ot['Total_flux']>8) & (ot['Maj']>6)]
     # galaxies if needed
@@ -145,19 +145,22 @@ if __name__=='__main__':
     wisemaps=[l[3] for l in lines]
     firstmaps=[l[4] for l in lines]
 
+    ss=Source(ctable=ot)
+    oneoff=False
     if len(sys.argv)>2:
+        oneoff=True
+        '''
         clines=open('../lgz_v1/lgz_components.txt').readlines()
-        ss=Source()
         for c in clines:
             bits=c.split()
             ss.add(bits[1],bits[0].rstrip())                 
-    else:
-        print 'Reading local components file'
-        clines=open('components.txt').readlines()
-        ss=Source()
-        for c in clines:
-            bits=c.split()
-            ss.add(bits[0],bits[1].rstrip())                 
+        '''
+
+    print 'Reading local components file'
+    clines=open('components.txt').readlines()
+    for c in clines:
+        bits=c.split()
+        ss.add(bits[0],bits[1].rstrip())                 
 
     for r in t:
         #ss.add(r['Source_Name'],r['Source_Name'])
@@ -167,7 +170,10 @@ if __name__=='__main__':
             try:
                 ss.set_opt(r['Source_Name'],r['ID_ra'],r['ID_dec'])
             except:
-                ss.set_opt(r['Source_Name'],r['LR_ra'],r['LR_dec'])
+                try:
+                    ss.set_opt(r['Source_Name'],r['LR_ra'],r['LR_dec'])
+                except:
+                    pass # no opt ID
         try:
             ss.set_size(r['Source_Name'],r['Size'])
         except:
@@ -195,16 +201,18 @@ if __name__=='__main__':
             continue
         if len(ss.get_comps(sourcename))==0:
             print sourcename,'has no components!'
-            continue
-            '''
-            for source in ss.cdict:
-                if sourcename in ss.cdict[source]:
-                    break # it's already in some other source
-            else:
-                ss.add(sourcename,sourcename)
-            if sourcename in ss.cdict[source]:
+            if not(oneoff):
                 continue
-            '''
+            else:
+                for source in ss.cdict:
+                    if sourcename in ss.cdict[source]:
+                        print '(It\'s already part of some other source)'
+                        break 
+                else:
+                    ss.add(sourcename,sourcename)
+                if sourcename in ss.cdict[source]:
+                    continue
+
         r=t[i]
         print i,r
         assert(sourcename==r['Source_Name'])
