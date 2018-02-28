@@ -52,4 +52,4 @@ print 'Sorting'
 t.sort('RA')
 
 print 'Writing to disk'
-t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v0.8.fits',overwrite=True)
+t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v1.0.fits',overwrite=True)

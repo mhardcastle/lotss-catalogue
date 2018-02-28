@@ -183,15 +183,15 @@ if __name__=='__main__':
                 pass
 
     # now parse existing files to the structure
-    dir='/data/lofar/mjh/hetdex_v4/zoom_v2/'
-    g=glob.glob(dir+'ILT*.txt')
-    for f in g:
-        if 'table-list' in f:
-            continue
-        n=f.split('/')[-1].replace('.txt','')
-        print 'Parsing file for source',n
-        parsefile(n,ss,dir=dir)
-        ss.mdict[n]=2
+    for dir in ['/data/lofar/mjh/hetdex_v4/zoom/','/data/lofar/mjh/hetdex_v4/zoom_v2/']:
+        g=glob.glob(dir+'ILT*.txt')
+        for f in g:
+            if 'table-list' in f:
+                continue
+            n=f.split('/')[-1].replace('.txt','')
+            print 'Parsing file for source',n
+            parsefile(n,ss,dir=dir)
+            ss.mdict[n]=2
 
     
     for i in range(len(t)):

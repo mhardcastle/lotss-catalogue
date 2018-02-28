@@ -129,8 +129,8 @@ class find_overlap(object):
 #t=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits')
 t=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.fits')
 oldt=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.1.fits')
-compt=Table.read('HETDEX-LGZ-comps-lgzv2.fits')
-sourcet=Table.read('HETDEX-LGZ-cat-lgzv2.fits')
+compt=Table.read('HETDEX-LGZ-comps-lgzv3.fits')
+sourcet=Table.read('HETDEX-LGZ-cat-lgzv3.fits')
 for name in ['Component_flux','E_RA','E_DEC','Peak_flux','E_Peak_flux','E_Total_flux','Isl_rms']:
     sourcet[name]=np.nan
 sourcet['S_Code']=""
@@ -243,7 +243,7 @@ stf.write('drop.fits',overwrite=True)
 
 sourcet.remove_column('Component_flux')
 stf=sourcet[~drops]
-stf.write('HETDEX-LGZ-cat-v0.6-filtered.fits',overwrite=True)
+stf.write('HETDEX-LGZ-cat-v0.7-filtered.fits',overwrite=True)
 
 removenames=open('remove.txt','w')
 for r in remove:

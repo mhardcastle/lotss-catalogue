@@ -105,7 +105,7 @@ if __name__=='__main__':
 
     print 'Reading tables, please wait...'
     pyb=Table.read('../LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.artefacts.fits')
-    lgztnames=['../lgz_v1/HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits','HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits']
+    lgztnames=['../lgz_v1/HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits','HETDEX-LGZ-cat-v0.7-filtered-unbroken.fits']
     lgzt=[]
     for i,n in enumerate(lgztnames):
         t=Table.read(n)
@@ -114,11 +114,11 @@ if __name__=='__main__':
     lgz=vstack(lgzt)
     lgz['Mosaic_ID']=Column(lgz['Mosaic_ID'],dtype='S11')
 
-    #lgz=Table.read('HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits')
     lgz['New_size']=np.nan
     lgz['New_width']=np.nan
     lgz['New_PA']=np.nan
     lgz['Mismatch_flag']=False
+    lgz['Optical_removed']=False
     if do_optical:
         ocat=Table.read('/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.2.fits')
         opcat=SkyCoord(ocat['ra']*u.deg, ocat['dec']*u.deg)
@@ -211,13 +211,16 @@ if __name__=='__main__':
                 print 'Source',k,'has not changed'
                 # source has not changed, which means it can be copied from the corresponding entry in the lgz table
                 r=lgz[ss.idict[k]]
+                oldr=deepcopy(r)
             else:
                 # source has changed, or was only ever present in zooms text
                 print 'Source',k,'is flagged as having changed'
                 if k in ss.idict:
                     r=lgz[ss.idict[k]]
+                    oldr=deepcopy(r)
                 else:
                     r=lgz[0]
+                    oldr=None
                 # Clear some fields to default values
                 for j in ['Art_prob','Blend_prob','Zoom_prob','Hostbroken_prob','ID_Qual','Assoc_Qual','Assoc', 'Compoverlap', 'Version']:
                     r[j]=0
@@ -244,6 +247,11 @@ if __name__=='__main__':
             if ora is not None:
                 print '      Updated optical position',ora,odec
                 # later we check for source near this position
+            else:
+                if ss.changed_dict[k] and oldr is not None and ~np.isnan(oldr['optRA']):
+                    print 'optical ID is zeroed out by change'
+                    r['Optical_removed']=True
+                    
             try:
                 size=ss.sdict[k]
             except KeyError:
@@ -295,13 +303,16 @@ if __name__=='__main__':
                     if size>r['New_size']:
                         r['New_size']=size
 
-                print 'sizes:',maxsep,maxsize
+                print '      sizes:',maxsep,maxsize
                 r['Size']=maxsize
 
             if ora is not None and do_optical:
                 # check opt position
-                sep=separation(ora,odec,r['optRA'],r['optDec'])
-                if np.isnan(sep) or sep>1.0:
+                if oldr is not None:
+                    sep=separation(ora,odec,oldr['optRA'],oldr['optDec'])
+                else:
+                    sep=np.nan
+                if np.isnan(sep) or sep>1.0 or oldr is None:
                     print '         Separation is',sep,'updating with new opt pos'
                     c=SkyCoord(ora*u.deg,odec*u.deg)
                     idx, d2d, d3d = c.match_to_catalog_sky(opcat)
@@ -322,7 +333,14 @@ if __name__=='__main__':
                         r['optDec']=odec
                         r['OptID_Name']=name
                         r['ID_Qual']=qual
-
+                else:
+                    # no real change from old position, use old name
+                    r['optRA']=ora
+                    r['optDec']=odec
+                    r['OptID_Name']=oldr['OptID_Name']
+                    r['ID_Qual']=oldr['ID_Qual']
+            else:
+                print '      No optical ID'
         if r is not None:
             if k in badl:
                 r['Mismatch_flag']=True
@@ -333,6 +351,6 @@ if __name__=='__main__':
             for j in comps:
                 remove.write('%s %s %i\n' % (j,r['Source_Name'],ss.mdict[k]))
 
-    olgz.write('HETDEX-LGZ-cat-v0.10-filtered-zooms.fits',overwrite=True)
+    olgz.write('HETDEX-LGZ-cat-v0.11-filtered-zooms.fits',overwrite=True)
 
     remove.close()

@@ -8,13 +8,13 @@ from process_lgz import sourcename,Make_Shape
 
 if __name__=='__main__':
 
-    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.11.fits')
-    mask=(t['ID_flag']<61) | (t['ID_flag']>63)
+    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.0.fits')
+    mask=(t['ID_flag']<41) | (t['ID_flag']>42)
     tout=t[mask]
     tb=t[~mask]
     # component table. This is modified too
-    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.11.comp.fits')
-    mask=(ct['ID_flag']<61) | (ct['ID_flag']>63)
+    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.0.comp.fits')
+    mask=(ct['ID_flag']<41) | (ct['ID_flag']>42)
     ctout=ct[mask]
     gt=Table.read('lofar_gaus_pw.fixed.fits')
 
@@ -48,15 +48,15 @@ if __name__=='__main__':
         # parse the file
         if lines[0]=='## Flagged':
             r['ID_flag']=610
-            tout.add_row(r)
+            #tout.add_row(r) # drop these
             for cr in ctfl:
                 cr['ID_flag']=610
-                ctout.add_row(cr)
+                #ctout.add_row(cr)
         elif lines[0]=='## Unchanged':
-            r['ID_flag']=600
+            r['ID_flag']=42 #600
             tout.add_row(r)
             for cr in ctfl:
-                cr['ID_flag']=610
+                cr['ID_flag']=42 # 610
                 ctout.add_row(cr)
         elif lines[0]=='## Components':
             print 'Output file to be processed!'
@@ -75,7 +75,7 @@ if __name__=='__main__':
             if np.all(rgt['Source']==1):
                 print 'Components unchanged'
                 # in this case only the opt ID has changed
-                r['ID_flag']=601
+                r['ID_flag']=42 # 601
                 if 1 in optid:
                     ra,dec=optid[1]
                     r['ID_ra']=ra
@@ -88,7 +88,7 @@ if __name__=='__main__':
                     r['ID_dec']=np.nan
                 tout.add_row(r)
                 for cr in ctfl:
-                    cr['ID_flag']=601
+                    cr['ID_flag']=42 # 601
                     ctout.add_row(cr)
             else:
                 print "It's complicated"
@@ -155,7 +155,7 @@ if __name__=='__main__':
                         for k in ['Maj','E_Maj','Min','E_Min','DC_Maj','DC_Min','PA','E_PA','DC_PA','E_DC_Maj','E_DC_Min', 'E_DC_PA']:
                             r[k]=np.nan
                     r['Source_Name']=sname
-                    r['ID_flag']=idflag
+                    r['ID_flag']=42 # idflag
                     if s in optid:
                         ra,dec=optid[s]
                         r['ID_ra']=ra
@@ -178,7 +178,7 @@ if __name__=='__main__':
                         # Gaussians don't have names
                         c['Component_Name']=sourcename(g['RA'],g['DEC'])
                         c['Source_Name']=sname
-                        c['ID_flag']=idflag
+                        c['ID_flag']=42
                         # now fix up a few other columns
                         #c['Artefact_flag']=False
                         #c['LGZ_flag']=0
