@@ -47,16 +47,13 @@ if __name__=='__main__':
 
         # parse the file
         if lines[0]=='## Flagged':
-            r['ID_flag']=610
             #tout.add_row(r) # drop these
             for cr in ctfl:
                 cr['ID_flag']=610
                 #ctout.add_row(cr)
         elif lines[0]=='## Unchanged':
-            r['ID_flag']=42 #600
             tout.add_row(r)
             for cr in ctfl:
-                cr['ID_flag']=42 # 610
                 ctout.add_row(cr)
         elif lines[0]=='## Components':
             print 'Output file to be processed!'
@@ -75,7 +72,6 @@ if __name__=='__main__':
             if np.all(rgt['Source']==1):
                 print 'Components unchanged'
                 # in this case only the opt ID has changed
-                r['ID_flag']=42 # 601
                 if 1 in optid:
                     ra,dec=optid[1]
                     r['ID_ra']=ra
@@ -88,7 +84,7 @@ if __name__=='__main__':
                     r['ID_dec']=np.nan
                 tout.add_row(r)
                 for cr in ctfl:
-                    cr['ID_flag']=42 # 601
+                    cr['ID_flag']=r['ID_flag']
                     ctout.add_row(cr)
             else:
                 print "It's complicated"
@@ -109,7 +105,6 @@ if __name__=='__main__':
                         for k in copy:
                             r[k]=rg[k]
                         sname=sourcename(r['RA'],r['DEC'])
-                        idflag=602
                         r['S_Code']='S'
                         r['ML_LR']=np.nan
                         r['LGZ_Size']=np.nan
@@ -129,7 +124,6 @@ if __name__=='__main__':
                         dec=np.sum(clist['DEC']*clist['Total_flux'])/tfluxsum
                         sname=sourcename(ra,dec)
                         print '      New sourcename is',sname
-                        idflag=603
                         r['RA']=ra
                         r['DEC']=dec
                         r['E_RA']=np.sqrt(np.mean(clist['E_RA']**2.0))
@@ -155,7 +149,6 @@ if __name__=='__main__':
                         for k in ['Maj','E_Maj','Min','E_Min','DC_Maj','DC_Min','PA','E_PA','DC_PA','E_DC_Maj','E_DC_Min', 'E_DC_PA']:
                             r[k]=np.nan
                     r['Source_Name']=sname
-                    r['ID_flag']=42 # idflag
                     if s in optid:
                         ra,dec=optid[s]
                         r['ID_ra']=ra
@@ -178,7 +171,7 @@ if __name__=='__main__':
                         # Gaussians don't have names
                         c['Component_Name']=sourcename(g['RA'],g['DEC'])
                         c['Source_Name']=sname
-                        c['ID_flag']=42
+                        c['ID_flag']=r['ID_flag']
                         # now fix up a few other columns
                         #c['Artefact_flag']=False
                         #c['LGZ_flag']=0

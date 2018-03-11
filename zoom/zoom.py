@@ -320,7 +320,11 @@ if __name__=='__main__':
         
         f=show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,block=False,interactive=False,drlimit=8000,peak=peak,plotpos=[(pwg,'+')])
 
-        ora,odec=ss.odict[sourcename]
+        try:
+            ora,odec=ss.odict[sourcename]
+        except KeyError:
+            ora=np.nan
+            odec=np.nan
         components=ss.get_comps(sourcename)
         notcomponents=ss.get_ncomps(sourcename)
         print 'components is',components

@@ -47,4 +47,4 @@ NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --
 
 To visualize catalogued sources:
 
-qsub -t 0-100 -v INFILE=file.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/lgz_create/visualize.qsub
+qsub -t 1-146 -v INFILE=rql.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/lgz_create/visualize.qsub

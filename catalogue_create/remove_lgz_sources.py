@@ -129,7 +129,7 @@ class find_overlap(object):
 #t=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits')
 t=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.fits')
 oldt=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.1.fits')
-compt=Table.read('HETDEX-LGZ-comps-lgzv3.fits')
+compt=Table.read('HETDEX-LGZ-comps-lgzv3-fixed.fits')
 sourcet=Table.read('HETDEX-LGZ-cat-lgzv3.fits')
 for name in ['Component_flux','E_RA','E_DEC','Peak_flux','E_Peak_flux','E_Total_flux','Isl_rms']:
     sourcet[name]=np.nan
