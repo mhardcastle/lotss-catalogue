@@ -163,6 +163,15 @@ def Masks_disjoint_complete(masklist):
 
 if __name__=='__main__':
 
+
+    size_large = 15.           # in arcsec
+    separation1 = 45.          # in arcsec
+    size_huge = 25.            # in arcsec
+    #separation2 = 30.          # in arcsec
+    lLR_thresh = 0.639            # LR threshold
+    fluxcut = 10               # in mJy
+    fluxcut2 = 2.5               # in mJy
+
     ### Required INPUTS
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
@@ -188,6 +197,19 @@ if __name__=='__main__':
     psmlcat = Table.read(psmlcat_file)
     psmlgcat = Table.read(psmlgcat_file)
     
+    # update to lr threshold but not yet catalogue
+    fixlr = (psmlcat['lr'] < lLR_thresh)
+    psmlcat['lr'][fixlr] = np.nan
+    psmlcat['ra'][fixlr] = np.nan
+    psmlcat['dec'][fixlr] = np.nan
+    
+    
+    fixlr = (psmlgcat['lr'] < lLR_thresh)
+    psmlgcat['lr'][fixlr] = np.nan
+    psmlgcat['ra'][fixlr] = np.nan
+    psmlgcat['dec'][fixlr] = np.nan
+    
+    psmlgcat = psmlgcat[psmlgcat['S_Code'] != 'S']
 
     ## get the panstarrs ML information
 
@@ -243,7 +265,7 @@ if __name__=='__main__':
     # join the ps ml gaus cat  - they have identical RA/DEC (source_names were wrong)
     cg = ac.SkyCoord(lofargcat['RA'], lofargcat['DEC'], unit="deg")
     cpsmlg = ac.SkyCoord(psmlgcat['RA'], psmlgcat['DEC'], unit="deg")
-    f_nn_idx_g,f_nn_sep2d_g,f_nn_dist3d_g = ac.match_coordinates_sky(cg,cpsmlg,nthneighbor=1)
+    f_nn_idx_g,f_nn_sep2d_g,_ = ac.match_coordinates_sky(cg,cpsmlg,nthneighbor=1)
 
     # note the large sources are missing from the ML catalogue
     lrgcol = np.zeros(len(lofargcat),dtype=float)
@@ -284,22 +306,28 @@ if __name__=='__main__':
     #if add_G:
         #lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=list), 'G_ind'))
 
-    iCC = 0
     
     if 'msource1_flag' not in lofarcat.colnames:
         raise  RuntimeError('need the msource1_flag -- run get_msource_flag.py')
     if 'msource2_flag' not in lofarcat.colnames:
         raise  RuntimeError('need the msource2_flag -- run get_msource_flag.py')
-    
+    fixlist = ['ILTJ111611.15+493234.8', 'ILTJ121557.43+512418.5', 'ILTJ121956.33+473756.2', 'ILTJ124047.70+500956.4', 'ILTJ131951.11+531748.0', 'ILTJ135441.11+541646.4']
+    for s in fixlist:
+        lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 1
+    fixlist = ['ILTJ140430.41+560657.9'] 
+    for s in fixlist:
+        lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 2
 
     m_S = lofarcat['S_Code'] =='S'
     minds = np.where(~m_S)[0]
     for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
         ig = np.where(lofargcat['Source_Name']==sid)[0]
         lofarcat['G_LR_max'][i]= np.nanmax(lofargcat['LR'][ig])
-        igi = np.argmax(lofargcat['LR'][ig])
-        #for now, if one of the gaussian LR is better, take that
-        if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
+        if np.any(np.isfinite(lofargcat['LR'][ig])):
+            
+            igi = np.nanargmax(lofargcat['LR'][ig])
+            #for now, record the best gaussian
+            #if lofarcat['G_LR_max'][i] > lofarcat['LR'][i]:
             lofarcat['gLR'][i] = lofarcat['G_LR_max'][i]
             lofarcat['gLR_name_ps'][i] = lofargcat['LR_name_ps'][ig[igi]]
             lofarcat['gLR_name_wise'][i] = lofargcat['LR_name_wise'][ig[igi]]
@@ -307,8 +335,8 @@ if __name__=='__main__':
             lofarcat['gLR_dec'][i] = lofargcat['LR_dec'][ig[igi]]
             #pass
         # how many unique acceptable matches are there for the gaussian components
-        matches_ra = np.unique(lofargcat['LR_ra'][ig][lofargcat['LR'][ig] >= 0.36])
-        matches_src_ra = (lofargcat['LR_ra'][ig] == lofarcat['LR_ra'][i])
+        matches_ra = np.unique(lofargcat['LR_ra'][ig][lofargcat['LR'][ig] >= lLR_thresh])
+        matches_src_ra = (lofargcat['LR_ra'][ig] == lofarcat['LR_ra'][i]) & (lofargcat['LR_dec'][ig] == lofarcat['LR_dec'][i])
         lofarcat['N_G_LR_matchsource'][i] =  1*np.sum(matches_src_ra)
         n_matches_ra = len(matches_ra)
         if n_matches_ra > 1:
@@ -316,17 +344,17 @@ if __name__=='__main__':
         # any different to source match
         if np.sum(matches_ra != lofarcat['LR_ra'][i]):
             lofarcat['Flag_G_LR_problem'][i] = True
-        lofarcat['Ng_LR_good'][i]= np.nansum(lofargcat['LR'][ig] >= 0.36)
+        lofarcat['Ng_LR_good'][i]= np.nansum(lofargcat['LR'][ig] >= lLR_thresh)
         lofarcat['Ng_LR_good_unique'][i]= n_matches_ra
         
         
         # special case 1:
         # source with lr, 1 gaus with lr diff to source
         
-        if (lofarcat['LR'][i] >= 0.36) and (lofarcat['Ng_LR_good'][i] == 1) and (lofarcat['N_G_LR_matchsource'][i] == 0):
+        if (lofarcat['LR'][i] >= lLR_thresh) and (lofarcat['Ng_LR_good'][i] == 1) and (lofarcat['N_G_LR_matchsource'][i] == 0):
             #compare LRsource and LRgaus
             
-            igi = ig[(lofargcat['LR'][ig] )>= 0.36]
+            igi = ig[(lofargcat['LR'][ig] )>= lLR_thresh]
             if ((lofarcat['LR'][i] > 10 ) & (lofargcat['LR'][igi] < 10 ) & (lofarcat['LR'][i] > 10 * lofargcat['LR'][igi]))[0]:
                 lofarcat['G_LR_case1'][i] = 1 # accept ML source
                 #print '1'
@@ -340,9 +368,9 @@ if __name__=='__main__':
         # special case 2:
         # source with lr, 2 gaus with lr, 1 diff to source
         
-        elif (lofarcat['LR'][i] >= 0.36) and (lofarcat['Ng_LR_good'][i] == 2) and (lofarcat['N_G_LR_matchsource'][i] == 1):
+        elif (lofarcat['LR'][i] >= lLR_thresh) and (lofarcat['Ng_LR_good'][i] == 2) and (lofarcat['N_G_LR_matchsource'][i] == 1):
             # compare LRsource and LRgaus's
-            igi = ig[(lofargcat['LR'][ig] )>= 0.36]
+            igi = ig[(lofargcat['LR'][ig] )>= lLR_thresh]
             igs = igi[lofargcat['LR_ra'][igi] == lofarcat['LR_ra'][i]]
             ign = igi[lofargcat['LR_ra'][igi] != lofarcat['LR_ra'][i]]
             
@@ -356,21 +384,21 @@ if __name__=='__main__':
                 lofarcat['G_LR_case2'][i] = 3  # lgz
         
         # special case 3:
-        elif (lofarcat['LR'][i] < 0.36) and (lofarcat['Ng_LR_good'][i] == 1):
-            igi = ig[(lofargcat['LR'][ig] )>= 0.36]
-            if (lofargcat['LR'][igi] >  10*0.36) and (lofargcat['Maj'][igi] < 10):
+        elif (lofarcat['LR'][i] < lLR_thresh) and (lofarcat['Ng_LR_good'][i] == 1):
+            igi = ig[(lofargcat['LR'][ig] )>= lLR_thresh]
+            if (lofargcat['LR'][igi] >  10*lLR_thresh) and (lofargcat['Maj'][igi] < 10):
                 lofarcat['G_LR_case3'][i] = 1  # accept match
             else:
                 lofarcat['G_LR_case3'][i] = 2  # lgz
                 
         
         
-        
+    #sys.exit()
         
         #if add_G:
             #lofarcat['G_ind'][i]= ig
     lofarcat['G_LR_max'][m_S] = lofarcat['LR'][m_S]
-    lofarcat['Ng_LR_good'][m_S] = 1*(lofarcat['LR'][m_S] >= 0.36)
+    lofarcat['Ng_LR_good'][m_S] = 1*(lofarcat['LR'][m_S] >= lLR_thresh)
     #lofarcat['Ng_LR_good_unique'][m_S] = n_matches_ra
 
     # some flags for mult_gaus sources:
@@ -408,6 +436,11 @@ if __name__=='__main__':
         raise  RuntimeError('need the visual flag information for the double sources')
     double_flag = lofarcat['double_flag']
                 
+                
+    if 'double_flag2' not in lofarcat.colnames:
+        raise  RuntimeError('need the visual flag information for the double sources')
+    double_flag2 = lofarcat['double_flag2']
+                
     if 'm_nisol_flag_vc2' not in lofarcat.colnames:
         raise  RuntimeError('need the  visual flag information for the m non-isol sources')
     mnisol_flag2 = lofarcat['m_nisol_flag_vc2']
@@ -438,7 +471,7 @@ if __name__=='__main__':
         
     # combine the artefact flags
     # artefacts have been identified through various routes of visual checking
-    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5) | (edge_flag==True) | (mnisol_flag2 == 6) | (double_flag == 3)
+    Artefact_flag = (artefact_flag == 1) | (huge_faint_flag ==4) | (nhuge_2masx_flag==4) | (Lclustered_flag == 1) | (clustered_flag == 1) | (nhuge_faint_flag==5) | (edge_flag==True) | (mnisol_flag2 == 6) | (double_flag == 3) | (double_flag2 == 3)
 
 
     lofarcat.add_column(Column(Artefact_flag, 'Artefact_flag'))
@@ -496,26 +529,6 @@ if __name__=='__main__':
 
 
     ########################################################
-
-
-    # make samples
-
-    # # source classes
-    # 
-    # clases from draft flowchart
-    # 
-    # source classes - parameters & masks
-
-    # >15 " and 10mJY -2%
-
-    size_large = 15.           # in arcsec
-    separation1 = 45.          # in arcsec
-    size_huge = 25.            # in arcsec
-    #separation2 = 30.          # in arcsec
-    lLR_thresh = 0.36            # LR threshold
-    lLR_thresh2 = 0.72            # LR threshold - stricter
-    fluxcut = 10               # in mJy
-    fluxcut2 = 2.5               # in mJy
 
     Ncat = len(lofarcat)
 
@@ -732,7 +745,7 @@ if __name__=='__main__':
     lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 2) ] = 1
     lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 3) ] = 61
     lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] == 4) ] = 62
-    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] >= 5) ] = 3
+    lofarcat['ID_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] >= 5) ] = 330
     lofarcat['LGZ_flag'][M_small_isol_nS.mask & (lofarcat['msource1_flag'] >= 5) ] = 20
 
     
@@ -786,7 +799,7 @@ if __name__=='__main__':
     lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 2) ] = 1
     lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 3) ] = 61
     lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] == 4) ] = 62
-    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] >= 5) ] = 3
+    lofarcat['ID_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] >= 5) ] = 330
     lofarcat['LGZ_flag'][M_small_nisol_nclustered_nS.mask & (lofarcat['msource2_flag'] >= 5) ] = 20
 
     
@@ -925,8 +938,16 @@ if __name__=='__main__':
                         masterlist=masterlist)
     lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz.mask] = 3
     
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz3 = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag2'] == 2,
+                        'lgz3',
+                        edgelabel='complex',
+                        color='green',
+                        qlabel='lgz3',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz3.mask] = 330
     
-    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_noid = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 1,
+    
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_noid = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask((lofarcat['double_flag'] == 1) | (lofarcat['double_flag2'] == 1),
                         'noid',
                         edgelabel='no match',
                         color='red',
@@ -935,7 +956,7 @@ if __name__=='__main__':
     lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_noid.mask] = 1
     
     
-    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_art = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 3,
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_art = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask((lofarcat['double_flag'] == 3) | (lofarcat['double_flag2'] == 3),
                         'artefact',
                         edgelabel='artefact',
                         color='grey',
@@ -945,13 +966,13 @@ if __name__=='__main__':
     
     
     
-    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_prob = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 4,
+    M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_prob = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(((lofarcat['double_flag'] == 4) | (lofarcat['double_flag'] == 0)) & (lofarcat['double_flag2'] == 0),
                         'prob',
                         edgelabel='problem - noid',
                         color='red',
                         qlabel='problem',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_prob.mask] = 1
+    lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_prob.mask] = 1 ## these should be in lgz assoc! but let's double check...
 
     M_small_nisol_nclustered_S_nlr_NNnlr_simflux_nsep = M_small_nisol_nclustered_S_nlr_NNnlr_simflux.submask(~C2_dist,
                         'ndist',

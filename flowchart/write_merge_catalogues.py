@@ -80,7 +80,7 @@ if __name__=='__main__':
 
     ### Required INPUTS
     
-    version =  '0.11'
+    version =  '1.0'
     
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
@@ -90,16 +90,12 @@ if __name__=='__main__':
     lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.gaus.fits'
     lofarcat_orig_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.fits'
 
-    # PS ML - matches for sources and gaussians
-    psmlcat_file = path+'lofar_pw.fixed.fits'
-    psmlgcat_file = path+'lofar_gaus_pw.fixed.fits'
-
     # sorted output from flowchart
     #lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
     lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.sorted.fits'
 
     # LGZ output
-    lgz_cat_file = os.path.join(path,'lgz_v2/HETDEX-LGZ-cat-v0.10-filtered-zooms.fits') 
+    lgz_cat_file = os.path.join(path,'lgz_v2/HETDEX-LGZ-cat-v0.11-filtered-zooms.fits') 
     lgz_component_file = os.path.join(path,'lgz_v2/lgz_components.txt')
 
     comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
@@ -359,7 +355,7 @@ if __name__=='__main__':
     
     
     # handle ML sources
-    lLR_thresh = 0.36
+    lLR_thresh = 0.639
     selml = ((lofarcat_sorted['ID_flag']==1) |(lofarcat_sorted['ID_flag']==61) | (lofarcat_sorted['ID_flag']==62)) & (np.log10(1+lofarcat_sorted['LR']) > lLR_thresh)
     print 'adding info for {n:d} ML source matches'.format(n=np.sum(selml))
     
@@ -499,15 +495,15 @@ if __name__=='__main__':
     count_flags(lofarcat_sorted_antd, 'ID_flag')
     
     print 'dropping ID_flag 3 sources'
-    lofarcat_sorted_antd = lofarcat_sorted_antd[lofarcat_sorted_antd['ID_flag']!=3]
-    mergecat = mergecat[mergecat['ID_flag']!=3]
+    #lofarcat_sorted_antd = lofarcat_sorted_antd[lofarcat_sorted_antd['ID_flag']!=3]
+    #mergecat = mergecat[mergecat['ID_flag']!=3]
         
-    lofarcat_sorted_antd.write(comp_out_full_file, overwrite=True)
-    
-    lofarcat_sorted_antd.keep_columns(['New_Source_Name', 'Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'DC_Maj', 'E_DC_Maj', 'DC_Min', 'E_DC_Min', 'DC_PA', 'E_DC_PA', 'Isl_rms', 'S_Code', 'Ng', 'Mosaic_ID', 'Number_Masked', 'Number_Pointings', 'Masked_Fraction', 'ID_flag'])
     lofarcat_sorted_antd.rename_column('Source_Name', 'Component_Name')
     lofarcat_sorted_antd.rename_column('New_Source_Name', 'Source_Name')
     
+    lofarcat_sorted_antd.write(comp_out_full_file, overwrite=True)
+    
+    lofarcat_sorted_antd.keep_columns(['Component_Name', 'Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'DC_Maj', 'E_DC_Maj', 'DC_Min', 'E_DC_Min', 'DC_PA', 'E_DC_PA', 'Isl_rms', 'S_Code', 'Ng', 'Mosaic_ID', 'Number_Masked', 'Number_Pointings', 'Masked_Fraction', 'ID_flag'])
     
     lofarcat_sorted_antd.write(comp_out_file, overwrite=True)
 
@@ -518,6 +514,7 @@ if __name__=='__main__':
     mergecat.keep_columns(['Source_Name', 'RA', 'E_RA', 'DEC', 'E_DEC', 'Peak_flux', 'E_Peak_flux', 'Total_flux', 'E_Total_flux', 'Maj', 'E_Maj', 'Min', 'E_Min', 'PA', 'E_PA', 'DC_Maj', 'E_DC_Maj', 'DC_Min', 'E_DC_Min', 'DC_PA', 'E_DC_PA', 'Isl_rms', 'S_Code', 'Mosaic_ID', 'Number_Masked', 'Number_Pointings', 'Masked_Fraction', 'ID_flag', 'ID_name', 'ID_ra', 'ID_dec', 'ML_LR', 'LGZ_Size', 'LGZ_Width', 'LGZ_PA', 'LGZ_Assoc', 'LGZ_Assoc_Qual', 'LGZ_ID_Qual'])
 
     mergecat.write(merge_out_file, overwrite=True)
+    '''
     
     sys.exit()
     tt = mergecat['ID_name']
@@ -535,3 +532,4 @@ if __name__=='__main__':
                 xx  = Table([tt['Source_Name'], tt['ID_flag'], tt['ID_name'], tt['FC_flag'], tt['Art_prob'],tt['Blend_prob'],tt['Zoom_prob'],tt['Hostbroken_prob'],tt['Total_flux']])
                 print xx
                 tout = vstack([tout,tt])
+    '''

@@ -57,7 +57,19 @@ for n in artefactlist['Source_Name']:
     lofarcat['artefact_flag'][ni] = True    
 
 # some more artefacts from lgz and various visual checks (these are stored as a list of names in a simple text file...)
-artefactlistfile = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/lgz_v1/artefacts.txt'
+artefactlistfile = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/lgz_v2/artefacts.txt'
+with open(artefactlistfile,'r') as f:
+    artefacts = [line.strip() for line in f]
+for n in artefacts:
+    if n in lofarcat['Source_Name']: 
+        ni = np.where(lofarcat['Source_Name']==n)[0][0]
+        lofarcat['artefact_flag'][ni] = True    
+    else:
+        print n
+    
+
+# some more artefacts from lgz and various visual checks (all the ones with Deleted in the zoom file)
+artefactlistfile = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/lgz_v2/zoom_deleted.txt'
 with open(artefactlistfile,'r') as f:
     artefacts = [line.strip() for line in f]
 for n in artefacts:
@@ -273,6 +285,23 @@ tt.rename_column('visual_flag','double_flag')
 
 
 lofarcat.add_column(tt['double_flag'])
+
+
+double_cat_file = 'doubles/sample_all_src_clean_small_nisol_nclustered_S_nlr_NNnlr_simflux_dist_prob-new-vflag.fits'
+double_cat = Table.read(double_cat_file)
+
+if 'double_flag2' in lofarcat.colnames:
+    lofarcat.remove_column('double_flag2')
+lofarcat.sort('Source_Name')
+tt=join(lofarcat, double_cat, join_type='left')
+tt['visual_flag'].fill_value = 0
+tt = tt.filled()
+tt.sort('Source_Name')
+tt.rename_column('visual_flag','double_flag2')
+
+
+lofarcat.add_column(tt['double_flag2'])
+
 
 #################################################################################
 # from visual inspection of samples of m non-isolated sources (pre-check for lgz)
