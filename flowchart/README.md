@@ -2,11 +2,11 @@
 Various scripts for the LOFAR source classification decision tree including merging catalogues from ML and LGZ outputs.
 
 Inputs:
-* LOFAR_HBA_T1_DR1_catalog_v0.9.srl.fixed.fits -- PyDBSF catalogue (with corrected source names)
-* LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits -- PyBDSF Gaussian component catalogue
-* lofar_pw.fixed.fits -- ML output for sources in the PyBDSF catalogue
-* lofar_gaus_pw.fixed.fits -- ML output for Gaussian in the PyBDSF Gaussian component catalogue
-* HETDEX-LGZ-cat-v0.6-filtered-zooms.fits -- LGZ output catalogue
+* LOFAR_HBA_T1_DR1_catalog_v0.99.srl.fits -- PyDBSF catalogue (with corrected source names)
+* LOFAR_HBA_T1_DR1_catalog_v0.99.gaus.fits -- PyBDSF Gaussian component catalogue
+* lofar_pw_pdf.fits -- ML output for sources in the PyBDSF catalogue
+* lofar_gaus_pw_pdf.fits -- ML output for Gaussian in the PyBDSF Gaussian component catalogue
+* HETDEX-LGZ-cat-v0.11-filtered-zooms.fits -- LGZ output catalogue
 * lgz_components.txt -- LGZ output components
 
 ## Workflow:
@@ -24,7 +24,7 @@ Inputs:
 
 
 ### `get_visual_flags.py`
-Adds the following columns to the PyBDSF catalogue:
+Adds the following columns to the PyBDSF catalogue relating to visual classification results of subsamples selected in the flowchart:
 * artefact_flag
 * clustered_flag
 * Lclustered_flag
@@ -105,7 +105,9 @@ Nearest not-artefact neighbour (NNC) details:
 
 
 ## `write_merge_catalogues.py`
-Merge outputs from decision tree using ML or bright galaxy optical IDs where necessary and LGZ outputs where available. Combines multiple matches to the same bright galaxy. Removes all artefacts from both the source and components tables.
+Merge outputs from decision tree using ML or bright galaxy optical IDs where necessary and LGZ outputs where available. LGZ components are removed from the source table and replaced by the LGZ sources (in the components table, their source names are updated). Similarly, combines multiple matches to the same bright galaxy. Removes all artefacts from both the source and components tables.
+
+Most of the columns are dropped from the catalogues (but versions with full column sets are kept as *full.fits)
 
 Outputs:
 * LOFAR_HBA_T1_DR1_merge_ID_v*.fits -- final source list, with limited columns
@@ -116,13 +118,25 @@ The ID_flag in the final source list is updated/simplified given LGZ outputs
 * 0 for no identification possible
 * 1 for LR 
 * 2 for bright galaxy
-* 3. for LGZ
+* 3[12] for LGZ
     * 31 for LGZ
     * 32 for LGZ zoom
-* 4. for blend
+* 4[12] for blend
     * 41 deblending workflow 
     * 42 LGZ deblending workflow
 
+Some new columns are added:
+* ID_name (later modified after deblending...)
+* ID_ra, ID_dec - position of ID from ML or LGZ
+* ML_LR - the LR value for sources with an LR match
+and the LGZ columns:
+* LGZ_Size
+* LGZ_Width
+* LGZ_PA
+* LGZ_Assoc
+* LGZ_Assoc_Qual
+* LGZ_ID_Qual
+ 
 The component list is the PyBDSF catalogue annotated with the final source names
 * Component_Name 
 * Source_Name - maps to Source_Name in the source catalogue
