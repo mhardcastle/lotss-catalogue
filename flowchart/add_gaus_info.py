@@ -18,8 +18,6 @@ if __name__=='__main__':
     path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
     lofargcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.gaus.fits'
     lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.presort.fits'
-    psmlcat_file = path+'lofar_pw.fixed.fits'
-    psmlgcat_file = path+'lofar_gaus_pw.fixed.fits'
 
 
 
