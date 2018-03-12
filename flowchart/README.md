@@ -12,22 +12,44 @@ Inputs:
 ## Workflow:
 * `find_artefact_candidates.py` -- find candidate artefacts 
 * `match_2masx.py` -- match to 2MASX
+* `flag_edge_sources.py` -- find the edge sources to flag as artefacts
 * iterate through:
   * `lofar_source_sorter.py` -- initial classification
+  * `add_gaus_info.py`  -- to calculate gaussian separations, etc and store values
   * visual confirmation of artefacts and other visually checked endpoint with `classify.py` from classify
   * `get_visual_flags.py` -- apply flags generated from several passes of classify.py on different catagories
+  * `handle_m_sources.py` and `get_msource_flags.py` -- run the msource flowchart and save flags
   * `lofar_source_sorter.py` -- new classification with visual flags applied
 * `write_merge_catalogues.py` -- write final catalogue, merging outputs from LGZ, ML, large galaxy strands
 
 
 ### `get_visual_flags.py`
-Adds the following columns to the PyBDSF catalouge:
+Adds the following columns to the PyBDSF catalogue:
 * artefact_flag
 * clustered_flag
 * Lclustered_flag
 * huge_faint_flag
 * nhuge_faint_flag
 * nhuge_2masx_flag
+
+### `add_gaus_info.py`
+more info from the Gaussians:
+* Ng - the number of Gaussians making up the source
+* G_LR_max - max LR from all the Gaussians
+* Ng_LR_good - number of Gaussians with good LR
+* Flag_G_LR_problem - True if Gaussian match is ambiguous
+
+### `handle_m_sources.py` and `get_msource_flags.py`
+Adds 
+* msource[12]_flag -- saves flowchart diagnosis code
+  * 0: no match
+  * 1: accept ML of the source
+  * 2: accept ML of the gaussian with highest ML
+  * 3: deblend and accept both gaussians
+  * 4: deblend workflow
+  * 5: LOFAR galaxy zoo 
+* MC_flag[12] -- saves flowchart box number
+
 
 ### `match_2masx.py`
 Note: some 2MASX parameters need to be fixed with `fix_2mass_catalogue.py`. Here we add the following columns to the PyBDSF catalouge:
@@ -53,29 +75,11 @@ from the ML catalogues:
 * LR_name_ps -  panstarrs name
 * LR_ra, LR_dec -  position
 
-more info from the Gaussians:
-* Ng - the number of Gaussians making up the source
-* G_LR_max - max LR from all the Gaussians
-* Ng_LR_good - number of Gaussians with good LR
-* Flag_G_LR_problem - True if Gaussian match is ambiguous
 
 flags:
 * Artefact_flag - combined artefact flag from several classify routes
-* ID_flag -- flag indicating origin of optical ID
-  * -1 for artefact
-  * 2 for bright galaxy
-  * 3 for LGZ
-    * 3 for LGZv1
-    * 3210 for LGZv2
-    * 3220 for LGZv2 zoom
-  * 4 for no match
-  * 5 for TBD
-  * 600 for blend, resolved as unchanged
-  * 601 for blend, resolved as new optical ID
-  * 602 for blend, resolved as new source built from one Gaussian
-  * 603 for blend, resolved as new source built from >1 Gaussian
-  * 610 for blend, flagged as problematic
-* LGZ_flag - 1 for LGZv1 ; 2 for LGZv2 ; 20 for LGZv2_zoom
+* ID_flag -- flag indicating identification route (modified in write_merge_catalogues)
+* LGZ_flag - 1 for LGZv1 ; 2 for LGZv2 ; 20 for LGZv2_zoom; etc
 * FC_flag - numeric value encodes endpoint of flowchart
 
 Nearest neighbour (NN) details:
@@ -101,19 +105,27 @@ Nearest not-artefact neighbour (NNC) details:
 
 
 ## `write_merge_catalogues.py`
-Merge outputs from decision tree using ML or bright galaxy optical IDs where necessary and LGZ outputs where available. Combines multiple matches to the same bright galaxy.
+Merge outputs from decision tree using ML or bright galaxy optical IDs where necessary and LGZ outputs where available. Combines multiple matches to the same bright galaxy. Removes all artefacts from both the source and components tables.
 
 Outputs:
-* LOFAR_HBA_T1_DR1_merge_ID_v0.6.fits -- final source list, with limited columns
-* LOFAR_HBA_T1_DR1_merge_ID_v0.6.comp.fits -- final component list
+* LOFAR_HBA_T1_DR1_merge_ID_v*.fits -- final source list, with limited columns
+* LOFAR_HBA_T1_DR1_merge_ID_v*.comp.fits -- final component list
+
+
+The ID_flag in the final source list is updated/simplified given LGZ outputs
+* 0 for no identification possible
+* 1 for LR 
+* 2 for bright galaxy
+* 3. for LGZ
+    * 31 for LGZ
+    * 32 for LGZ zoom
+* 4. for blend
+    * 41 deblending workflow 
+    * 42 LGZ deblending workflow
 
 The component list is the PyBDSF catalogue annotated with the final source names
-* New_Source_Name 
-* ID_flag -- updated given LGZ outputs
-    * 311 for LGZv1
-    * 312 for LGZv1 zoom
-    * 3210 for LGZv2
-    * 3220 for LGZv2 zoom
+* Component_Name 
+* Source_Name - maps to Source_Name in the source catalogue
 
 
 #### misc other scripts
