@@ -33,7 +33,7 @@ wc file-list.txt
 
 (to find how many jobs you're going to be running) and then
 
-qsub -t 0-100 -v INFILE=file.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/lgz_create/lgz.qsub
+qsub -t 0-100 -v INFILE=file.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/lgz_create/lgz_v2.qsub
 
 To upload to Zooniverse...
 
@@ -44,3 +44,7 @@ cat *-manifest.txt | sort -n -k 1 -t , >> manifest.csv
 
 export PANOPTES_PASSWORD=whatever
 NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --project 2513 --workflow 5581
+
+To visualize catalogued sources:
+
+qsub -t 1-146 -v INFILE=rql.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/lgz_create/visualize.qsub

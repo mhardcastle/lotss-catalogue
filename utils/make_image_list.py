@@ -64,13 +64,8 @@ class MapsList(object):
 if __name__=='__main__':
     t=Table.read(sys.argv[1])
     outfilename=sys.argv[1].replace('.fits','-list.txt')
-    if not(os.path.isfile(outfilename)):
-        startpoint=0
-        outfile=open(outfilename,'w')
-    else:
-        startpoint=len(open(outfilename).readlines())
-        outfile=open(outfilename,'a')
-   
+    outfile=open(outfilename,'w')
+    
     imagedir=os.environ['IMAGEDIR']
     os.chdir(imagedir)
     if os.path.isfile('mapslist.pickle'):
@@ -87,7 +82,7 @@ if __name__=='__main__':
         with open('mapslist.pickle','w') as f:
             pickle.dump([lm,psm,wm,fm],f)
 
-    for r in t[startpoint:]:
+    for r in t:
         lofarname=lm.find(r['RA'],r['DEC'])
         psnames=psm.find(r['RA'],r['DEC'])
         wisename=wm.find(r['RA'],r['DEC'])

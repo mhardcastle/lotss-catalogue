@@ -8,13 +8,13 @@ from process_lgz import sourcename,Make_Shape
 
 if __name__=='__main__':
 
-    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.9.fits')
-    mask=(t['ID_flag']<61) | (t['ID_flag']>63)
+    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.0.fits')
+    mask=(t['ID_flag']<41) | (t['ID_flag']>42)
     tout=t[mask]
     tb=t[~mask]
     # component table. This is modified too
-    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v0.9.comp.fits')
-    mask=(ct['ID_flag']<61) | (ct['ID_flag']>63)
+    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.0.comp.fits')
+    mask=(ct['ID_flag']<41) | (ct['ID_flag']>42)
     ctout=ct[mask]
     gt=Table.read('lofar_gaus_pw.fixed.fits')
 
@@ -23,12 +23,12 @@ if __name__=='__main__':
         gc=0
         gl=[]
         print name
-        ctf=(ct['New_Source_Name']==name)
+        ctf=(ct['Source_Name']==name)
         ctfl=ct[ctf]
         print '... has',len(ctfl),'components'
         for j,c in enumerate(ctfl):
             print '    Component',j,'has type',c['S_Code']
-            gtf=(gt['Source_Name']==c['Source_Name'])
+            gtf=(gt['Source_Name']==c['Component_Name'])
             gtfl=gt[gtf]
             print '    ... and contains',len(gtfl),'Gaussians'
             gl.append(gtfl)
@@ -47,16 +47,13 @@ if __name__=='__main__':
 
         # parse the file
         if lines[0]=='## Flagged':
-            r['ID_flag']=610
-            tout.add_row(r)
+            #tout.add_row(r) # drop these
             for cr in ctfl:
                 cr['ID_flag']=610
-                ctout.add_row(cr)
+                #ctout.add_row(cr)
         elif lines[0]=='## Unchanged':
-            r['ID_flag']=600
             tout.add_row(r)
             for cr in ctfl:
-                cr['ID_flag']=610
                 ctout.add_row(cr)
         elif lines[0]=='## Components':
             print 'Output file to be processed!'
@@ -75,7 +72,6 @@ if __name__=='__main__':
             if np.all(rgt['Source']==1):
                 print 'Components unchanged'
                 # in this case only the opt ID has changed
-                r['ID_flag']=601
                 if 1 in optid:
                     ra,dec=optid[1]
                     r['ID_ra']=ra
@@ -88,7 +84,7 @@ if __name__=='__main__':
                     r['ID_dec']=np.nan
                 tout.add_row(r)
                 for cr in ctfl:
-                    cr['ID_flag']=601
+                    cr['ID_flag']=r['ID_flag']
                     ctout.add_row(cr)
             else:
                 print "It's complicated"
@@ -109,7 +105,6 @@ if __name__=='__main__':
                         for k in copy:
                             r[k]=rg[k]
                         sname=sourcename(r['RA'],r['DEC'])
-                        idflag=602
                         r['S_Code']='S'
                         r['ML_LR']=np.nan
                         r['LGZ_Size']=np.nan
@@ -129,7 +124,6 @@ if __name__=='__main__':
                         dec=np.sum(clist['DEC']*clist['Total_flux'])/tfluxsum
                         sname=sourcename(ra,dec)
                         print '      New sourcename is',sname
-                        idflag=603
                         r['RA']=ra
                         r['DEC']=dec
                         r['E_RA']=np.sqrt(np.mean(clist['E_RA']**2.0))
@@ -155,7 +149,6 @@ if __name__=='__main__':
                         for k in ['Maj','E_Maj','Min','E_Min','DC_Maj','DC_Min','PA','E_PA','DC_PA','E_DC_Maj','E_DC_Min', 'E_DC_PA']:
                             r[k]=np.nan
                     r['Source_Name']=sname
-                    r['ID_flag']=idflag
                     if s in optid:
                         ra,dec=optid[s]
                         r['ID_ra']=ra
@@ -170,22 +163,22 @@ if __name__=='__main__':
                     # Gaussians to new components to go in ctout
                     for g in clist:
                         c=ct[0]
-                        copy=['RA','E_RA','DEC','E_DEC','Peak_flux','E_Peak_flux','Total_flux','E_Total_flux','Maj','E_Maj','Min','E_Min','DC_Maj','DC_Min','PA','E_PA','Isl_rms','Mosaic_ID','Isl_id']
+                        copy=['RA','E_RA','DEC','E_DEC','Peak_flux','E_Peak_flux','Total_flux','E_Total_flux','Maj','E_Maj','Min','E_Min','DC_Maj','DC_Min','PA','E_PA','Isl_rms','Mosaic_ID']
                         for k in copy:
                             c[k]=g[k]
                         for k in ['Min','Maj','PA']:
                             c['E_DC_'+k]=c['E_'+k]
                         # Gaussians don't have names
-                        c['Source_Name']=sourcename(g['RA'],g['DEC'])
-                        c['New_Source_Name']=sname
-                        c['ID_flag']=idflag
+                        c['Component_Name']=sourcename(g['RA'],g['DEC'])
+                        c['Source_Name']=sname
+                        c['ID_flag']=r['ID_flag']
                         # now fix up a few other columns
-                        c['Artefact_flag']=False
-                        c['LGZ_flag']=0
-                        c['FC_flag']=0
+                        #c['Artefact_flag']=False
+                        #c['LGZ_flag']=0
+                        #c['FC_flag']=0
                         c['Ng']=1
                         c['S_Code']='S'
-                        c['G_max_sep']=np.nan
+                        #c['G_max_sep']=np.nan
                         for k,ty in ct.dtype.descr:
                             if k[0:2]=='NN' or 'LR' in k:
                                 if ty=='>f8':

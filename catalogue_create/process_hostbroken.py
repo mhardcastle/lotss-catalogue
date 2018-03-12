@@ -4,7 +4,7 @@ from astropy.table import Table
 from separation import separation
 import numpy as np
 
-t=Table.read('HETDEX-LGZ-cat-v0.6-filtered.fits')
+t=Table.read('HETDEX-LGZ-cat-v0.7-filtered.fits')
 t2m=Table.read('/data/lofar/mjh/hetdex_v4/2MASX_hetdex_fix.fits') # Wendy's table
 sep2m=60 # arcsec
 
@@ -45,4 +45,4 @@ print np.sum(problems),'problems'
 
 tp=t[problems]
 tp.write('../zoom_v2/hostbroken_problems.fits',overwrite=True)
-t.write('HETDEX-LGZ-cat-v0.6-filtered-unbroken.fits',overwrite=True)
+t.write('HETDEX-LGZ-cat-v0.7-filtered-unbroken.fits',overwrite=True)

@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# visualize sources in the final LGZ catalogue
+
 import matplotlib
 matplotlib.use('Agg')
 from astropy.table import Table,vstack
@@ -22,11 +24,11 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # Annotated PyBDSF table
-    ot=Table.read('/data/lofar/wwilliams/hetdex/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_v0.12.comp.fits')
+    ot=Table.read('/beegfs/general/lofar/LOFAR_HBA_T1_DR1_merge_ID_v1.0.comp.fits')
     # large source table for neighbours
     lt=ot[(ot['Total_flux']>3) & (ot['Maj']>8)]
     # ID catalogue so we can check for a source with existing ML or other ID
-    it=Table.read('/data/lofar/wwilliams/hetdex/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_v0.12.fits')
+    it=Table.read('/beegfs/general/lofar/LOFAR_HBA_T1_DR1_merge_ID_optical_v1.0.fits')
     # read lists
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     lofarmaps=[l[1] for l in lines]
@@ -53,7 +55,6 @@ if __name__=='__main__':
     psimage=sourcename+'_PS.png'
     pspimage=sourcename+'_PSp.png'
     wiseimage=sourcename+'_W.png'
-    manifestname=sourcename+'-manifest.txt'
     print lofarmaps[i],psmaps[i],wisemaps[i]
     try:
         mosaic=r['Mosaic_ID']
@@ -71,73 +72,30 @@ if __name__=='__main__':
         lofarfile+='/mosaic.fits'
     print lofarfile
 
-    if os.path.isfile(manifestname):
-        print 'Selected output file exists already'
-        sys.exit(0)
-
     from overlay import show_overlay
 
     ra,dec=r['RA'],r['DEC']
 
     try:
-        marker_ra=r['ra']
-        marker_dec=r['dec']
+        marker_ra=r['ID_ra']
+        marker_dec=r['ID_dec']
     except:
         marker_ra=None
         marker_dec=None
 
     title=None
-        
-    # if externally supplied information about size and position is present, use it
-    if 'Cent_RA' in t.colnames and 'Cent_DEC' in t.colnames and 'Size' in t.colnames:
-        ra=r['Cent_RA']
-        dec=r['Cent_DEC']
-        size=r['Size']*1.5
-    else:
-        # resize the image to look for interesting neighbours
-        iter=0
-        while True:
-            startra,startdec=ra,dec
-            tcopy=lt
-            tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
-            tcopy=tcopy[tcopy['dist']<180]
-            print 'Iter',iter,'found',len(tcopy),'neighbours'
 
-            # make sure the original source is in there
-            for nr in tcopy:
-                if sourcename==nr['Source_Name']:
-                    break
-            else:
-                if 'Maj' in r.columns:
-                    tcopy=vstack((tcopy,r))
-
-            ra=np.mean(tcopy['RA'])
-            dec=np.mean(tcopy['DEC'])
-
-            if startra==ra and startdec==dec:
-                break
-            iter+=1
-            if iter==10:
-                break
-
-        # now find the bounding box of the resulting collection
-        ra,dec,size=find_bbox(tcopy)
-
-
+    tmask=(ot['Source_Name']==sourcename)
+    assert(np.sum(tmask)>0)
+    tcopy=ot[tmask]
+    ra,dec,size=find_bbox(tcopy)
+    size*=1.2
     
     if np.isnan(size):
         ra=r['RA']
         dec=r['DEC']
         size=60
 
-    if size>300.0:
-        # revert just to original
-        ra,dec=r['RA'],r['DEC']
-        tcopy=Table(r)
-        ra,dec,size=find_bbox(tcopy)
-
-    if size>300:
-        size=300.0
     if size<60:
         size=60.0
     size=(int(0.5+size/10))*10
@@ -162,19 +120,11 @@ if __name__=='__main__':
     ots=ots[ots['Source_Name']!=""] # removes artefacts
     cols=[]
     for nr in ots:
-        if nr['Component_Name']==r['Source_Name']:
+        if nr['Source_Name']==r['Source_Name']:
             # this is our target
-            cols.append('red')
-        elif nr['Source_Name']!=nr['Source_Name']:
-            # part of an association
             cols.append('green')
         else:
-            its=it[it['Source_Name']==nr['Source_Name']]
-            if len(its)>0 and not(np.isnan(its[0]['ID_ra'])):
-                cols.append('cyan')
-            else:
-                cols.append('red')
-
+            cols.append('red')
     
     pshdu=extract_subim(imagedir+'/downloads/'+psmaps[i],ra,dec,size,hduid=1)
     lhdu=extract_subim(lofarfile,ra,dec,size)
@@ -186,13 +136,6 @@ if __name__=='__main__':
 
     print ots,cols
     
-    show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,ellipse_color=cols,peak=peak)
-    
-    show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,plotpos=[(pg,'x'),(pwg,'+')],show_lofar=False,save_name=pspimage,no_labels=True,title=title,ellipse_color=cols,peak=peak)
+    show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='magenta',title=title,ellipse_color=cols,peak=peak)
     whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
-    show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=wiseimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,noisethresh=0,ellipse_color=cols,peak=peak)
-
-    with open(manifestname,'w') as manifest:
-        manifest.write('%i,%s,%s,%s,%s,%f,%f,%f\n' % (i,psimage,pspimage,wiseimage,sourcename,ra,dec,size*3600.0))
-
-    os.system('mogrify -quality 90 -trim '+sourcename+'*.png')
+    show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=wiseimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='magenta',title=title,noisethresh=0,ellipse_color=cols,peak=peak)

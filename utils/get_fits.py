@@ -14,7 +14,7 @@ def save_fits(ra,dec,name=None,size=0.25):
         name=(str('ILTJ'+s).replace(' ','')[:-1])
     lm=LofarMaps()
     filename=os.environ['IMAGEDIR']+'/'+lm.find(ra,dec)
-    hdu=extract_subim(filename,ra,dec,0.25)
+    hdu=extract_subim(filename,ra,dec,size)
     outname=name+'.fits'
     hdu.writeto(outname,clobber=True)
     return outname
@@ -25,6 +25,11 @@ if __name__=='__main__':
         ra=float(sys.argv[1])
         dec=float(sys.argv[2])
         save_fits(ra,dec)
+    elif len(sys.argv)==4:
+        ra=float(sys.argv[1])
+        dec=float(sys.argv[2])
+        size=float(sys.argv[3])
+        save_fits(ra,dec,size=size)
     elif len(sys.argv)==2:
         s=sys.argv[1][4:]
         coord=s[0:2]+':'+s[2:4]+':'+s[4:9]+' '+s[9:12]+':'+s[12:14]+':'+s[14:]
