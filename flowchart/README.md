@@ -116,12 +116,12 @@ Outputs:
 
 The ID_flag in the final source list is updated/simplified given LGZ outputs
 * 0 for no identification possible
-* 1 for LR 
+* 1 for LR  identification (or lack therof) 
 * 2 for bright galaxy
-* 3[12] for LGZ
+* 3[12] for LGZ association and identification (or lack therof) 
     * 31 for LGZ
     * 32 for LGZ zoom
-* 4[12] for blend
+* 4[12] for blend association and identification (or lack therof) 
     * 41 deblending workflow 
     * 42 LGZ deblending workflow
 
