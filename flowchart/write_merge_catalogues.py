@@ -80,7 +80,7 @@ if __name__=='__main__':
 
     ### Required INPUTS
     
-    version =  '1.0'
+    version =  '1.1'
     
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
@@ -284,6 +284,8 @@ if __name__=='__main__':
             
             assoc_2mass['RA']=np.average(complist['RA'], weights=complist['Total_flux'])
             assoc_2mass['DEC']=np.average(complist['DEC'], weights=complist['Total_flux'])
+            
+            assoc_2mass['ID_flag'] = 2 # ensure the ID_flag is 2 (if the first of the other components was not 2)
             
             assoc_2mass['Source_Name'] = name_from_coords(assoc_2mass['RA'],assoc_2mass['DEC'],prefix='ILTJ')
             
