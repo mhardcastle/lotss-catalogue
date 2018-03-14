@@ -109,7 +109,7 @@ lofarcat['artefact_flag'][lofarcat['E_RA'] == 0] = True
 #################################################################################
 # the 1/300k case of a duplicate source - flag the one (higher noise as an artefact here
 
-lofarcat['artefact_flag'][(lofarcat['Source_Name']=='ILTJ132633.10+484745.7') & (lofarcat['Mosaic_ID']=='P38Hetdex')] = True
+lofarcat['artefact_flag'][(lofarcat['Source_Name']=='ILTJ132633.10+484745.7') & (lofarcat['Mosaic_ID']=='P38Hetdex07')] = True
 
 
 #################################################################################
