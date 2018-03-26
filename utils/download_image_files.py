@@ -1,5 +1,8 @@
-# formerly get_panstarrs_file.py . Will be amended to allow downloads
-# of images from WISE as well.
+#!/usr/bin/python
+
+# download required image files (WISE, PanSTARRS, FIRST) for a set of
+# input objects in a FITS catalogue. Outputs an image file and populates the
+# $IMAGEDIR/downloads directory
 
 import requests
 from astropy.io import fits

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # Like download_image_files, but assumes that the relevant files are
 # already there, and so just finds the nearest map from a list.
 
@@ -72,7 +74,6 @@ if __name__=='__main__':
         with open('mapslist.pickle') as f:
             lm,psm,wm,fm=pickle.load(f)
     else:
-        stop
         lm=MapsList('mosaics/*-mosaic.fits')
         os.chdir('downloads')
         psm=MapsList('rings*.fits',hdu_no=1)
