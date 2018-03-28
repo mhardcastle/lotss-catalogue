@@ -1,6 +1,7 @@
 from astropy.table import Table,Column
 import numpy as np
 import sys
+import os
 
 # run the following
 
@@ -38,7 +39,7 @@ for c in stringcols:
     t[c]=[s.rstrip() for s in t[c]]
 print
 
-print 'Remove -99s'
+print 'Remove -99s:',
 sys.stdout.flush()
 dblcols=[n for (n,ty) in t.dtype.descr if 'f8' in ty]
 for c in dblcols:
@@ -51,4 +52,5 @@ print 'Sorting'
 t.sort('RA')
 
 print 'Writing to disk'
-t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v1.0.fits',overwrite=True)
+t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v1.1.fits',overwrite=True)
+os.system('cp ../blend/merge_comp_out.fits LOFAR_HBA_T1_DR1_merge_ID_v1.1.comp.fits')

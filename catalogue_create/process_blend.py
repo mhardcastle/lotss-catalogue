@@ -8,12 +8,12 @@ from process_lgz import sourcename,Make_Shape
 
 if __name__=='__main__':
 
-    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.0.fits')
+    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.1.fits')
     mask=(t['ID_flag']<41) | (t['ID_flag']>42)
     tout=t[mask]
     tb=t[~mask]
     # component table. This is modified too
-    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.0.comp.fits')
+    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.1.comp.fits')
     mask=(ct['ID_flag']<41) | (ct['ID_flag']>42)
     ctout=ct[mask]
     gt=Table.read('lofar_gaus_pw.fixed.fits')
