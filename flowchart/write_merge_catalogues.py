@@ -1,5 +1,5 @@
 import os 
-from astropy.table import Table, Column, join, vstack
+from astropy.table import Table, Column, join, vstack, hstack
 from astropy.coordinates import SkyCoord
 import numpy as np
 
@@ -80,7 +80,7 @@ if __name__=='__main__':
 
     ### Required INPUTS
     
-    version =  '1.1'
+    version =  '1.2'
     
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
@@ -95,10 +95,11 @@ if __name__=='__main__':
     lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.sorted.fits'
 
     # LGZ output
-    lgz_cat_file = os.path.join(path,'lgz_v2/HETDEX-LGZ-cat-v0.11-filtered-zooms.fits') 
+    lgz_cat_file = os.path.join(path,'lgz_v2/HETDEX-LGZ-cat-v1.1-filtered-zooms.fits') 
     lgz_component_file = os.path.join(path,'lgz_v2/lgz_components.txt')
 
     comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
+    art_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.art.fits'.format(v=version))
     merge_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.fits'.format(v=version))
     merge_out_full_file = merge_out_file.replace('.fits','.full.fits')
     comp_out_full_file = comp_out_file.replace('.fits','.full.fits')
@@ -146,6 +147,26 @@ if __name__=='__main__':
     tc.sort('Source_Name')
     lgz_select = (tc['LGZ_remove']!=1)
 
+    lofarcat_sorted_del = lofarcat_sorted[~lgz_select]
+    #sys.exit()
+
+    is_lgz_art = np.zeros(len(lofarcat_sorted), dtype=bool)
+    # keep a list of the lgz artefacts
+    lgz_art = lgz_cat_full[lgz_cat_full['Art_prob'] >= 0.5]
+    for ll in lgz_art:
+        if ll['Assoc'] > 1:
+            #get the comp naes
+            llcomps = lgz_components[lgz_components['lgz_src'] ==  ll['Source_Name']]['lgz_component']
+            for llcompi in llcomps:
+                is_lgz_art[lofarcat_sorted['Source_Name'] == llcompi] = 1
+
+
+        else:
+            is_lgz_art[lofarcat_sorted['Source_Name'] == ll['Source_Name']] = 1
+
+    # save  ist of the artefacts
+    lofarcat_sorted[(lofarcat_sorted['Artefact_flag'] == 1) & (is_lgz_art)].write(art_out_file, overwrite=True)
+    #sys.exit()
 
     print 'Removing {n:d} sources associated in LGZ'.format(n=np.sum(~lgz_select))
     lofarcat_sorted = lofarcat_sorted[lgz_select]
@@ -165,11 +186,13 @@ if __name__=='__main__':
             #else:
                 #lofarcat_sorted_antd['ID_flag'][ind] = 312
 
+    
     ## remove artefacts
     # all the artefacts identified and visually confirmed in the flowchart process
     print 'Throwing away {n:d} artefacts'.format(n=np.sum(lofarcat_sorted['Artefact_flag'] == 1))
     lofarcat_sorted = lofarcat_sorted[lofarcat_sorted['Artefact_flag'] == 0]
     
+
     # artefacts have no name in the merged catalogue cos they don't appear there
     # except for ones deemed to be part of another source by the wisdom of LGZ
     # not true anymore - these are now removed from the associations
@@ -234,6 +257,7 @@ if __name__=='__main__':
             snames[ti] = name_from_coords(sdss_ra[ti],sdss_dec[ti],prefix='SDSS J')
         except:
             print 'error - sdss', ra,dec
+            import pdb ; pdb.set_trace()
             
         
     
@@ -262,20 +286,83 @@ if __name__=='__main__':
     lofarcat_add_2mass_mult = lofarcat_sorted[1:1]
     nmerge = np.sum(ucounts>1)
     nn = 0
+
+    nok = 0
+    nok1 = 0
+    nnok = 0
+
+    # we need to consider the 2MASX sources that were in the first LGZ selections (to be consistent with what came later we take the 2MASX merge and 'throw away' the lgz assoc as if they had never been in lgz) warning - this can be complicated if something is associated in lgz but not to the 2masx source... does this happen?
+    # these are all the lgz sources that are mixed up with the 2msss sources - they should be removed from the lgz source list when these are added in later...
+    # make sure all the components in the components cat point to the 2mass source
+    remove_2mass_lgz_srcs = []
+
     for n in unames: #[ucounts>1]:
         if 'SDSS' in n: continue
-        
+        mergeok = True
+
         #ii = np.where(lofarcat_sorted['ID_name'] == n)[0]
         
         i = np.where(lofarcat_sorted['2MASX_name'] == n.replace('2MASX J',''))[0]
-        
+        #lofarcat_sorted_del
+
+        i2 = np.where(lofarcat_sorted_del['2MASX_name'] == n.replace('2MASX J',''))[0]
         #print len(ii), len(i)
-        
+        if len(i2) > 0:
+            #print '\n##',n
+            #print len(i), len(i2)
+            #print 'not removed (will be combined) - '
+            #print lofarcat_sorted['Source_Name','ID_flag'][i]
+            #print 'removed (in lgz) - '
+            #print lofarcat_sorted_del['Source_Name','ID_flag'][i2]
+            nnok += 1
+            lofarcat_sorted[i].write('check_large_opt/'+n.replace(' ','_')+'.fits',overwrite=True)
+
+            lgz_srcs = []
+            lgz_src_comps = []
+            missing_comp = []
+            for ii in i2:
+                lgz_srci = lgz_components['lgz_src'][lgz_components['lgz_component'] == lofarcat_sorted_del['Source_Name'][ii]][0]
+                all_lgz_comp = lgz_components['lgz_component'][lgz_components['lgz_src'] == lgz_srci]
+
+                #print '-',lofarcat_sorted_del['Source_Name'][ii], 'is in lgz src', lgz_srci, 'which has',len(all_lgz_comp),'components'
+                ## make sure all the components of this to be removed source are part of the 2MASX source... otherwise ????
+                remove_2mass_lgz_srcs.append(lgz_srci)
+                if lgz_srci not in lgz_srcs:
+                    lgz_srcs.append(lgz_srci)
+            for lgz_src in lgz_srcs:
+                #print 'checking', lgz_src
+                lgz_src_comp = lgz_components['lgz_component'][lgz_components['lgz_src'] == lgz_src]
+                for lgz_src_compi in lgz_src_comp:
+                    if lgz_src_compi not in lgz_src_comps:
+                        lgz_src_comps.append(lgz_src_compi)
+
+                    #if (lgz_src_compi not in lofarcat_sorted['Source_Name'][i])
+                    if (lgz_src_compi not in lofarcat_sorted_del['Source_Name'][i2]):
+                        if lgz_src_compi not in missing_comp:
+                            missing_comp.append(lgz_src_compi)
+                            print 'adding lgz component to 2MASX assoc', lgz_src_compi
+                            i2 = np.hstack((i2, np.where(lofarcat_sorted_del['Source_Name'] == lgz_src_compi)[0] ))
+                            mergeok = False
+
+            lofarcat_sorted_del[i2].write('check_large_opt/'+n.replace(' ','_')+'-lgz.fits',overwrite=True)
+            #print n, missing_comp
+            #print lgz_srcs
+            #print lgz_src_comps
+            #print lofarcat_sorted_del['Source_Name'][i2]
+        # else i2 = 0 - i.e. no part is in lgz
+        else:
+            if len(i) == 1:
+                #print n, 'ok1'
+                nok1 += 1
+            else:
+                #print n, 'ok'
+                nok += 1
+
         nn += len(i)
         #print n, i
         remove_2mass_mult[i] = True
         
-        complist = lofarcat_sorted[i].copy()
+        complist = vstack(( lofarcat_sorted[i].copy() , lofarcat_sorted_del[i2].copy() ))
         assoc_2mass = lofarcat_sorted[i].copy()[0]
         
         
@@ -347,6 +434,10 @@ if __name__=='__main__':
         
         lofarcat_add_2mass_mult = vstack([lofarcat_add_2mass_mult, assoc_2mass]) 
         
+    print nok, 'are ok'
+    print nok1, 'are ok (single)'
+    print nnok, 'are partly in an lgz source'
+    #sys.exit()
     lofarcat_sorted = lofarcat_sorted[~remove_2mass_mult]
     lofarcat_sorted = vstack([lofarcat_sorted,lofarcat_add_2mass_mult])
         
@@ -408,11 +499,17 @@ if __name__=='__main__':
     
     lofarcat_sorted['ID_name'][selml] = ''
 
-                               
+    lgz_cat_full.add_column(Column(np.zeros(len(lgz_cat_full), dtype=bool),'2MASSoverlap'))
+    for s in remove_2mass_lgz_srcs:
+        lgz_cat_full['2MASSoverlap'][lgz_cat_full['Source_Name'] == s] = True
+    print np.sum(lgz_cat_full['2MASSoverlap']), ' removed because they are in a 2MASS assoc'
+
+    # get a list of the lgz artefacts...
+    lgz_art['Assoc'] > 1
 
     ## add LGz v1 associated sources
     # 
-    lgz_select = (lgz_cat_full['Compoverlap']==0)&(lgz_cat_full['Art_prob']<0.5)&(lgz_cat_full['Zoom_prob']<0.5)
+    lgz_select = (lgz_cat_full['Compoverlap']==0)&(lgz_cat_full['Art_prob']<0.5)&(lgz_cat_full['Zoom_prob']<0.5)&(lgz_cat_full['2MASSoverlap']==0)
     print 'Selecting {n2:d} of {n1:d} sources in the LGZ catalogue to add'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select))
     lgz_cat = lgz_cat_full[lgz_select]
     lgz_cat.rename_column('optRA','ID_ra')
