@@ -24,14 +24,15 @@ class Source(object):
             return False
             
     def add(self,source,component):
-        if component=='ILTJ124211.12+500021.9':
-            print source
-            raise RuntimeError('Argh!')
         if self.ctable is not None:
             # don't add artefacts
-            r=self.ctable.loc[component]
-            if r['Artefact_flag'] or r['Edge_flag']:
-                return
+            try:
+                r=self.ctable.loc[component]
+                if r['Artefact_flag'] or r['Edge_flag']:
+                    return
+            except KeyError:
+                # we are being asked to add a component that doesn't exist, e.g. by oneoff zoom
+                pass
         if source in self.cdict:
             self.set_components(source,self.cdict[source]+[component])
         else:
@@ -45,9 +46,6 @@ class Source(object):
     def set_components(self,source,clist):
         self.changed_dict[source]=True
         self.cdict[source]=clist
-        if 'ILTJ124211.12+500021.9' in clist:
-            print 'source is',source
-            raise RuntimeError('Bleagh!')
         for comp in clist:
             for k in self.cdict:
                 if k!=source:

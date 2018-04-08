@@ -43,11 +43,13 @@ def test_catalogue_mismatch(t,tc):
             i+=1
             j+=1
         elif tn[i]<tcn[j]:
-            print tn[i],'is in source catalogue but not component catalogue',i,j
+            name=tn[i]
+            source=t[t['Source_Name']==name][0]
+            print '%s (%i) is in source catalogue but not component catalogue' % (name,source['ID_flag']),i,j
             count+=1
             i+=1
         elif tcn[j]<tn[i]:
-            print tcn[j],'is in source catalogue but not component catalogue',i,j
+            print tcn[j],'is in component catalogue but not source catalogue',i,j
             j+=1
             count+=1
         else:

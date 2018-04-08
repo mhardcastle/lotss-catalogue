@@ -174,9 +174,9 @@ if __name__=='__main__':
     wisemaps=[l[3] for l in lines]
     firstmaps=[l[4] for l in lines]
     # galaxies if needed
-    gals=Table.read(imagedir+'/wise/allwise_HETDEX_full_radec.fits')
-    
-    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.0.comp.fits')
+    #gals=Table.read(imagedir+'/wise/allwise_HETDEX_full_radec.fits')
+    gals=Table.read('/data/lofar/mjh/hetdex_ps1_allwise_radec.fits')
+    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.1.comp.fits')
     t['Source_Name']=[s.rstrip() for s in t['Source_Name']]
     ct['Source_Name']=[s.rstrip() for s in ct['Source_Name']]
     #gt=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits')
@@ -194,6 +194,8 @@ if __name__=='__main__':
         ctf=(ct['Source_Name']==name)
         ctfl=ct[ctf]
         print '... has',len(ctfl),'components'
+        if len(ctfl)==0:
+            continue
         for j,c in enumerate(ctfl):
             print '    Component',j,'has type',c['S_Code']
             gtf=(gt['Source_Name']==c['Component_Name'])
@@ -255,6 +257,7 @@ if __name__=='__main__':
                 command=raw_input()
                 if command=='d':
                     ga.dump()
+                    print pwg
                 elif command=='s':
                     ga.write(name)
                     stop=True
@@ -286,13 +289,16 @@ if __name__=='__main__':
                         print 'There are more than two possibilities!'
                     else:
                         cra,cdec=ga.optpos(I.c)
-                        sep=separation(cra,cdec,mlt['ra'],mlt['dec'])
-                        index=np.argmax(sep)
-                        ra=mlt[index]['ra']
-                        dec=mlt[index]['dec']
-                        I.c=2
-                        I.set_mode('O')
-                        I.clickon(ra,dec)
+                        if cra is None or cdec is None:
+                            print 'No existing optical ID!'
+                        else:
+                            sep=separation(cra,cdec,mlt['ra'],mlt['dec'])
+                            index=np.argmax(sep)
+                            ra=mlt[index]['ra']
+                            dec=mlt[index]['dec']
+                            I.c=2
+                            I.set_mode('O')
+                            I.clickon(ra,dec)
 
             plt.close()
 

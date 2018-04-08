@@ -1,4 +1,6 @@
 def test_duplicate(t,colname,description,exclude=[]):
+    have_id=('ID_flag' in t.colnames)
+        
     print 'Constructing list...'
     count=0
     idlist=[]
@@ -21,7 +23,11 @@ def test_duplicate(t,colname,description,exclude=[]):
             print 'Duplicate',description,'with name',value,':'
             for k in range(i,i+j+1):
                 ix=idlist[k][1]
-                print '          ',ix,t[ix]['Source_Name'],t[ix]['ID_flag']
+                print '          ',ix,t[ix]['Source_Name'],
+                if have_id:
+                    print t[ix]['ID_flag']
+                else:
+                    print
             count+=1
         i+=j+1
     return count

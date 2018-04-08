@@ -5,7 +5,7 @@ import os
 
 # run the following
 
-# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=10 out=merge.fits find=best1 join=all1 in1=../blend/merge_out.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.5.fits
+# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=5 out=merge.fits find=best1 join=all1 in1=../blend/merge_out.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.5.fits
 
 # and then run this to clean up afterwards.
 

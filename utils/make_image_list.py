@@ -16,7 +16,7 @@ import pickle
 from separation import separation
 
 class MapsList(object):
-    def __init__(self,globstring,hdu_no=0):
+    def __init__(self,globstring,hdu_no=0,keephdu=True):
         warnings.simplefilter('ignore',category=AstropyWarning)
         print 'Ingesting',globstring
         g=glob.glob(globstring)
@@ -26,6 +26,7 @@ class MapsList(object):
         decs=[]
         sizes=[]
         wcs=[]
+        hdus=[]
         for d in g:
             hdu=fits.open(d)
             xsize=hdu[hdu_no].header['NAXIS1']
@@ -41,13 +42,17 @@ class MapsList(object):
             files.append(d)
             wcs.append(w)
             sizes.append((xsize,ysize))
-            hdu.close()
+            if keephdu:
+                hdus.append(hdu)
+            else:
+                hdu.close()
         self.files=files
         self.ras=np.array(ras)
         self.decs=np.array(decs)
         self.sizes=sizes
         self.wcs=wcs
-    def find(self,ra,dec):
+        self.hdus=hdus
+    def find(self,ra,dec,returnhdu=False):
         dist=separation(ra,dec,self.ras,self.decs)
         ranks=sorted(range(len(dist)),key=lambda i:dist[i])
         for r in ranks:
@@ -61,7 +66,10 @@ class MapsList(object):
                 break
         else:
             raise RuntimeError('Cannot find suitable map')
-        return self.files[r]
+        if returnhdu:
+            return self.hdus[r]
+        else:
+            return self.files[r]
 
 if __name__=='__main__':
     t=Table.read(sys.argv[1])

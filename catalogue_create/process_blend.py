@@ -9,11 +9,13 @@ from process_lgz import sourcename,Make_Shape
 if __name__=='__main__':
 
     t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.1.fits')
+    t['Deblended_from']='                      '
     mask=(t['ID_flag']<41) | (t['ID_flag']>42)
     tout=t[mask]
     tb=t[~mask]
     # component table. This is modified too
     ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.1.comp.fits')
+    ct['Deblended_from']='                      '
     mask=(ct['ID_flag']<41) | (ct['ID_flag']>42)
     ctout=ct[mask]
     gt=Table.read('lofar_gaus_pw.fixed.fits')
@@ -98,6 +100,7 @@ if __name__=='__main__':
                     clist=rgt[rgt['Source']==s]
                     print 'Doing source',s,'with',len(clist),'Gaussians'
                     r['ML_LR']=np.nan
+                    r['Deblended_from']=name
                     if len(clist)==1:
                         # New source consists of only one Gaussian. Build the table entry from that
                         rg=clist[0]
@@ -169,6 +172,7 @@ if __name__=='__main__':
                         for k in ['Min','Maj','PA']:
                             c['E_DC_'+k]=c['E_'+k]
                         # Gaussians don't have names
+                        c['Deblended_from']=g['Source_Name'] # the original component name
                         c['Component_Name']=sourcename(g['RA'],g['DEC'])
                         c['Source_Name']=sname
                         c['ID_flag']=r['ID_flag']

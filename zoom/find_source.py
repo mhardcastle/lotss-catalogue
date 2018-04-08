@@ -4,12 +4,13 @@
 import sys
 from astropy.table import Table
 import glob
+import os
 
 name=sys.argv[1]
 
-t=Table.read('/beegfs/general/lofar/LOFAR_HBA_T1_DR1_merge_ID_optical_v1.0.fits')
+t=Table.read('/data/lofar/mjh/hetdex_v4/lgz_v2/LOFAR_HBA_T1_DR1_merge_ID_optical_v1.1.fits')
 
-tc=Table.read('/beegfs/general/lofar/LOFAR_HBA_T1_DR1_merge_ID_v1.0.comp.fits')
+tc=Table.read('/data/lofar/mjh/hetdex_v4/lgz_v2/LOFAR_HBA_T1_DR1_merge_ID_v1.1.comp.fits')
 
 s=t[t['Source_Name']==name]
 if len(s)!=1:
@@ -53,4 +54,17 @@ for d in ['/data/lofar/mjh/hetdex_v4/zoom','/data/lofar/mjh/hetdex_v4/zoom_v2']:
             for c in ct:
                 if c['Component_Name'] in l:
                     print 'Component appears in zoom file',f
+
+if r['ID_flag'] in [41,42]:
+    deblend=r['Deblended_from'].rstrip()
+    print 'Source is a blend: deblended from is',deblend
+    if deblend=='':
+        deblend=r['Source_Name']
+
+    blendfile='/data/lofar/mjh/hetdex_v4/blend/'+deblend+'.txt'
+    print 'Blend file',blendfile,
+    if os.path.isfile(blendfile):
+        print 'exists'
+    else:
+        print 'does not exist'
 
