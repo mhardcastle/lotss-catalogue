@@ -19,7 +19,7 @@ t['ID_ra']=t['ra_2']
 t['ID_dec']=t['dec_2']
 
 print 'Remove unnecessary columns'
-t.remove_columns(['ra_2','dec_2','GroupID','GroupSize','Separation','raMean','decMean','class','id','z_good','Number_Masked','Number_Pointings'])
+t.remove_columns(['ra_2','dec_2','Separation','raMean','decMean','class','id','z_good','Number_Masked','Number_Pointings'])
 
 print 'Update ID names'
 for i,r in enumerate(t):

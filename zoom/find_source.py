@@ -22,7 +22,7 @@ print 'Source',name,'has ID_flag',r['ID_flag']
 ct=tc[tc['Source_Name']==name]
 
 if len(ct)==0:
-    raise RuntimeError('Source has no components!')
+    print 'Source has no components!'
 elif len(ct)==1:
     print name,'is a single-component source'
 else:
