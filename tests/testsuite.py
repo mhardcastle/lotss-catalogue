@@ -3,8 +3,8 @@
 # Call with the names of source and component tables
 
 import sys
-from astropy.table import Table
-import sys
+from astropy.table import Table, join
+import numpy as np
 from utils import banner,test_duplicate
 import astropy.table
 
@@ -57,6 +57,11 @@ def test_catalogue_mismatch(t,tc):
     print 'Found',count,'mismatches'
     return count==0
     
+def test_idflag_mismatch(t,tc):
+    tt = join(t,tc, keys=['Source_Name'])
+    count = np.sum(tt['ID_flag_1'] != tt['ID_flag_2'])
+    print 'Found',count,'cases of mismatching ID_flag\'s'
+    return count==0
 
 t=Table.read(sys.argv[1])
 tc=Table.read(sys.argv[2])
@@ -65,3 +70,4 @@ test_duplicate_id(t)
 test_duplicate_sourcename(t)
 test_duplicate_compname(tc)
 test_catalogue_mismatch(t,tc)
+test_idflag_mismatch(t,tc)
