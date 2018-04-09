@@ -544,13 +544,16 @@ if __name__=='__main__':
     
     ### this is blend and should be dealt with later:
     # but update the ID_flag before we discard the Blend_prob column
-    mergecat['ID_flag'][mergecat['Blend_prob'] > 0.5] = 63
+    mergecat['ID_flag'][mergecat['Blend_prob'] >= 0.5] = 63
     
-    # remove the artefact components from the component file
+    # update ID_flags of the blend components from the component file
     lgz_select_blend = (lgz_cat_full['Blend_prob']>=0.5)
-    print 'Selecting {n2:d} of {n1:d} artefact sources in the LGZ catalogue to update ID_flag'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select_blend))
+    print 'Selecting {n2:d} of {n1:d} blend sources in the LGZ catalogue to update ID_flag'.format(n1=len(lgz_cat_full),n2=np.sum(lgz_select_blend))
     lgz_cat_blend = lgz_cat_full[lgz_select_blend]
     for s in lgz_cat_blend['Source_Name']:
+        #if s not in mergecat['Source_Name'][mergecat['Blend_prob'] >= 0.5]:
+            #if s in mergecat['Source_Name']:
+                #print s, mergecat['ID_flag','Zoom_prob','Blend_prob'][mergecat['Source_Name']==s][0]
         # look up component names
         si = (lgz_components['Source_Name'] == s)
         lgz_c = lgz_components['Component_Name'][si]
