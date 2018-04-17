@@ -5,7 +5,7 @@ import os
 
 # run the following
 
-# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=5 out=merge.fits find=best1 join=all1 in1=../blend/merge_out.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.5.fits
+# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=5 out=merge.fits find=best1 join=all1 in1=../blend/merge_out.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.6.fits
 
 # and then run this to clean up afterwards.
 
@@ -19,7 +19,7 @@ t['ID_ra']=t['ra_2']
 t['ID_dec']=t['dec_2']
 
 print 'Remove unnecessary columns'
-t.remove_columns(['ra_2','dec_2','GroupID','GroupSize','Separation','raMean','decMean','class','id','z_good','Number_Masked','Number_Pointings'])
+t.remove_columns(['ra_2','dec_2','Separation','raMean','decMean','class','id','z_good','Number_Masked','Number_Pointings'])
 
 print 'Update ID names'
 for i,r in enumerate(t):
@@ -52,5 +52,5 @@ print 'Sorting'
 t.sort('RA')
 
 print 'Writing to disk'
-t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v1.1.fits',overwrite=True)
-os.system('cp ../blend/merge_comp_out.fits LOFAR_HBA_T1_DR1_merge_ID_v1.1.comp.fits')
+t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v1.1b.fits',overwrite=True)
+os.system('cp ../blend/merge_comp_out.fits LOFAR_HBA_T1_DR1_merge_ID_v1.1b.comp.fits')

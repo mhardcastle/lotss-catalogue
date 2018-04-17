@@ -58,6 +58,7 @@ def test_catalogue_mismatch(t,tc):
     return count==0
     
 def test_idflag_mismatch(t,tc):
+    banner('Testing for mismatched ID flags')
     tt = join(t,tc, keys=['Source_Name'])
     count = np.sum(tt['ID_flag_1'] != tt['ID_flag_2'])
     print 'Found',count,'cases of mismatching ID_flag\'s'

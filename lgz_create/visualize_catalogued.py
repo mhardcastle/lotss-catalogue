@@ -103,16 +103,6 @@ if __name__=='__main__':
 
     size/=3600.0
 
-    gals=Table.read(imagedir+'/tier1_ps1_wise_hetdex.fits')
-    gals['raMean'].name='ra'
-    gals['decMean'].name='dec'
-    pg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
-    del(gals)
-
-    gals=Table.read(imagedir+'/wise/allwise_HETDEX_full_radec.fits')
-    pwg=gals[(np.abs(gals['ra']-ra)<size) & (np.abs(gals['dec']-dec)<size)]
-    del(gals)
-
     seps=separation(ra,dec,ot['RA'],ot['DEC'])
     ots=ot[seps<size*2]
     print ra,dec
@@ -135,7 +125,30 @@ if __name__=='__main__':
         peak=None
 
     print ots,cols
+    try:
+        plotpos=os.environ['PLOTPOS']
+    except:
+        plotpos=None
+    if plotpos is not None:
+        print 'PLOTPOS is',plotpos
+        bits=plotpos.split(',')
+        tp=Table.read(bits[0])
+        try:
+            tp['RA'].name='ra'
+            tp['DEC'].name='dec'
+        except:
+            pass
+        tpp=tp[(np.abs(tp['ra']-ra)<size) & (np.abs(tp['dec']-dec)<size)]
+        print '*** Filtered to',len(tpp)
+        shape='x'
+        color='white'
+        if len(bits)>1:
+            shape=bits[1]
+        if len(bits)>2:
+            color=bits[2]
+        plotpos=[(tpp,shape)]
+        print '*** PLOTPOS is ',plotpos
     
-    show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='magenta',title=title,ellipse_color=cols,peak=peak)
+    show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='magenta',title=title,ellipse_color=cols,peak=peak,plotpos=plotpos)
     whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
-    show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=wiseimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='magenta',title=title,noisethresh=0,ellipse_color=cols,peak=peak)
+    show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=wiseimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='magenta',title=title,noisethresh=0,ellipse_color=cols,peak=peak,plotpos=plotpos)
