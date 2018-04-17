@@ -368,6 +368,12 @@ if __name__=='__main__':
             assoc_2mass['DEC']=np.average(complist['DEC'], weights=complist['Total_flux'])
             
             assoc_2mass['ID_flag'] = 2 # ensure the ID_flag is 2 (if the first of the other components was not 2)
+            #  (if the first of the other components was not 2 then it won't have the right ID_name)
+            if np.any(complist['ID_name'] == ''):
+                assert len(np.unique(complist['ID_name'][complist['ID_name']!=''])), 'something is wrong, there are multiple 2MASX ids'
+                assoc_2mass['ID_name'] = complist['ID_name'][complist['ID_name']!=''][0]
+                
+                
             
             assoc_2mass['Source_Name'] = name_from_coords(assoc_2mass['RA'],assoc_2mass['DEC'],prefix='ILTJ')
             
@@ -426,6 +432,8 @@ if __name__=='__main__':
             compcat['Source_Name'][ni] = assoc_2mass['Source_Name']
             compcat['ID_flag'][ni] = 2
         
+        if assoc_2mass['ID_name'] == '':
+            sys.exit()
         
         lofarcat_add_2mass_mult = vstack([lofarcat_add_2mass_mult, assoc_2mass]) 
         
