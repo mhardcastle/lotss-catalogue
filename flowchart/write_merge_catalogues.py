@@ -87,7 +87,7 @@ if __name__=='__main__':
 
     ### Required INPUTS
     
-    version =  '1.1'
+    version =  '1.2'
     
     # lofar source catalogue
     path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
