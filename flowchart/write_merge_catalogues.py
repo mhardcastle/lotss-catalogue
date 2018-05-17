@@ -452,7 +452,7 @@ if __name__=='__main__':
     
     # handle ML sources
     lLR_thresh = 0.639
-    selml = ((srccat['ID_flag']==1) |(srccat['ID_flag']==61) | (srccat['ID_flag']==62)) & (np.log10(1+srccat['LR']) > lLR_thresh)
+    selml = ((srccat['ID_flag']==1) |(srccat['ID_flag']==61) | (srccat['ID_flag']==62)) & (srccat['LR'] >= lLR_thresh)
     print 'adding info for {n:d} ML source matches'.format(n=np.sum(selml))
     
 
@@ -473,7 +473,7 @@ if __name__=='__main__':
     
     # use gaus info where it is needed:
     # for the blends where there is no source match
-    selmlg_blend = ((srccat['ID_flag']==61) | (srccat['ID_flag']==62)) & (np.log10(1+srccat['LR']) <= lLR_thresh)
+    selmlg_blend = ((srccat['ID_flag']==61) | (srccat['ID_flag']==62)) & (srccat['LR'] < lLR_thresh)
     # and for the msources that are selected to have best G match
     selmlg_auto = (srccat['ID_flag']==1) & ( ((srccat['msource1_flag']==2) | (srccat['msource2_flag']==2)))
     selmlg = selmlg_blend | selmlg_auto
@@ -497,7 +497,7 @@ if __name__=='__main__':
     
     
     
-    selml = (srccat['ID_flag']==1) & (np.log10(1+srccat['LR']) <= lLR_thresh)
+    selml = (srccat['ID_flag']==1) & (srccat['LR'] < lLR_thresh)
     print 'adding info for {n:d} ML source non-matches'.format(n=np.sum(selml))
     
     srccat['ID_name'][selml] = ''
