@@ -33,12 +33,13 @@ path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2
 
 comp_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.comp.fits'.format(v=version))
 merge_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.fits'.format(v=version))
+art_out_file = os.path.join(path,'LOFAR_HBA_T1_DR1_merge_ID_v{v:s}.art.fits'.format(v=version))
 merge_out_full_file = merge_out_file.replace('.fits','.full.fits')
 comp_out_full_file = comp_out_file.replace('.fits','.full.fits')
 
 
 
-for f in [ comp_out_file,    comp_out_full_file, merge_out_file, merge_out_full_file]:
+for f in [ art_out_file, comp_out_file,    comp_out_full_file, merge_out_file, merge_out_full_file]:
     print f
     cat = Table.read(f)
     
