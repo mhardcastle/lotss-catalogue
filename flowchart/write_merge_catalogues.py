@@ -371,6 +371,8 @@ if __name__=='__main__':
             #  (if the first of the other components was not 2 then it won't have the right ID_name)
             if np.any(complist['ID_name'] == ''):
                 assert len(np.unique(complist['ID_name'][complist['ID_name']!=''])), 'something is wrong, there are multiple 2MASX ids'
+                assoc_2mass['ID_ra'] = complist['ID_ra'][complist['ID_name']!=''][0]
+                assoc_2mass['ID_dec'] = complist['ID_dec'][complist['ID_name']!=''][0]
                 assoc_2mass['ID_name'] = complist['ID_name'][complist['ID_name']!=''][0]
                 
                 
