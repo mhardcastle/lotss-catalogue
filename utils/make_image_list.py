@@ -36,7 +36,6 @@ class MapsList(object):
                 ra,dec=w.wcs_pix2world(xsize/2,ysize/2,0)
             except TypeError:
                 ra,dec,_,_=w.wcs_pix2world(xsize/2,ysize/2,0,0,0)
-            print ra,dec
             ras.append(ra)
             decs.append(dec)
             files.append(d)

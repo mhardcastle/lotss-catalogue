@@ -52,5 +52,6 @@ print 'Sorting'
 t.sort('RA')
 
 print 'Writing to disk'
-t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v1.1b.fits',overwrite=True)
-os.system('cp ../blend/merge_comp_out.fits LOFAR_HBA_T1_DR1_merge_ID_v1.1b.comp.fits')
+t.write('LOFAR_HBA_T1_DR1_merge_ID_optical_v1.2.fits',overwrite=True)
+os.system('cp ../blend/merge_comp_out.fits LOFAR_HBA_T1_DR1_merge_ID_v1.2.comp.fits')
+os.system('cp ../blend/merge_art_out.fits LOFAR_HBA_T1_DR1_merge_ID_v1.2.art.fits')

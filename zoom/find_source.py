@@ -8,9 +8,9 @@ import os
 
 name=sys.argv[1]
 
-t=Table.read('/data/lofar/mjh/hetdex_v4/lgz_v2/LOFAR_HBA_T1_DR1_merge_ID_optical_v1.1.fits')
+t=Table.read('/data/lofar/mjh/hetdex_v4/lgz_v2/LOFAR_HBA_T1_DR1_merge_ID_optical_v1.2.fits')
 
-tc=Table.read('/data/lofar/mjh/hetdex_v4/lgz_v2/LOFAR_HBA_T1_DR1_merge_ID_v1.1.comp.fits')
+tc=Table.read('/data/lofar/mjh/hetdex_v4/lgz_v2/LOFAR_HBA_T1_DR1_merge_ID_v1.2.comp.fits')
 
 s=t[t['Source_Name']==name]
 if len(s)!=1:

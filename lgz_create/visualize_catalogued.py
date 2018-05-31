@@ -86,11 +86,13 @@ if __name__=='__main__':
     title=None
 
     tmask=(ot['Source_Name']==sourcename)
-    assert(np.sum(tmask)>0)
-    tcopy=ot[tmask]
-    ra,dec,size=find_bbox(tcopy)
-    size*=1.2
-    
+    if np.sum(tmask)>0:
+        tcopy=ot[tmask]
+        ra,dec,size=find_bbox(tcopy)
+        size*=1.2
+    else:
+        size=np.nan
+
     if np.isnan(size):
         ra=r['RA']
         dec=r['DEC']
@@ -109,20 +111,26 @@ if __name__=='__main__':
     print ots['RA','DEC']
     ots=ots[ots['Source_Name']!=""] # removes artefacts
     cols=[]
+    peak=None
     for nr in ots:
         if nr['Source_Name']==r['Source_Name']:
             # this is our target
             cols.append('green')
+            if peak is None or nr['Peak_flux']<peak:
+                peak=nr['Peak_flux']
         else:
             cols.append('red')
     
     pshdu=extract_subim(imagedir+'/downloads/'+psmaps[i],ra,dec,size,hduid=1)
     lhdu=extract_subim(lofarfile,ra,dec,size)
     firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
-    try:
-        peak==r['Peak_flux']/1000.0
-    except:
-        peak=None
+    if peak is not None:
+        peak/=1000
+    else:
+        try:
+            peak==r['Peak_flux']/1000.0
+        except:
+            peak=None
 
     print ots,cols
     try:

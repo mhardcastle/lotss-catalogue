@@ -7,10 +7,12 @@ from astropy.table import Table, join
 import numpy as np
 from utils import banner,test_duplicate
 import astropy.table
+from progressbar import ProgressBar
+pbar = ProgressBar()
 
 def test_duplicate_id(t):
     banner('Testing for duplicate optical IDs')
-    count=test_duplicate(t,'ID_name','optical ID name',exclude=['Mult'])
+    count=test_duplicate(t,'ID_name','optical ID name',exclude=['Mult','Altered'])
     print 'Found',count,'cases of duplication'
     return count==0
 
@@ -64,10 +66,28 @@ def test_idflag_mismatch(t,tc):
     print 'Found',count,'cases of mismatching ID_flag\'s'
     return count==0
 
+def test_missing_source(tc,ta,ts):
+    banner('Testing for missing sources from the PyBDSF catalogue')
+    count=0
+    for r in pbar(ts):
+        name=r['Source_Name']
+        if np.sum(tc['Component_Name']==name)==0:
+            # not in component catalogue
+            if np.sum(tc['Deblended_from']==name)==0:
+                # not deblended
+                if np.sum(ta['Source_Name']==name)==0:
+                    print 'PyBDSF source',name,'not found'
+                    count += 1
+    print 'Found',count,'missing sources'
+    return count==0
+                    
 t=Table.read(sys.argv[1])
 tc=Table.read(sys.argv[2])
+ta=Table.read(sys.argv[3])
+ts=Table.read(sys.argv[4])
 
 test_duplicate_id(t)
+test_missing_source(tc,ta,ts)
 test_duplicate_sourcename(t)
 test_duplicate_compname(tc)
 test_catalogue_mismatch(t,tc)

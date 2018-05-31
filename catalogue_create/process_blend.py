@@ -5,19 +5,36 @@ import numpy as np
 import sys
 import os
 from process_lgz import sourcename,Make_Shape
+from copy import deepcopy
+
+def add_artefact(at,r):
+    new_row=deepcopy(at[0])
+    for c in at.colnames:
+        new_row[c]=r[c]
+    new_row['Source_Name']=r['Component_Name']
+    print '    *** Adding %s to artefact list ***' % new_row['Source_Name']
+    at.add_row(new_row)
 
 if __name__=='__main__':
 
-    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.1.fits')
+    t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.2.fits')
     t['Deblended_from']='                      '
     mask=(t['ID_flag']<41) | (t['ID_flag']>42)
     tout=t[mask]
     tb=t[~mask]
     # component table. This is modified too
-    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.1.comp.fits')
+    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.2.comp.fits')
     ct['Deblended_from']='                      '
     mask=(ct['ID_flag']<41) | (ct['ID_flag']>42)
     ctout=ct[mask]
+    # artefact table. Append dropped sources to this
+    at=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.2.art.fits')
+    delcols=[]
+    for c in at.colnames:
+        if c not in ct.colnames:
+            delcols.append(c)
+    at.remove_columns(delcols)
+    # Gaussian table, for components
     gt=Table.read('lofar_gaus_pw.fixed.fits')
 
     for i,r in enumerate(tb):
@@ -51,8 +68,8 @@ if __name__=='__main__':
         if lines[0]=='## Flagged':
             #tout.add_row(r) # drop these
             for cr in ctfl:
-                cr['ID_flag']=610
-                #ctout.add_row(cr)
+                #cr['ID_flag']=610
+                add_artefact(at,cr)
         elif lines[0]=='## Unchanged':
             tout.add_row(r)
             for cr in ctfl:
@@ -70,8 +87,12 @@ if __name__=='__main__':
                 ra=float(bits[1])
                 dec=float(bits[2])
                 optid[id]=(ra,dec)
-                
-            if np.all(rgt['Source']==1):
+            if np.all(rgt['Source']==0):
+                print 'No unflagged components!'
+                # treat as flagged
+                for cr in ctfl:
+                    add_artefact(at,cr)
+            elif np.all(rgt['Source']==1):
                 print 'Components unchanged'
                 # in this case only the opt ID has changed
                 if 1 in optid:
@@ -96,14 +117,30 @@ if __name__=='__main__':
                 # table for each input line
                 ss=set(rgt['Source'])
                 for s in ss:
-                    if s==0: continue
+                    if s==0:
+                        # implies there are Gaussians here that don't belong
+                        # in any source.
+                        clist=rgt[rgt['Source']==0]
+                        print 'Checking source',s,'for artefact components'
+                        # if there are whole components none of which
+                        # are in the source, then we need to add to the
+                        # artefact list
+                        print clist
+                        components=set(clist['Source_Name'])
+                        for c in components:
+                            flagged=np.sum(clist['Source_Name']==c)
+                            total=np.sum(gt['Source_Name']==c)
+                            if flagged==total:
+                                crow=ctfl[ctfl['Component_Name']==c][0]
+                                print 'Flagging component',crow['Component_Name']
+                                add_artefact(at,crow)
                     clist=rgt[rgt['Source']==s]
                     print 'Doing source',s,'with',len(clist),'Gaussians'
                     r['ML_LR']=np.nan
                     r['Deblended_from']=name
                     if len(clist)==1:
                         # New source consists of only one Gaussian. Build the table entry from that
-                        rg=clist[0]
+                        rg=deepcopy(clist[0])
                         copy=['RA','E_RA','DEC','E_DEC','Peak_flux','E_Peak_flux','Total_flux','E_Total_flux','Maj','E_Maj','Min','E_Min','DC_Maj','DC_Min','PA','E_PA','Isl_rms','Mosaic_ID']
                         for k in copy:
                             r[k]=rg[k]
@@ -165,7 +202,7 @@ if __name__=='__main__':
                     # now sort out the components by converting
                     # Gaussians to new components to go in ctout
                     for g in clist:
-                        c=ct[0]
+                        c=deepcopy(ct[0])
                         copy=['RA','E_RA','DEC','E_DEC','Peak_flux','E_Peak_flux','Total_flux','E_Total_flux','Maj','E_Maj','Min','E_Min','DC_Maj','DC_Min','PA','E_PA','Isl_rms','Mosaic_ID']
                         for k in copy:
                             c[k]=g[k]
@@ -197,6 +234,9 @@ if __name__=='__main__':
             raise RuntimeError('Cannot parse input file...'+lines[0])
 
     tout.write('merge_out.fits',overwrite=True)
+    ctout.sort('RA')
     ctout.write('merge_comp_out.fits',overwrite=True)
-
+    at.sort('RA')
+    at.write('merge_art_out.fits',overwrite=True)
+    
     

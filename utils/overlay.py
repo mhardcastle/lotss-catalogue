@@ -47,7 +47,7 @@ def find_noise_area(hdu,ra,dec,size):
     if ymin<0: ymin=0
     ymax=int(max(yv))
     if ymax>=ysize: ymax=ysize-1
-    print xmin,xmax,ymin,ymax
+    #print xmin,xmax,ymin,ymax
     subim=hdu[0].data[ymin:ymax,xmin:xmax]
     mean,noise=find_noise(subim)
     for i in range(5,0,-1):
