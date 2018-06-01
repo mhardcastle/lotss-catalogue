@@ -18,7 +18,11 @@ use of the new_components.txt file]
 
 In blend directory:
 
-../blend/blend_components.py : use on a file of potential blended
+../blend/extract_blends.py : make blends catalogue
+
+../utils/make_image_list.py blends.fits : make image file for catalogue
+
+../blend/blend_components.py blends.fits : use on a file of potential blended
 sources to generate override files in the blends directory.
 
 process_blend.py : operate on the blend files and output from Wendy's code to sort out the blends

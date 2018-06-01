@@ -136,7 +136,6 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
                 edgecolor='white'
                 facecolor=edgecolor
             if len(t)>0:
-                print 'Showing markers at',t['ra'],t['dec'],marker,facecolor
                 f.show_markers(t['ra'],t['dec'],marker=marker,facecolor=facecolor,edgecolor=edgecolor,linewidth=2,s=750,zorder=100)
 
     if circle_radius is not None:

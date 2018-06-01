@@ -176,7 +176,7 @@ if __name__=='__main__':
     # galaxies if needed
     #gals=Table.read(imagedir+'/wise/allwise_HETDEX_full_radec.fits')
     gals=Table.read('/data/lofar/mjh/hetdex_ps1_allwise_radec.fits')
-    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.1.comp.fits')
+    ct=Table.read('LOFAR_HBA_T1_DR1_merge_ID_v1.2.comp.fits')
     t['Source_Name']=[s.rstrip() for s in t['Source_Name']]
     ct['Source_Name']=[s.rstrip() for s in ct['Source_Name']]
     #gt=Table.read('LOFAR_HBA_T1_DR1_catalog_v0.9.gaus.fixed.fits')
