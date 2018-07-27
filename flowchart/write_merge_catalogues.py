@@ -572,6 +572,12 @@ if __name__=='__main__':
             compcat['ID_flag'][ci] = 63
     
     
+    # fix one nuisance ID_flag==2 source by hand
+    # ILTJ123201.77+462057.2 2MASXJ12320182+4620528 
+    # need it to match PSO J123202.123+462048.494 which is just outside the 5" search radius
+    si = np.where(mergecat['Source_Name'] == 'ILTJ123201.77+462057.2')[0][0]
+    mergecat['ID_ra'][si] = 188.00875596
+    mergecat['ID_dec'][si] = 46.34677538
     
     # write some flag counts for both catalogues    
     count_flags(mergecat, 'ID_flag')
