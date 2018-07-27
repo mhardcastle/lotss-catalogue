@@ -79,22 +79,30 @@ if __name__=='__main__':
     os.chdir(imagedir)
     if os.path.isfile('mapslist.pickle'):
         with open('mapslist.pickle') as f:
-            lm,psm,wm,fm=pickle.load(f)
+            lm,psm,wm,fm,vm=pickle.load(f)
     else:
-        lm=MapsList('mosaics/*-mosaic.fits')
+        lm=MapsList('mosaics/*-mosaic.fits',keephdu=False)
         os.chdir('downloads')
-        psm=MapsList('rings*.fits',hdu_no=1)
-        wm=MapsList('*w1*fits')
-        fm=MapsList('*%2B*.fits')
+        psm=MapsList('rings*.fits',hdu_no=1,keephdu=False)
+        wm=MapsList('*w1*fits',keephdu=False)
+        fm=MapsList('*%2B*.fits',keephdu=False)
+        vm=MapsList('VLASS*.fits',keephdu=False)
         os.chdir(imagedir)
         with open('mapslist.pickle','w') as f:
-            pickle.dump([lm,psm,wm,fm],f)
+            pickle.dump([lm,psm,wm,fm,vm],f)
 
     for r in t:
         lofarname=lm.find(r['RA'],r['DEC'])
         psnames=psm.find(r['RA'],r['DEC'])
         wisename=wm.find(r['RA'],r['DEC'])
         firstname=fm.find(r['RA'],r['DEC'])
-        print >>outfile,r['Source_Name'],lofarname,psnames,wisename,firstname
+        if 'VLASS' in os.environ:
+            try:
+                vlassname=vm.find(r['RA'],r['DEC'])
+            except RuntimeError:
+                vlassname='None'
+            print >>outfile,r['Source_Name'],lofarname,psnames,wisename,firstname,vlassname
+        else:
+            print >>outfile,r['Source_Name'],lofarname,psnames,wisename,firstname     
 
     outfile.close()

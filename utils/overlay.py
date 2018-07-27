@@ -56,7 +56,7 @@ def find_noise_area(hdu,ra,dec,size):
             break
     return mean,noise,vmax
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red'):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red'):
 
     if lofarhdu is None:
         print 'LOFAR HDU is missing, not showing it'
@@ -109,6 +109,12 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,rms_use=None,bmaj=Non
         print 'Using FIRST rms',firstrms
         firstlevels=firstrms*3*2.0**np.linspace(0,14,30)
         f.show_contour(firsthdu,colors=first_color,linewidths=lw, levels=firstlevels)
+
+    if vlasshdu is not None:
+        vlassrms=find_noise_area(vlasshdu,ra,dec,size)[1]
+        print 'Using VLASS rms',vlassrms
+        vlasslevels=vlassrms*3*2.0**np.linspace(0,14,30)
+        f.show_contour(vlasshdu,colors=vlass_color,linewidths=lw, levels=vlasslevels)
 
     if bmaj is not None:
         f.add_beam()

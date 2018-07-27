@@ -23,11 +23,13 @@ python $LGZPATH/utils/download_image_files.py file.fits
 
 To make a single image set:
 
-python $LGZPATH/lgz_create/make_overlays.py file.fits xxxx
+python $LGZPATH/lgz_create/make_overlays.py file.fits xxxx yyyy
 
-where xxxx is the number of the image from file.fits or file-list.txt.
+where xxxx is the number of the image from file.fits or file-list.txt
+and optionally yyyy is the number of the last image. If yyyy is set,
+the code loops over all numbers between xxxx and yyyy.
 
-To make all the images, use a job:
+To make all the images when you have lots of them, use a job:
 
 wc file-list.txt
 
@@ -48,3 +50,6 @@ NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --
 To visualize catalogued sources:
 
 qsub -t 1-146 -v INFILE=rql.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/lgz_create/visualize.qsub
+
+or, better still, use the visualize_sample.sh script which will do all
+the work for you.
