@@ -134,6 +134,10 @@ if __name__=='__main__':
             else:
                 cols.append('red')
 
+        if 'NO_OVERLAY' in os.environ:
+            ots=None
+
+                
         pshdu=extract_subim(imagedir+'/downloads/'+psmaps[i],ra,dec,size,hduid=1)
         lhdu=extract_subim(lofarfile,ra,dec,size)
         firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)

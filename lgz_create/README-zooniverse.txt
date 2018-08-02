@@ -23,11 +23,9 @@ python $LGZPATH/utils/download_image_files.py file.fits
 
 To make a single image set:
 
-python $LGZPATH/lgz_create/make_overlays.py file.fits xxxx yyyy
+python $LGZPATH/lgz_create/make_overlays.py file.fits xxxx
 
-where xxxx is the number of the image from file.fits or file-list.txt
-and optionally yyyy is the number of the last image. If yyyy is set,
-the code loops over all numbers between xxxx and yyyy.
+where xxxx is the number of the image from file.fits or file-list.txt .
 
 To make all the images when you have lots of them, use a job:
 
@@ -53,3 +51,9 @@ qsub -t 1-146 -v INFILE=rql.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/lg
 
 or, better still, use the visualize_sample.sh script which will do all
 the work for you.
+
+visualize_catalogued.py filename.fits xxxx yyyy works like
+make_overlays, but for visualizing sources from the
+catalogue. Optionally yyyy is the number of the last image. If yyyy is
+set, the code loops over all numbers between xxxx and yyyy.
+Some extra environment variables control this, including PLOTPOS and NO_OVERLAY.
