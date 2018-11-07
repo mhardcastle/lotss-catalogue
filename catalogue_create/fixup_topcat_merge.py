@@ -5,7 +5,7 @@ import os
 
 # run the following
 
-# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=5 out=merge.fits find=best1 join=all1 in1=../blend/merge_out.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.6.fits
+# /soft/topcat/stilts tskymatch2 ra1=ID_ra dec1=ID_dec ra2=ra dec2=dec error=5 out=merge.fits find=best1 join=all1 in1=merge_out_fixed.fits in2=/data/lofar/mjh/hetdex_ps1_allwise_photoz_v0.6.fits
 
 # and then run this to clean up afterwards.
 
@@ -23,7 +23,7 @@ t.remove_columns(['ra_2','dec_2','Separation','raMean','decMean','class','id','z
 
 print 'Update ID names'
 for i,r in enumerate(t):
-    if ~np.isnan(r['ID_ra']) and r['ID_flag']!=2:
+    if ~np.isnan(r['ID_ra']) and r['ID_flag']!=2 and r['ID_flag']!=22:
         psoname=r['objName'].rstrip()
         if psoname!="" and psoname!="N/A":
             t[i]['ID_name']=psoname

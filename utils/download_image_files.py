@@ -114,6 +114,8 @@ class LofarMaps(object):
                 file=d
             else:
                 file=d+'/mosaic.fits'
+                if not os.path.isfile(file):
+                    continue
             hdu=fits.open(file)
             ras.append(hdu[0].header['CRVAL1'])
             decs.append(hdu[0].header['CRVAL2'])

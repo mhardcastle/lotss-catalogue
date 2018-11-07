@@ -2,7 +2,7 @@
 import numpy as np
 from astropy.table import Table,hstack
 
-t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_optical_f_v1.2.fits')
+t=Table.read('LOFAR_HBA_T1_DR1_merge_ID_optical_v1.2.fits')
 t2=Table.read('LOFAR_HBA_T1_DR1_merge_ID_optical_f_v1.2_restframe_mags.fits')
 del(t2['Source_Name'])
 del(t2['z_best'])

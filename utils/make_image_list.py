@@ -82,6 +82,7 @@ if __name__=='__main__':
             lm,psm,wm,fm,vm=pickle.load(f)
     else:
         lm=MapsList('mosaics/*-mosaic.fits',keephdu=False)
+        assert(len(lm.files)>0)
         os.chdir('downloads')
         psm=MapsList('rings*.fits',hdu_no=1,keephdu=False)
         wm=MapsList('*w1*fits',keephdu=False)

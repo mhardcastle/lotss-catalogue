@@ -24,11 +24,11 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # Annotated PyBDSF table
-    ot=Table.read('/beegfs/general/lofar/LOFAR_HBA_T1_DR1_merge_ID_v1.0.comp.fits')
+    ot=Table.read('/beegfs/general/lofar/LOFAR_HBA_T1_DR1_merge_ID_v1.2.comp.fits')
     # large source table for neighbours
     lt=ot[(ot['Total_flux']>3) & (ot['Maj']>8)]
     # ID catalogue so we can check for a source with existing ML or other ID
-    it=Table.read('/beegfs/general/lofar/LOFAR_HBA_T1_DR1_merge_ID_optical_v1.0.fits')
+    it=Table.read('/beegfs/general/lofar/LOFAR_HBA_T1_DR1_merge_ID_optical_f_v1.2.fits')
     # read lists
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     lofarmaps=[l[1] for l in lines]
@@ -40,16 +40,11 @@ if __name__=='__main__':
     except:
         vlassmaps=['None']*len(firstmaps)
 
-#    lofarmaps=[l.rstrip().split()[1] for l in open('lofar-maps.txt').readlines()]
-#    psmaps=[l.rstrip().split()[1] for l in open('panstarrs-list.txt').readlines()]
-#    firstmaps=[l.rstrip().split()[1] for l in open('first-list.txt').readlines()]
-#    wisemaps=[l.rstrip().split()[2] for l in open('panstarrs-list.txt').readlines()]
-
     begin=int(sys.argv[2])
     try:
         end=int(sys.argv[3])
     except:
-        end=begin
+        end=begin+1
     if end>len(t):
         end=len(t)
         

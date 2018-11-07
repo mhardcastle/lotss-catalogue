@@ -29,6 +29,10 @@ process_blend.py : operate on the blend files and output from Wendy's code to so
 
 In output directory:
 
+process_2mass_tzi.py : a few 2MASS sources come through the
+too-zoomed-in path. Fix up their ra, dec manually and change their
+ID-flag so that they keep their names.
+
 Topcat/stilts merge blend output catalogue with the optical ID catalogue, then
 
 fixup_topcat_merge.py : rename and remove columns to give the final catalogue
