@@ -98,6 +98,12 @@ def get_first(ra,dec):
     download_file(url+path,outname)
     return outname
 
+def get_legacy(ra,dec,size=1000,pixscale=0.454,bands='r',ftype='fits'):
+    url = "http://legacysurvey.org/viewer/{}-cutout?ra={}&dec={}&size={}&layer=mzls+bass-dr6&pixscale={}&bands={}".format(ftype,ra,dec,size,pixscale,bands)
+    outname='legacy-%s-%f-%f.fits' % (bands,ra,dec)
+    download_file(url,outname)
+    return outname
+    
 class LofarMaps(object):
     def __init__(self,stay_in_imagedir=False):
         imagedir=os.environ['IMAGEDIR']
