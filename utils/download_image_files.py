@@ -30,8 +30,13 @@ def download_file(url,outname):
                 response = requests.get(url, stream=True,verify=False,timeout=120)
                 if response.status_code!=200:
                     print 'Warning, HTML status code',response.status_code
+                    if response.status_code>=500 and response.status_code<600:
+                        raise RuntimeError('Retry!')
             except requests.exceptions.ConnectionError:
                 print 'Connection error! sleeping 60 seconds before retry...'
+                sleep(60)
+            except RuntimeError:
+                print 'Transient error reported, retrying after sleep'
                 sleep(60)
             except requests.exceptions.Timeout:
                 print 'Timeout: retrying download'

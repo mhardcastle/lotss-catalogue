@@ -27,16 +27,24 @@ def find_noise(a):
         b=b[b<(m+5.0*s)]
     return m,s
 
-def find_noise_area(hdu,ra,dec,size):
+def find_noise_area(hdu,ra,dec,size,channel=0):
     # ra, dec, size in degrees
-    ysize,xsize=hdu[0].data.shape
+    if len(hdu[0].data.shape)==2:
+        cube=False
+        ysize,xsize=hdu[0].data.shape
+    else:
+        channels,ysize,xsize=hdu[0].data.shape
+        cube=True
     w=WCS(hdu[0].header)
     ras=[ra-size,ra-size,ra+size,ra+size]
     decs=[dec-size,dec+size,dec-size,dec+size]
     xv=[]
     yv=[]
     for r,d in zip(ras,decs):
-        x,y=w.wcs_world2pix(r,d,0)
+        if cube:
+            x,y,c=w.wcs_world2pix(r,d,0,0)
+        else:
+            x,y=w.wcs_world2pix(r,d,0)
         xv.append(x)
         yv.append(y)
     xmin=int(min(xv))
@@ -48,7 +56,10 @@ def find_noise_area(hdu,ra,dec,size):
     ymax=int(max(yv))
     if ymax>=ysize: ymax=ysize-1
     #print xmin,xmax,ymin,ymax
-    subim=hdu[0].data[ymin:ymax,xmin:xmax]
+    if cube:
+        subim=hdu[0].data[channel,ymin:ymax,xmin:xmax]
+    else:
+        subim=hdu[0].data[ymin:ymax,xmin:xmax]
     mean,noise=find_noise(subim)
     for i in range(5,0,-1):
         vmax=np.nanmedian(subim[subim>(mean+i*noise)])
@@ -56,7 +67,7 @@ def find_noise_area(hdu,ra,dec,size):
             break
     return mean,noise,vmax
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red'):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid'):
 
     if lofarhdu is None:
         print 'LOFAR HDU is missing, not showing it'
@@ -69,8 +80,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         print 'Cannot hide warnings'
 
     print '========== Doing overlay at',ra,dec,'with size',size,'==========='
-    print '========== Title is',title,'=========='
-
+    print '========== Title is',title,'=========='    
+    
     if coords_ra is None:
         coords_ra=ra
         coords_dec=dec
@@ -89,14 +100,29 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         levels=minlevel*2.0**np.linspace(0,14,30)
 
     hdu=opthdu
-    mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
-    print 'Optical parameters are',mean,noise,vmax
-    f = aplpy.FITSFigure(hdu,north=True)
-    print 'centring on',ra,dec,size
-    f.recenter(ra,dec,width=size,height=size)
-    f.show_colorscale(vmin=mean+noisethresh*noise,vmax=vmax,stretch='log')
-    #f.show_colorscale(vmin=0,vmax=1e-3)
-    #f.show_colorscale(vmin=0,vmax=1.0)
+
+    if len(hdu[0].data.shape)>2:
+        # This is an RGB image. Try to do something sensible with it
+        vmins=[]
+        for i in range(3):
+            mean,noise,vmax=find_noise_area(hdu,ra,dec,size,channel=i)
+            vmin=mean+noisethresh*noise
+            vmins.append(vmin)
+        aplpy.make_rgb_image(hdu.filename(),'rgb.png',stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2]) # FILENAME NOT SAFE
+        f=aplpy.FITSFigure('rgb.png',north=True)
+        print 'centring on',ra,dec,size
+        f.recenter(ra,dec,width=size,height=size)
+        f.show_rgb()
+       
+        
+    else:
+        mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
+        print 'Optical parameters are',mean,noise,vmax
+        f = aplpy.FITSFigure(hdu,north=True)
+        print 'centring on',ra,dec,size
+        f.recenter(ra,dec,width=size,height=size)
+        f.show_colorscale(vmin=mean+noisethresh*noise,vmax=vmax,stretch='log')
+
     if bmaj is not None:
         f._header['BMAJ']=bmaj
         f._header['BMIN']=bmin
@@ -149,7 +175,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
 
     if overlay_cat is not None:
         t=overlay_cat
-        f.show_ellipses(t['RA'],t['DEC'],t['Maj']*2/overlay_scale,t['Min']*2/overlay_scale,angle=90+t['PA'],edgecolor=ellipse_color,linewidth=3,zorder=100)
+        f.show_ellipses(t['RA'],t['DEC'],t['Maj']*2/overlay_scale,t['Min']*2/overlay_scale,angle=90+t['PA'],edgecolor=ellipse_color,linewidth=lw_ellipse,linestyle=ellipse_style,zorder=100)
 
     if overlay_region is not None:
         f.show_regions(overlay_region)

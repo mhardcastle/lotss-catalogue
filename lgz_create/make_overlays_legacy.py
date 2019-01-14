@@ -89,7 +89,6 @@ if __name__=='__main__':
         tcopy=tcopy[tcopy['dist']<180]
         print 'Iter',iter,'found',len(tcopy),'neighbours'
 
-        '''
         # make sure the original source is in there
         for nr in tcopy:
             if sourcename==nr['Source_Name']:
@@ -98,7 +97,6 @@ if __name__=='__main__':
             if 'Maj' in r.columns:
                 tcopy=vstack((tcopy,r))
 
-        '''
         ra=np.mean(tcopy['RA'])
         dec=np.mean(tcopy['DEC'])
         
@@ -117,14 +115,12 @@ if __name__=='__main__':
         dec=r['DEC']
         size=60
 
-    '''
     if size>300.0:
         # revert just to original
         ra,dec=r['RA'],r['DEC']
         size=300.0
         tcopy=Table(r)
         ra,dec,size=find_bbox(tcopy)
-    '''
 
     if size>300:
         size=300.0
@@ -140,7 +136,12 @@ if __name__=='__main__':
     print ra,dec
     print ots['RA','DEC']
     ots=ots[ots['Source_Name']!=""] # removes artefacts
-
+    ls=[]
+    for nr in ots:
+        if nr['Component_Name']==r['Source_Name']:
+            ls.append('solid')
+        else:
+            ls.append('dashed')
     
     pshdu=fits.open(imagedir+'/downloads/'+psmaps[i])
     lhdu=extract_subim(lofarfile,ra,dec,size)
@@ -153,8 +154,8 @@ if __name__=='__main__':
 
     print ots
     
-    show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False)
-    show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False)
+    show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
+    show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
 
     with open(manifestname,'w') as manifest:
         manifest.write('%i,%s,%s,%s,%f,%f,%f\n' % (i,psimage,pspimage,sourcename,ra,dec,size*3600.0))
