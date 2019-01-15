@@ -32,132 +32,137 @@ if __name__=='__main__':
     psmaps=[l[2] for l in lines]
     firstmaps=[l[4] for l in lines]
 
-    i=int(sys.argv[2])
-    r=t[i]
-    print r
+    start=int(sys.argv[2])
     try:
-        sourcename=r['Source_Name']
-    except KeyError:
-        # try to fix up old-format files
-        t['Source_id'].name='Source_Name'
-        sourcename=r['Source_Name']
-    sourcename=sourcename.rstrip()
-
-    psimage=sourcename+'_PS.png'
-    pspimage=sourcename+'_PSp.png'
-    manifestname=sourcename+'-manifest.txt'
-    print lofarmaps[i],psmaps[i]
-    try:
-        mosaic=r['Mosaic_ID']
+        end=int(sys.argv[3])+1
     except:
-        mosaic=None
-    if mosaic is not None:
+        end=start+1
+    for i in range(start,end):
+        r=t[i]
+        print r
         try:
-            lofarfile=get_mosaic_name(mosaic)
-        except RuntimeError:
-            print 'Could not get mosaic ID from',r['Mosaic_ID']
+            sourcename=r['Source_Name']
+        except KeyError:
+            # try to fix up old-format files
+            t['Source_id'].name='Source_Name'
+            sourcename=r['Source_Name']
+        sourcename=sourcename.rstrip()
+
+        psimage=sourcename+'_PS.png'
+        pspimage=sourcename+'_PSp.png'
+        manifestname=sourcename+'-manifest.txt'
+        print lofarmaps[i],psmaps[i]
+        try:
+            mosaic=r['Mosaic_ID']
+        except:
             mosaic=None
-    if mosaic is None:
-        lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
-    if os.path.isdir(lofarfile):
-        lofarfile+='/mosaic.fits'
-    print lofarfile
+        if mosaic is not None:
+            try:
+                lofarfile=get_mosaic_name(mosaic)
+            except RuntimeError:
+                print 'Could not get mosaic ID from',r['Mosaic_ID']
+                mosaic=None
+        if mosaic is None:
+            lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
+        if os.path.isdir(lofarfile):
+            lofarfile+='/mosaic.fits'
+        print lofarfile
 
-    if os.path.isfile(manifestname):
-        print 'Selected output file exists already'
-        sys.exit(0)
+        if os.path.isfile(manifestname):
+            print 'Selected output file exists already'
+            sys.exit(0)
 
-    from overlay import show_overlay
+        from overlay import show_overlay
 
-    ra,dec=r['RA'],r['DEC']
-
-    try:
-        marker_ra=r['ra']
-        marker_dec=r['dec']
-    except:
-        marker_ra=None
-        marker_dec=None
-
-    title=None
-        
-    # resize the image to look for interesting neighbours
-    iter=0
-    while True:
-        startra,startdec=ra,dec
-        tcopy=lt
-        tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
-        tcopy=tcopy[tcopy['dist']<180]
-        print 'Iter',iter,'found',len(tcopy),'neighbours'
-
-        # make sure the original source is in there
-        for nr in tcopy:
-            if sourcename==nr['Source_Name']:
-                break
-        else:
-            if 'Maj' in r.columns:
-                tcopy=vstack((tcopy,r))
-
-        ra=np.mean(tcopy['RA'])
-        dec=np.mean(tcopy['DEC'])
-        
-        if startra==ra and startdec==dec:
-            break
-        iter+=1
-        if iter==10:
-            break
-
-    # now find the bounding box of the resulting collection
-    print tcopy['RA'],tcopy['DEC'],tcopy['Maj'],tcopy['Min'],tcopy['PA']
-    ra,dec,size=find_bbox(tcopy)
-    
-    if np.isnan(size):
-        ra=r['RA']
-        dec=r['DEC']
-        size=60
-
-    if size>300.0:
-        # revert just to original
         ra,dec=r['RA'],r['DEC']
-        size=300.0
-        tcopy=Table(r)
+
+        try:
+            marker_ra=r['ra']
+            marker_dec=r['dec']
+        except:
+            marker_ra=None
+            marker_dec=None
+
+        title=None
+
+        # resize the image to look for interesting neighbours
+        iter=0
+        while True:
+            startra,startdec=ra,dec
+            tcopy=lt
+            tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
+            tcopy=tcopy[tcopy['dist']<180]
+            print 'Iter',iter,'found',len(tcopy),'neighbours'
+
+            # make sure the original source is in there
+            for nr in tcopy:
+                if sourcename==nr['Source_Name']:
+                    break
+            else:
+                if 'Maj' in r.columns:
+                    tcopy=vstack((tcopy,r))
+
+            ra=np.mean(tcopy['RA'])
+            dec=np.mean(tcopy['DEC'])
+
+            if startra==ra and startdec==dec:
+                break
+            iter+=1
+            if iter==10:
+                break
+
+        # now find the bounding box of the resulting collection
+        print tcopy['RA'],tcopy['DEC'],tcopy['Maj'],tcopy['Min'],tcopy['PA']
         ra,dec,size=find_bbox(tcopy)
 
-    if size>300:
-        size=300.0
-    if size<60:
-        size=60.0
-    size=(int(0.5+size/10))*10
-    print 'size is',size
+        if np.isnan(size):
+            ra=r['RA']
+            dec=r['DEC']
+            size=60
 
-    size/=3600.0
+        if size>300.0:
+            # revert just to original
+            ra,dec=r['RA'],r['DEC']
+            size=300.0
+            tcopy=Table(r)
+            ra,dec,size=find_bbox(tcopy)
 
-    seps=separation(ra,dec,ot['RA'],ot['DEC'])
-    ots=ot[seps<size*2]
-    print ra,dec
-    print ots['RA','DEC']
-    ots=ots[ots['Source_Name']!=""] # removes artefacts
-    ls=[]
-    for nr in ots:
-        if nr['Component_Name']==r['Source_Name']:
-            ls.append('solid')
-        else:
-            ls.append('dashed')
-    
-    pshdu=fits.open(imagedir+'/downloads/'+psmaps[i])
-    lhdu=extract_subim(lofarfile,ra,dec,size)
-    lhdu.writeto('lofar.fits',clobber=True)
-    firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
-    try:
-        peak==r['Peak_flux']/1000.0
-    except:
-        peak=None
+        if size>300:
+            size=300.0
+        if size<60:
+            size=60.0
+        size=(int(0.5+size/10))*10
+        print 'size is',size
 
-    print ots
-    
-    show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
-    show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
+        size/=3600.0
 
-    with open(manifestname,'w') as manifest:
-        manifest.write('%i,%s,%s,%s,%f,%f,%f\n' % (i,psimage,pspimage,sourcename,ra,dec,size*3600.0))
+        seps=separation(ra,dec,ot['RA'],ot['DEC'])
+        ots=ot[seps<size*2]
+        print ra,dec
+        print ots['RA','DEC']
+        ots=ots[ots['Source_Name']!=""] # removes artefacts
+        ls=[]
+        for nr in ots:
+            if nr['Component_Name']==r['Source_Name']:
+                ls.append('solid')
+            else:
+                ls.append('dashed')
 
-    os.system('mogrify -quality 90 -trim '+sourcename+'*.png')
+        pshdu=fits.open(imagedir+'/downloads/'+psmaps[i])
+        lhdu=extract_subim(lofarfile,ra,dec,size)
+        lhdu.writeto('lofar.fits',clobber=True)
+        firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
+        try:
+            peak==r['Peak_flux']/1000.0
+        except:
+            peak=None
+
+        print ots
+
+        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
+        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
+
+        with open(manifestname,'w') as manifest:
+            manifest.write('%i,%s,%s,%s,%f,%f,%f\n' % (i,psimage,pspimage,sourcename,ra,dec,size*3600.0))
+
+        os.system('mogrify -quality 90 -trim '+sourcename+'*.png')

@@ -57,3 +57,8 @@ make_overlays, but for visualizing sources from the
 catalogue. Optionally yyyy is the number of the last image. If yyyy is
 set, the code loops over all numbers between xxxx and yyyy.
 Some extra environment variables control this, including PLOTPOS and NO_OVERLAY.
+
+cat > manifest.csv <<EOF
+subject_id,image_name_1,image_name_2,source_name,ra,dec,#size
+EOF
+cat *-manifest.txt | sort -n -k 1 -t , >> manifest.csv
