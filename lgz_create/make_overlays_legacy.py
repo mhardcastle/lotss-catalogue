@@ -57,12 +57,12 @@ if __name__=='__main__':
             mosaic=r['Mosaic_ID']
         except:
             mosaic=None
-            if mosaic is not None:
-                try:
-                    lofarfile=get_mosaic_name(mosaic)
-                except RuntimeError:
-                    print 'Could not get mosaic ID from',r['Mosaic_ID']
-                    mosaic=None
+        if mosaic is not None:
+            try:
+                lofarfile=get_mosaic_name(mosaic)
+            except RuntimeError:
+                print 'Could not get mosaic ID from',r['Mosaic_ID']
+                mosaic=None
         if mosaic is None:
             lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
         if os.path.isdir(lofarfile):
