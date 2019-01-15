@@ -52,18 +52,8 @@ if __name__=='__main__':
         pspimage=sourcename+'_PSp.png'
         manifestname=sourcename+'-manifest.txt'
         print lofarmaps[i],psmaps[i]
-        try:
-            mosaic=r['Mosaic_ID']
-        except:
-            mosaic=None
-        if mosaic is not None:
-            try:
-                lofarfile=get_mosaic_name(mosaic)
-            except RuntimeError:
-                print 'Could not get mosaic ID from',r['Mosaic_ID']
-                mosaic=None
-        if mosaic is None:
-            lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
+
+        lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
         if os.path.isdir(lofarfile):
             lofarfile+='/mosaic.fits'
         print lofarfile
@@ -112,7 +102,6 @@ if __name__=='__main__':
                 break
 
         # now find the bounding box of the resulting collection
-        print tcopy['RA'],tcopy['DEC'],tcopy['Maj'],tcopy['Min'],tcopy['PA']
         ra,dec,size=find_bbox(tcopy)
 
         if np.isnan(size):
@@ -138,8 +127,7 @@ if __name__=='__main__':
 
         seps=separation(ra,dec,ot['RA'],ot['DEC'])
         ots=ot[seps<size*2]
-        print ra,dec
-        print ots['RA','DEC']
+
         ots=ots[ots['Source_Name']!=""] # removes artefacts
         ls=[]
         for nr in ots:
@@ -157,7 +145,6 @@ if __name__=='__main__':
         except:
             peak=None
 
-        print ots
 
         show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
         show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
