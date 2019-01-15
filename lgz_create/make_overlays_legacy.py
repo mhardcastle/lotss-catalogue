@@ -22,7 +22,7 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # Annotated PyBDSF table
-    ot=Table.read('/data/lofar/wwilliams/hetdex/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_v0.12.comp.fits')
+    ot=Table.read(os.environ['LOTSS_COMPONENT_CATALOGUE'])
     # large source table for neighbours
     lt=ot[(ot['Total_flux']>3) & (ot['Maj']>8)]
 
