@@ -53,11 +53,24 @@ if __name__=='__main__':
         manifestname=sourcename+'-manifest.txt'
         print lofarmaps[i],psmaps[i]
 
-        lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
+        try:
+            mosaic=r['Mosaic_ID']
+        except:
+            mosaic=None
+            if mosaic is not None:
+                try:
+                    lofarfile=get_mosaic_name(mosaic)
+                except RuntimeError:
+                    print 'Could not get mosaic ID from',r['Mosaic_ID']
+                    mosaic=None
+        if mosaic is None:
+            lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
         if os.path.isdir(lofarfile):
             lofarfile+='/mosaic.fits'
         print lofarfile
-
+        if '.fits' not in lofarfile:
+            raise RuntimeError('Could not find mosaic fits file')
+        
         if os.path.isfile(manifestname):
             print 'Selected output file exists already'
             sys.exit(0)
