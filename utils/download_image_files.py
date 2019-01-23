@@ -5,6 +5,7 @@
 # $IMAGEDIR/downloads directory
 
 import requests
+from astroquery.skyview import SkyView
 from astropy.io import fits
 from astropy.table import Table
 import astropy.coordinates as coord
@@ -102,6 +103,19 @@ def get_first(ra,dec):
     outname=path.split('/')[-1]
     download_file(url+path,outname)
     return outname
+
+def get_nvss(ra,dec,size=1000):
+    # uses skyview
+    coords=coord.SkyCoord(ra, dec, unit=(u.deg, u.deg))
+    paths = SkyView.get_images(position=coords.to_string('hmsdms'),survey='NVSS',width=size*u.arcsec)
+    hdu = paths[0]
+    hdu[0].header['BMAJ']=45.0/3600.0
+    hdu[0].header['BMIN']=45.0/3600.0
+    hdu[0].header['BPA']=0
+    hdu[0].header['RESTFREQ']=1.4e9
+    filename='NVSS-'+coords.to_string('hmsdms').replace(' ','')+'.fits'
+    hdu.writeto(filename)
+    return filename
 
 def get_legacy(ra,dec,size=1000,pixscale=0.454,bands='r',ftype='fits'):
     url = "http://legacysurvey.org/viewer/{}-cutout?ra={}&dec={}&size={}&layer=mzls+bass-dr6&pixscale={}&bands={}".format(ftype,ra,dec,size,pixscale,bands)

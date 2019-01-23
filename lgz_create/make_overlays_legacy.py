@@ -39,7 +39,6 @@ if __name__=='__main__':
         end=start+1
     for i in range(start,end):
         r=t[i]
-        print r
         try:
             sourcename=r['Source_Name']
         except KeyError:
@@ -47,6 +46,7 @@ if __name__=='__main__':
             t['Source_id'].name='Source_Name'
             sourcename=r['Source_Name']
         sourcename=sourcename.rstrip()
+        print i,sourcename
 
         psimage=sourcename+'_PS.png'
         pspimage=sourcename+'_PSp.png'
@@ -73,7 +73,7 @@ if __name__=='__main__':
         
         if os.path.isfile(manifestname):
             print 'Selected output file exists already'
-            sys.exit(0)
+            continue
 
         from overlay import show_overlay
 
