@@ -36,3 +36,10 @@ ID-flag so that they keep their names.
 Topcat/stilts merge blend output catalogue with the optical ID catalogue, then
 
 fixup_topcat_merge.py : rename and remove columns to give the final catalogue
+
+add_panstarrs_flag.py : add the flag to indicate the missing PanSTARRS positions
+
+merge_rest_optical.py : merge the rest-frame catalogue (needs to match row-by-row)
+
+finalise_columns.py : change column order
+
