@@ -2,13 +2,13 @@ import os
 import numpy as np
 import glob
 
-def find_bbox(t):
+def find_bbox(t,scale=3600.0):
     # given a table t find the bounding box of the ellipses for the regions
 
     boxes=[]
     for r in t:
-        a=r['Maj']/3600.0
-        b=r['Min']/3600.0
+        a=r['Maj']/scale
+        b=r['Min']/scale
         th=(r['PA']+90)*np.pi/180.0
         dx=np.sqrt((a*np.cos(th))**2.0+(b*np.sin(th))**2.0)
         dy=np.sqrt((a*np.sin(th))**2.0+(b*np.cos(th))**2.0)

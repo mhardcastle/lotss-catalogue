@@ -67,7 +67,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0):
             break
     return mean,noise,vmax
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid'):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid'):
     '''
     show_overlay: make an overlay using AplPY.
     lofarhdu: the LOFAR cutout to use for contours
@@ -81,6 +81,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     title: title at the top of the plot or None for no title
     save_name: filename to save image as
     plotpos: list of RA, Dec to plot as markers
+    ppsize: size of the markers
     block: if True, wait before exiting if not saving an image
     interactive: if True, allow interaction with the image
     plot_coords: plot a set of co-ordinates as a large cross
@@ -159,9 +160,10 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
         print 'Optical parameters are',mean,noise,vmax
         f = aplpy.FITSFigure(hdu,north=True)
-        print 'centring on',ra,dec,size
-        f.recenter(ra,dec,width=size,height=size)
+        #print 'centring on',ra,dec,size
+        #f.recenter(ra,dec,width=size,height=size)
         f.show_colorscale(vmin=mean+noisethresh*noise,vmax=vmax,stretch='log')
+        #f.show_colorscale(stretch='log')
 
     if bmaj is not None:
         f._header['BMAJ']=bmaj
@@ -208,7 +210,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
                 edgecolor='white'
                 facecolor=edgecolor
             if len(t)>0:
-                f.show_markers(t['ra'],t['dec'],marker=marker,facecolor=facecolor,edgecolor=edgecolor,linewidth=2,s=750,zorder=100)
+                f.show_markers(t['ra'],t['dec'],marker=marker,facecolor=facecolor,edgecolor=edgecolor,linewidth=2,s=ppsize,zorder=100)
 
     if circle_radius is not None:
         f.show_circles([ra,],[dec,],[circle_radius,],facecolor='none',edgecolor='cyan',linewidth=5)
