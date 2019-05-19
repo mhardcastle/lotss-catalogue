@@ -38,7 +38,7 @@ qsub -t 0-100 -v INFILE=file.fits,LGZPATH=$LGZPATH,IMAGEDIR=$IMAGEDIR $LGZPATH/l
 To upload to Zooniverse...
 
 cat > manifest.csv <<EOF
-subject_id,image_name_1,image_name_2,image_name_3,source_name,ra,dec,#size
+subject_id,image_name_1,image_name_2,image_name_3,image_name_4,source_name,ra,dec,#size
 EOF
 cat *-manifest.txt | sort -n -k 1 -t , >> manifest.csv
 

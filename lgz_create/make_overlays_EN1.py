@@ -29,16 +29,16 @@ if __name__=='__main__':
 
     tname=sys.argv[1]
     t=Table.read(tname)
-    ot=Table.read('/beegfs/lofar/deepfields/Bootes_LR/Bootes_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
+    ot=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/EN1_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
     # large source table for neighbours
     lt=ot[(ot['DC_Maj']>8/3600.0)]
 
     # read in the big files that have all the data
     print 'Reading data...'
-    gals=Table.read('/beegfs/lofar/deepfields/Bootes_merged_optical/Bootes_merged_pos.fits')
-    lofarfile=fits.open('/beegfs/lofar/deepfields/Bootes_LOFAR/image_full_ampphase_di_m.NS_shift.int.facetRestored.blanked.scaled.fits')
-    spitzerfile=fits.open('/beegfs/lofar/deepfields/Bootes_optical/SDWFS/I2_bootes.v32.fits')
-    ibandfile=fits.open('/beegfs/lofar/deepfields/Bootes_merged_optical/Bootes_iband.fits')
+    gals=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/EN1_merged_pos.fits')
+    lofarfile=fits.open('/beegfs/lofar/deepfields/ELAIS-N1_LOFAR/image_full_ampphase_di_m.NS_shift.int.facetRestored.fits')
+    spitzerfile=fits.open('/beegfs/lofar/deepfields/ELAIS_N1_optical/optical_images/sw2band/EL_EN1_sw2band.fits')
+    ibandfile=fits.open('/beegfs/lofar/deepfields/ELAIS_N1_optical/optical_images/iband/EL_EN1_iband.fits')
     
     start=int(sys.argv[2])
     try:
@@ -60,11 +60,10 @@ if __name__=='__main__':
         spimage=sourcename+'_Sp.png'
         manifestname=sourcename+'-manifest.txt'
 
-        '''
         if os.path.isfile(manifestname):
             print 'Selected output file exists already'
             continue
-        '''
+
         ra,dec=r['RA'],r['DEC']
 
         marker_ra=None

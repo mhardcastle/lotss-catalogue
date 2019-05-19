@@ -29,16 +29,19 @@ if __name__=='__main__':
 
     tname=sys.argv[1]
     t=Table.read(tname)
-    ot=Table.read('/beegfs/lofar/deepfields/Bootes_LR/Bootes_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
+    ot=Table.read('/beegfs/lofar/deepfields/Lockman_filter/Lockman_filtered_highdec_n.fits')
     # large source table for neighbours
     lt=ot[(ot['DC_Maj']>8/3600.0)]
 
     # read in the big files that have all the data
     print 'Reading data...'
-    gals=Table.read('/beegfs/lofar/deepfields/Bootes_merged_optical/Bootes_merged_pos.fits')
-    lofarfile=fits.open('/beegfs/lofar/deepfields/Bootes_LOFAR/image_full_ampphase_di_m.NS_shift.int.facetRestored.blanked.scaled.fits')
-    spitzerfile=fits.open('/beegfs/lofar/deepfields/Bootes_optical/SDWFS/I2_bootes.v32.fits')
-    ibandfile=fits.open('/beegfs/lofar/deepfields/Bootes_merged_optical/Bootes_iband.fits')
+    gals=Table.read('/beegfs/lofar/deepfields/Lockman/MASTER_opt_spitzer_merged_cedit.fits')
+    # gals=gals[gals['FLAG_DEEP']==1]
+    gals['ALPHA_J2000'].name='ra'
+    gals['DELTA_J2000'].name='dec'
+    lofarfile=fits.open('/beegfs/lofar/deepfields/Lockman_LOFAR/image_full_ampphase_di_m.NS_shift.int.facetRestored.blanked.scaled.fits')
+    spitzerfile=fits.open('/beegfs/lofar/deepfields/Lockman/LH_4d5band.fits')
+    rbandfile=fits.open('/beegfs/lofar/deepfields/Lockman/LH_rband.fits')
     
     start=int(sys.argv[2])
     try:
@@ -54,8 +57,8 @@ if __name__=='__main__':
         print r
         sourcename=r['Source_Name']
 
-        iimage=sourcename+'_I.png'
-        ipimage=sourcename+'_Ip.png'
+        iimage=sourcename+'_R.png'
+        ipimage=sourcename+'_Rp.png'
         simage=sourcename+'_S.png'
         spimage=sourcename+'_Sp.png'
         manifestname=sourcename+'-manifest.txt'
@@ -135,18 +138,9 @@ if __name__=='__main__':
             else:
                 ls.append('dashed')
 
-        # here we use Montage to make a regridded Spitzer image so that
-        # the three images look the same
-        
         lhdu=extract_subim(lofarfile,ra,dec,size)
         shdu=extract_subim(spitzerfile,ra,dec,size)
-        ihdu=extract_subim(ibandfile,ra,dec,size)
-        #ihdu.writeto(sourcename+'_i.fits',overwrite=True)
-        #shdu.writeto(sourcename+'_s.fits',overwrite=True)
-        #montage_wrapper.mGetHdr(sourcename+'_i.fits',sourcename+'_i.hdr') 
-        #montage_wrapper.mProject(sourcename+'_s.fits',sourcename+'_so.fits',sourcename+'_i.hdr')
-        #ihdu[0].data=np.where(ihdu[0].data>49999,np.nan,ihdu[0].data)
-        #shdu=fits.open(sourcename+'_so.fits')
+        ihdu=extract_subim(rbandfile,ra,dec,size)
 
         pg=gals[(np.abs(gals['ra']-ra)<(size/np.cos(dec*np.pi/180.0))) & (np.abs(gals['dec']-dec)<size)]
 

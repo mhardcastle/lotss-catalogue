@@ -160,8 +160,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
         print 'Optical parameters are',mean,noise,vmax
         f = aplpy.FITSFigure(hdu,north=True)
-        #print 'centring on',ra,dec,size
-        #f.recenter(ra,dec,width=size,height=size)
+        print 'centring on',ra,dec,size
+        f.recenter(ra,dec,width=size,height=size)
         f.show_colorscale(vmin=mean+noisethresh*noise,vmax=vmax,stretch='log')
         #f.show_colorscale(stretch='log')
 
@@ -238,6 +238,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         plt.show(block=block)
     else:
         plt.savefig(save_name)
+        plt.close()
 
     def onclick(event):
         xp=event.xdata
