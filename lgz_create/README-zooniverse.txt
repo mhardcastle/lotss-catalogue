@@ -43,7 +43,7 @@ EOF
 cat *-manifest.txt | sort -n -k 1 -t , >> manifest.csv
 
 export PANOPTES_PASSWORD=whatever
-NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --project 2513 --workflow 5581
+NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --project 2513 --workflow 9731
 
 To visualize catalogued sources:
 

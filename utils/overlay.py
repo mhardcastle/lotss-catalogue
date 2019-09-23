@@ -194,7 +194,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         f.show_markers(coords_ra,coords_dec,marker='+',facecolor=coords_color,edgecolor=coords_color,linewidth=coords_lw,s=1500,zorder=100)
 
     if marker_ra is not None:
-        f.show_markers(marker_ra,marker_dec,marker='x',facecolor=marker_color,edgecolor=marker_color,linewidth=marker_lw,s=1500,zorder=100)
+        f.show_markers(marker_ra,marker_dec,marker='x',facecolor=marker_color,edgecolor=marker_color,linewidth=marker_lw,s=1500,zorder=140)
         
 
     if plotpos is not None:
@@ -209,7 +209,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
                 t,marker=element
                 edgecolor='white'
                 facecolor=edgecolor
-            if len(t)>0:
+            if t is not None and len(t)>0:
                 f.show_markers(t['ra'],t['dec'],marker=marker,facecolor=facecolor,edgecolor=edgecolor,linewidth=2,s=ppsize,zorder=100)
 
     if circle_radius is not None:

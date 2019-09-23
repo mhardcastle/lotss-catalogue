@@ -20,32 +20,7 @@ from lxml import html
 import glob
 import os
 from time import sleep
-
-def download_file(url,outname):
-    if os.path.isfile(outname):
-        print 'File',outname,'already exists, skipping'
-    else:
-        print 'Downloading',outname
-        while True:
-            try:
-                response = requests.get(url, stream=True,verify=False,timeout=120)
-                if response.status_code!=200:
-                    print 'Warning, HTML status code',response.status_code
-                    if response.status_code>=500 and response.status_code<600:
-                        raise RuntimeError('Retry!')
-            except requests.exceptions.ConnectionError:
-                print 'Connection error! sleeping 60 seconds before retry...'
-                sleep(60)
-            except RuntimeError:
-                print 'Transient error reported, retrying after sleep'
-                sleep(60)
-            except requests.exceptions.Timeout:
-                print 'Timeout: retrying download'
-            else:
-                break
-        with open(outname, 'wb') as out_file:
-            shutil.copyfileobj(response.raw, out_file)
-        del response
+from download_file import download_file
 
 def get_panstarrs(ra,dec,psband):
     page=requests.get('http://ps1images.stsci.edu/cgi-bin/ps1filenames.py?ra=%f&dec=%f' % (ra,dec),verify=False)
@@ -118,7 +93,7 @@ def get_nvss(ra,dec,size=1000):
     return filename
 
 def get_legacy(ra,dec,size=1000,pixscale=0.454,bands='r',ftype='fits'):
-    url = "http://legacysurvey.org/viewer/{}-cutout?ra={}&dec={}&size={}&layer=mzls+bass-dr6&pixscale={}&bands={}".format(ftype,ra,dec,size,pixscale,bands)
+    url = "http://legacysurvey.org/viewer/{}-cutout?ra={}&dec={}&size={}&layer=dr8&pixscale={}&bands={}".format(ftype,ra,dec,size,pixscale,bands)
     outname='legacy-%s-%f-%f.fits' % (bands,ra,dec)
     download_file(url,outname)
     return outname
@@ -138,7 +113,7 @@ class LofarMaps(object):
             if '.fits' in d:
                 file=d
             else:
-                file=d+'/mosaic.fits'
+                file=d+'/mosaic-blanked.fits'
                 if not os.path.isfile(file):
                     continue
             hdu=fits.open(file)

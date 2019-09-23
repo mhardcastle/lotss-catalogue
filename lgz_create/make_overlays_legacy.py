@@ -21,10 +21,15 @@ if __name__=='__main__':
     tname=sys.argv[1]
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
-    # Annotated PyBDSF table
-    ot=Table.read(os.environ['LOTSS_COMPONENT_CATALOGUE'])
-    # large source table for neighbours
-    lt=ot[(ot['Total_flux']>3) & (ot['Maj']>8)]
+    # Annotated PyBDSF table -- set to None to skip
+    if os.path.isfile(os.environ['LOTSS_COMPONENT_CATALOGUE']):
+        ot=Table.read(os.environ['LOTSS_COMPONENT_CATALOGUE'])
+
+        # large source table for neighbours
+        lt=ot[(ot['Total_flux']>3) & (ot['Maj']>8)]
+    else:
+        ot=None
+        lt=None
 
     # read lists
     lines=[l.rstrip().split() for l in open(lname).readlines()]
@@ -38,6 +43,7 @@ if __name__=='__main__':
     except:
         end=start+1
     for i in range(start,end):
+        print i
         r=t[i]
         try:
             sourcename=r['Source_Name']
@@ -66,7 +72,7 @@ if __name__=='__main__':
         if mosaic is None:
             lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
         if os.path.isdir(lofarfile):
-            lofarfile+='/mosaic.fits'
+            lofarfile+='/mosaic-blanked.fits'
         print lofarfile
         if '.fits' not in lofarfile:
             raise RuntimeError('Could not find mosaic fits file')
@@ -88,68 +94,78 @@ if __name__=='__main__':
 
         title=None
 
-        # resize the image to look for interesting neighbours
-        iter=0
-        while True:
-            startra,startdec=ra,dec
-            tcopy=lt
-            tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
-            tcopy=tcopy[tcopy['dist']<180]
-            print 'Iter',iter,'found',len(tcopy),'neighbours'
+        if lt is not None:
+        
+            # resize the image to look for interesting neighbours
+            iter=0
+            while True:
+                startra,startdec=ra,dec
+                tcopy=lt
+                tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
+                tcopy=tcopy[tcopy['dist']<180]
+                print 'Iter',iter,'found',len(tcopy),'neighbours'
 
-            # make sure the original source is in there
-            for nr in tcopy:
-                if sourcename==nr['Source_Name']:
+                # make sure the original source is in there
+                for nr in tcopy:
+                    if sourcename==nr['Source_Name']:
+                        break
+                else:
+                    if 'Maj' in r.columns:
+                        tcopy=vstack((tcopy,r))
+
+                ra=np.mean(tcopy['RA'])
+                dec=np.mean(tcopy['DEC'])
+
+                if startra==ra and startdec==dec:
                     break
-            else:
-                if 'Maj' in r.columns:
-                    tcopy=vstack((tcopy,r))
+                iter+=1
+                if iter==10:
+                    break
 
-            ra=np.mean(tcopy['RA'])
-            dec=np.mean(tcopy['DEC'])
-
-            if startra==ra and startdec==dec:
-                break
-            iter+=1
-            if iter==10:
-                break
-
-        # now find the bounding box of the resulting collection
-        ra,dec,size=find_bbox(tcopy)
-
-        if np.isnan(size):
-            ra=r['RA']
-            dec=r['DEC']
-            size=60
-
-        if size>300.0:
-            # revert just to original
-            ra,dec=r['RA'],r['DEC']
-            size=300.0
-            tcopy=Table(r)
+            # now find the bounding box of the resulting collection
             ra,dec,size=find_bbox(tcopy)
 
-        if size>300:
-            size=300.0
-        if size<60:
-            size=60.0
+            if np.isnan(size):
+                ra=r['RA']
+                dec=r['DEC']
+                size=60
+
+            if size>300.0:
+                # revert just to original
+                ra,dec=r['RA'],r['DEC']
+                size=300.0
+                tcopy=Table(r)
+                ra,dec,size=find_bbox(tcopy)
+
+            if size>300:
+                size=300.0
+            if size<60:
+                size=60.0
+
+        else:
+            size=r['Size']*1.5
         size=(int(0.5+size/10))*10
         print 'size is',size
 
         size/=3600.0
 
-        seps=separation(ra,dec,ot['RA'],ot['DEC'])
-        ots=ot[seps<size*2]
+        if ot is not None:
+            seps=separation(ra,dec,ot['RA'],ot['DEC'])
+            ots=ot[seps<size*2]
 
-        ots=ots[ots['Source_Name']!=""] # removes artefacts
-        ls=[]
-        for nr in ots:
-            if nr['Component_Name']==r['Source_Name']:
-                ls.append('solid')
-            else:
-                ls.append('dashed')
-
-        pshdu=fits.open(imagedir+'/downloads/'+psmaps[i])
+            ots=ots[ots['Source_Name']!=""] # removes artefacts
+            ls=[]
+            for nr in ots:
+                if nr['Component_Name']==r['Source_Name']:
+                    ls.append('solid')
+                else:
+                    ls.append('dashed')
+        else:
+            ots=None
+            ls=None
+        optfile=imagedir+'/downloads/'+psmaps[i]
+        print 'Optical image is',optfile
+        pshdu=fits.open(optfile)
         lhdu=extract_subim(lofarfile,ra,dec,size)
         lhdu.writeto('lofar.fits',clobber=True)
         firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
@@ -159,9 +175,9 @@ if __name__=='__main__':
             peak=None
 
 
-        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
+        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5,lofarlevel=3.0)
         
-        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5)
+        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,noisethresh=1.5,lofarlevel=3.0)
 
         with open(manifestname,'w') as manifest:
             manifest.write('%i,%s,%s,%s,%f,%f,%f\n' % (i,psimage,pspimage,sourcename,ra,dec,size*3600.0))
