@@ -169,7 +169,9 @@ if __name__=='__main__':
         os.mkdir('blend') # store text files in here
 
     t=Table.read('LGZ-cat.fits')
-    t=t[t['Blend_prob']>0.5]
+    filt=t['Blend_prob']>0.5
+    filt|=(t['Badclick']>=2) & (t['Zoom_prob<=0.5'])
+    t=t[filt]
     mt=Table.read('LGZ-multiple.fits')
     print 'Reading data...'
 

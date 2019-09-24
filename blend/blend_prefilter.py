@@ -181,7 +181,7 @@ def preselect_read(dir,tname):
         if g==6 or g==7:
             i=np.argmax(t['Source_Name']==s)
             filt[i]=True
-    print np.sum(filt)
+    print 'Analysing',np.sum(filt),'preselected objects'
     return t[filt]
         
 if __name__=='__main__':
@@ -248,7 +248,7 @@ if __name__=='__main__':
         gals['DELTA_J2000'].name='dec'
         
     display_mode='Spitzer'
-
+    
     for i,r in enumerate(t):
         name=r['Source_Name']
         print 'Source is',name

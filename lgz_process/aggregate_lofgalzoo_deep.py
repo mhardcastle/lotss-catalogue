@@ -291,6 +291,7 @@ artlist=[]
 blendlist=[]
 zoomlist=[]
 brokenlist=[]
+missinglist=[]
 finalcat=[]
 assoccat=[]
 compcat=[]
@@ -380,6 +381,7 @@ for subj in subs_unique:
         bcount=0
         zcount=0
         brcount=0
+        mcount=0
         for ind,p in probs_s.iterrows():
             if p['problem']=="Artefact":
                 acount=acount+1
@@ -389,16 +391,19 @@ for subj in subs_unique:
                 zcount=zcount+1
             if p['problem']=="Host galaxy broken up":
                 brcount=brcount+1
+            if p['problem']=="Image missing":
+                mcount=mcount+1
     
         artfrac=float(acount)/float(numseen)
         blendfrac=float(bcount)/float(numseen)
         zoomfrac=float(zcount)/float(numseen)
         brokefrac=float(brcount)/float(numseen)
+        missfrac=float(mcount)/float(numseen)
 
-        probdict.update({source_name:(artfrac,blendfrac,zoomfrac,brokefrac)})    
+        probdict.update({source_name:(artfrac,blendfrac,zoomfrac,brokefrac,missfrac)})    
             
     else:
-        probdict.update({source_name:(0.0,0.0,0.0,0.0)}) 
+        probdict.update({source_name:(0.0,0.0,0.0,0.0,0.0)}) 
     numgood=0
     numigood=0
 
@@ -638,6 +643,7 @@ for finalset in allgoodsets:
     bpb=0
     zpb=0
     hpb=0
+    imb=0
     if setsubjs>0:
         
         for fsubj in setsubjs:
@@ -652,7 +658,7 @@ for finalset in allgoodsets:
                     numseen=findilist[0]['Numclass']
                     qual=findilist[0]['Quality']
                     optids.append((nam,numseen,qual))
-            fapb,fbpb,fzpb,fhpb=probdict.get(fsubj)
+            fapb,fbpb,fzpb,fhpb,fimb=probdict.get(fsubj)
             if fapb>apb:
                 apb=fapb
             if fbpb>bpb:
@@ -661,6 +667,8 @@ for finalset in allgoodsets:
                 zpb=fzpb
             if fhpb>hpb:
                 hpb=fhpb
+            if fimb>imb:
+                imb=fimb
                 
         if len(optids)==0:
             optid="None"
@@ -737,7 +745,7 @@ for finalset in allgoodsets:
             compcat.append({'Comp_Name':elem,'Assoc':1,'Source_Name':setname,'Comp_RA':ara,'Comp_DEC':adec,'Comp_Flux':aflux,'Comp_Maj':amaj,'Comp_Min':amin,'Comp_PA':apa})
 
         ncomps=len(finalset)
-        finalcat.append({'Source_Name':setname,'RA':ramean,'Dec':decmean,'OptID_Name':optid, 'optRA':optra, 'optDec':optdec,'Flux':nflux,'Size':estsize,'Assoc':ncomps, 'Assoc_Qual':newscore[0][1],'ID_Qual':qual,'Compoverlap':oflag,'Art_prob':apb,'Blend_prob':bpb,'Zoom_prob':zpb,'Hostbroken_prob':hpb,'Badclick':badclick})
+        finalcat.append({'Source_Name':setname,'RA':ramean,'Dec':decmean,'OptID_Name':optid, 'optRA':optra, 'optDec':optdec,'Flux':nflux,'Size':estsize,'Assoc':ncomps, 'Assoc_Qual':newscore[0][1],'ID_Qual':qual,'Compoverlap':oflag,'Art_prob':apb,'Blend_prob':bpb,'Zoom_prob':zpb,'Hostbroken_prob':hpb,'Imagemissing_prob':imb,'Badclick':badclick})
 
             
     else:
@@ -762,7 +770,7 @@ for subj in new_subs_unique:
     npa=padict.get(subj)
     
     catalogued.append(subj)
-    apb,bpb,zpb,hpb=probdict.get(subj)
+    apb,bpb,zpb,hpb,imb=probdict.get(subj)
         
     # Source is not in an associated source, so tabulate with its ID if it exists or none if it doesn't
 
@@ -792,7 +800,7 @@ for subj in new_subs_unique:
 
     if subj in overlap:
         oflag=1
-    finalcat.append({'Source_Name':subj,'RA':nra,'Dec':ndec,'OptID_Name':optid, 'optRA':optra, 'optDec':optdec,'Flux':nflux,'Size':nmajsiz,'Assoc':0, 'Assoc_Qual':np.nan,'ID_Qual':qual,'Compoverlap':oflag,'Art_prob':apb,'Blend_prob':bpb,'Zoom_prob':zpb,'Hostbroken_prob':hpb,'Badclick':badclickdict[subj]})
+    finalcat.append({'Source_Name':subj,'RA':nra,'Dec':ndec,'OptID_Name':optid, 'optRA':optra, 'optDec':optdec,'Flux':nflux,'Size':nmajsiz,'Assoc':0, 'Assoc_Qual':np.nan,'ID_Qual':qual,'Compoverlap':oflag,'Art_prob':apb,'Blend_prob':bpb,'Zoom_prob':zpb,'Hostbroken_prob':hpb,'Imagemissing_prob':imb,'Badclick':badclickdict[subj]})
     compcat.append({'Comp_Name':subj,'Assoc':0,'Source_Name':subj,'Comp_RA':nra,'Comp_DEC':ndec,'Comp_Flux':nflux,'Comp_Maj':nmajsiz,'Comp_Min':nmin,'Comp_PA':npa})
             
     
@@ -804,7 +812,7 @@ for thing in nonexist:
                     
 # Write out final catalogue, associated source catalogue and artefacts catalogue
 
-write_fits_out(['Source_Name','RA','Dec','OptID_Name','optRA','optDec','Flux','Size','Assoc','Assoc_Qual','ID_Qual','Compoverlap','Art_prob','Blend_prob','Zoom_prob','Hostbroken_prob','Badclick'],finalcat,"LGZ-cat.fits")
+write_fits_out(['Source_Name','RA','Dec','OptID_Name','optRA','optDec','Flux','Size','Assoc','Assoc_Qual','ID_Qual','Compoverlap','Art_prob','Blend_prob','Zoom_prob','Hostbroken_prob','Imagemissing_prob','Badclick'],finalcat,"LGZ-cat.fits")
 write_fits_out(['Comp_Name','Assoc','Source_Name','Comp_RA','Comp_DEC','Comp_Flux','Comp_Maj','Comp_Min','Comp_PA'],compcat,'LGZ-comps.fits')
 
 print 'Multlist contains',len(multlist),'sources'
