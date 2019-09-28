@@ -170,8 +170,10 @@ if __name__=='__main__':
 
     t=Table.read('LGZ-cat.fits')
     filt=t['Blend_prob']>0.5
-    filt|=(t['Badclick']>=2) & (t['Zoom_prob<=0.5'])
+    filt|=(t['Badclick']>=2) & (t['Zoom_prob']<=0.5)
+    filt|=t['OptID_Name']=='Mult'
     t=t[filt]
+    print 'About to deblend',len(t),'sources:',len(glob.glob('blend/*.txt')),'blend files already exist'
     mt=Table.read('LGZ-multiple.fits')
     print 'Reading data...'
 
@@ -191,7 +193,7 @@ if __name__=='__main__':
         gt=Table.read('/beegfs/lofar/deepfields/Bootes_LR/new_fdeep_matches/Bootes_ML_RUN_fin_overlap_gaul_workflow_th.fits')
 
     elif field=='lockman':
-        sourcecat = "/beegfs/lofar/deepfields/Lockman_LR/LH_ML_RUN_fin_overlap_srl_workflow_th.fits"
+        sourcecat = "/beegfs/lofar/deepfields/Lockman_LR/updated_LR_cols/LH_ML_RUN_fin_overlap_srl_workflow_th.fits"
         optcat='/beegfs/lofar/deepfields/Lockman_edited_cats/optical/LH_MASTER_opt_spitzer_merged_forLGZ.fits'
         opt=Table.read(optcat)
         flt=(opt['FLAG_OVERLAP']==3)

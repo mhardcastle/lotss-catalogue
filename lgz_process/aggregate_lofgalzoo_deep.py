@@ -253,7 +253,7 @@ elif field=='lockman':
 
 elif field=='en1':
     sourcecat = "/beegfs/lofar/deepfields/ELAIS_N1_LR/new_optcat_matches/EN1_ML_RUN_fin_overlap_srl_workflow_th.fits"
-    optcat='/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/correct_merging/EN1_MASTER_opt_spitzer_merged_cedit_apcorr.fits'
+    optcat='/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/correct_merging/add_uncat/EN1_MASTER_opt_spitzer_merged_cedit_apcorr_adduncat.fits'
     opt=Table.read(optcat)
     flt=(opt['FLAG_OVERLAP']==7)
     opt=opt[flt]

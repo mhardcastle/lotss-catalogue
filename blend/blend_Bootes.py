@@ -164,6 +164,12 @@ if __name__=='__main__':
 
     tname=sys.argv[1]
     t=Table.read(tname)
+    try:
+        # For an on the fly deblend, specify the full component table and the name of the source to extract from it
+        sourcename=sys.argv[2]
+        t=t[t['Source_Name']==sourcename]
+    except:
+        pass
     # read lists
     print 'Reading data...'
     gals=Table.read('/beegfs/lofar/deepfields/Bootes_merged_optical/Bootes_merged_pos.fits')
