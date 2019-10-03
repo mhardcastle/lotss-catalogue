@@ -29,9 +29,9 @@ flagname=outfile.replace('filtered','flagged')
 print 'Applying final flags'
 final_flag(field,outfile,flagname)
 
-mergeout=flagname.replace('filtered','merged')
+mergeout=flagname.replace('flagged','merged')
 
-os.system('/soft/topcat/stilts tskymatch2 ra1=optRA dec1=optDec ra2=ALPHA_J2000 dec2=DELTA_J2000 error=5 join=all1 in1=%s in2=%s out=%s' % (outfile,optcat,mergeout))
+os.system('/soft/topcat/stilts tskymatch2 ra1=optRA dec1=optDec ra2=ALPHA_J2000 dec2=DELTA_J2000 error=1.5 join=all1 in1=%s in2=%s out=%s' % (outfile,optcat,mergeout))
 
 mergeout2=mergeout.replace('merged','merged_src')
 
