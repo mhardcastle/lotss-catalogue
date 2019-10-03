@@ -21,7 +21,7 @@ def filter_table(cat,mask,outname):
     maxy,maxx=mask[0].data.shape
     filter=[]
     for i,r in enumerate(t):
-        if (i % 1000)==0:
+        if (i % 5000)==0:
             print i
         x=int(pos[0][i])
         y=int(pos[1][i])

@@ -691,9 +691,12 @@ def sanity_check(s):
 
     print 'Total errors',errors
 
-def write_table(outname,sd,columns): 
+def write_table(outname,sd,columns,rename=None): 
 
     t=generate_table(sd,columns)
+    if rename is not None:
+        for old,new in rename:
+            t[old].name=new
     t.write(outname,overwrite=True)
 
 if __name__=='__main__':
@@ -712,7 +715,8 @@ if __name__=='__main__':
     write_table('sources-v0.1.fits',s.sd,columns)
 
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Parent',None)]
-    write_table('components-v0.1.fits',s.cd,columns)
+    rename=[('Source_Name','Component_Name'),('Parent','Parent_Source')]
+    write_table('components-v0.1.fits',s.cd,columns,rename=rename)
 
     #s.save('test.pickle')
 
