@@ -367,6 +367,7 @@ def make_structure(field,warn=False):
         if g==5:
             s.delete_source(sname,'Artefact') # Artefact
         elif g==3: # Don't accept ID
+            print 'Removing ID from',sname
             s.sd[sname]['lr_index_fin']=np.nan
             s.sd[sname]['lr_ra_fin']=np.nan
             s.sd[sname]['lr_dec_fin']=np.nan
@@ -488,7 +489,12 @@ def make_structure(field,warn=False):
                                 print 'Promoting single Gaussian to component and source'
                                 # Single Gaussian should be promoted to a source
                                 gname=gaussians[0]
-                                s.cd[s.gd[gname]['Parent']]['Deleted']='Removed by blend file'
+                                parent=s.gd[gname]['Parent']
+                                if 'Promoted' not in s.cd[parent]['Created']:
+                                    print gname,'has parent',parent,' -- marking deleted'
+                                    s.cd[parent]['Deleted']='Removed by blend file (single)'
+                                else:
+                                    print 'Not deleting parent',parent
                                 s.cd[gname]=deepcopy(s.gd[gname])
                                 s.cd[gname]['Created']='Promoted from single Gaussian'
                                 s.cd[gname]['Children']=[gname]
@@ -521,7 +527,13 @@ def make_structure(field,warn=False):
                                     raise RuntimeError('Duplicate source name',sname)
                                 s.sd[sname]=r
                                 for g in gaussians:
-                                    s.cd[s.gd[g]['Parent']]['Deleted']='Removed by blend file'
+                                    # logic here and above deals with the case where a component created elsewhere in the loop has the same name as a parent component of a Gaussian that would normally be deleted. As the old parent has already been overwritten the deletion is not necessary.
+                                    parent=s.gd[g]['Parent']
+                                    if 'Promoted' not in s.cd[parent]['Created']:
+                                        print g,'has parent',parent,' -- marking deleted'
+                                        s.cd[parent]['Deleted']='Removed by blend file (multiple)'
+                                    else:
+                                        print 'Not deleting parent',parent
                                     s.cd[g]=deepcopy(s.gd[g])
                                     s.cd[g]['Created']='Promoted from Gaussian'
                                     s.gd[g]['Parent']=g
@@ -647,6 +659,10 @@ def sanity_check(s):
                     if 'Deleted' in s.cd[component]:
                         print source
                         print 'Deleted component ',component,'in child list'
+                        print 'Source created by',s.sd[source]['Created'],'with children',s.sd[source]['Children']
+                        if s.sd[source]['Created']=='Deblend':
+                            print '(blend file was %s)' % s.sd[source]['Blend_file']
+                        print 'Component created by',s.cd[component]['Created'],'and deleted for reason',s.cd[component]['Deleted']
                         errors+=1
                     else:
                         s.cd[component]['Checked']=True
@@ -692,7 +708,7 @@ if __name__=='__main__':
     sanity_check(s)
     
     print 'Constructing output table'
-    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('FLAG_WORKFLOW',0),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
+    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('FLAG_WORKFLOW',-1),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
     write_table('sources-v0.1.fits',s.sd,columns)
 
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Parent',None)]
