@@ -82,8 +82,6 @@ def inMoc(ra, dec, moc):
 
 def final_flag(field_rk,final_path,final_outpath):
 
-    field_rk = "en1"
-
     # Define the overlap bits for each filter based on the field_rk
     olap_bits = dict()
 
