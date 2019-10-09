@@ -306,22 +306,28 @@ def make_structure(field,warn=False):
 
     if field=='bootes':
         ct=Table.read('/beegfs/lofar/deepfields/Bootes_LR/new_fdeep_matches/Bootes_ML_RUN_fin_overlap_srl_workflow_th.fits')
+        ct_nt=Table.read('/beegfs/lofar/deepfields/Bootes_LR/Bootes_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
+        allgals=Table.read('/beegfs/lofar/deepfields/Bootes_merged_optical/Bootes_merged_pos.fits')
         gt=Table.read('/beegfs/lofar/deepfields/Bootes_LR/new_fdeep_matches/Bootes_ML_RUN_fin_overlap_gaul_workflow_th.fits')
         preselect_dir='/beegfs/lofar/deepfields/Bootes_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/bootes'
-        blend_dirs=['/beegfs/lofar/deepfields/Bootes_blend','/beegfs/lofar/deepfields/preselect_blend/bootes',lgz_dir+'/blend']
+        blend_dirs=['/beegfs/lofar/deepfields/Bootes_blend','/beegfs/lofar/deepfields/preselect_blend/bootes/blend',lgz_dir+'/blend']
     elif field=='lockman':
         ct=Table.read('/beegfs/lofar/deepfields/Lockman_LR/updated_LR_cols/LH_ML_RUN_fin_overlap_srl_workflow_th.fits')
+        ct_nt=Table.read('/beegfs/lofar/deepfields/Lockman_LR/LH_ML_RUN_fin_overlap_srl_workflow.fits')
+        allgals=Table.read('/beegfs/lofar/deepfields/Lockman_edited_cats/optical/Lockman_merged_pos.fits')
         gt=Table.read('/beegfs/lofar/deepfields/Lockman_LR/updated_LR_cols/LH_ML_RUN_fin_overlap_gaul_workflow_th.fits')
         preselect_dir='/beegfs/lofar/deepfields/Lockman_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/lockman'
-        blend_dirs=['/beegfs/lofar/deepfields/Lockman_blend','/beegfs/lofar/deepfields/preselect_blend/lockman',lgz_dir+'/blend']
+        blend_dirs=['/beegfs/lofar/deepfields/Lockman_blend','/beegfs/lofar/deepfields/preselect_blend/lockman/blend',lgz_dir+'/blend']
     elif field=='en1':
         ct=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/new_optcat_matches/EN1_ML_RUN_fin_overlap_srl_workflow_th.fits')
+        ct_nt=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/EN1_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
+        allgals=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/EN1_merged_pos_all.fits')
         gt=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/new_optcat_matches/EN1_ML_RUN_fin_overlap_gaul_workflow_th.fits')
         preselect_dir='/beegfs/lofar/deepfields/ELAIS-N1_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/en1'
-        blend_dirs=['/beegfs/lofar/deepfields/ELAIS-N1_blend','/beegfs/lofar/deepfields/preselect_blend/en1',lgz_dir+'/blend']
+        blend_dirs=['/beegfs/lofar/deepfields/ELAIS-N1_blend','/beegfs/lofar/deepfields/preselect_blend/en1/blend',lgz_dir+'/blend']
     else:
         print 'Not in correct working directory'
         sys.exit(1)
@@ -368,10 +374,25 @@ def make_structure(field,warn=False):
             s.delete_source(sname,'Artefact') # Artefact
         elif g==3: # Don't accept ID
             print 'Removing ID from',sname
+            s.sd[sname]['lr_fin']=np.nan
             s.sd[sname]['lr_index_fin']=np.nan
             s.sd[sname]['lr_ra_fin']=np.nan
             s.sd[sname]['lr_dec_fin']=np.nan
-
+        elif g==2:
+            print 'Looking up',sname,'in no-threshold table'
+            filt=(ct_nt['Source_Name']==sname)
+            if np.sum(filt)==0:
+                raise RuntimeError('No entry for this source!')
+            else:
+                print 'Assigning position...'
+                r=ct_nt[filt][0]
+                s.sd[sname]['lr_fin']=r['lr_fin']
+                index=int(r['lr_index_fin'])
+                s.sd[sname]['optRA']=allgals[index]['ra']
+                s.sd[sname]['optDec']=allgals[index]['dec']
+        elif g==4:
+            s.sd[sname]['Zoom_prob']=1.0
+            
     s.set_stage('Ingest LGZ')
     lgz_source=Table.read(lgz_dir+'/LGZ-cat.fits')
     lgz_source['Dec'].name='DEC'
@@ -400,6 +421,8 @@ def make_structure(field,warn=False):
 
     for bd in blend_dirs:
         patches=glob.glob(bd+'/ILT*.txt')
+        if len(patches)==0:
+            raise RuntimeError('No patches found in directory %s, did you get the pathname wrong?' % bd)
         for f in patches:
             name=f.replace(bd+'/','').replace('.txt','')
             print 'Blend file for',name
@@ -709,14 +732,16 @@ if __name__=='__main__':
     print '*** Sanity checking *** '
     
     sanity_check(s)
+
+    version='v0.2'
     
     print 'Constructing output table'
-    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('FLAG_WORKFLOW',-1),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
-    write_table('sources-v0.1.fits',s.sd,columns)
+    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
+    write_table('sources-'+version+'.fits',s.sd,columns)
 
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Parent',None)]
     rename=[('Source_Name','Component_Name'),('Parent','Parent_Source')]
-    write_table('components-v0.1.fits',s.cd,columns,rename=rename)
+    write_table('components-'+version+'.fits',s.cd,columns,rename=rename)
 
     #s.save('test.pickle')
 
