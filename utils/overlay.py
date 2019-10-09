@@ -29,6 +29,7 @@ def find_noise(a):
 
 def find_noise_area(hdu,ra,dec,size,channel=0):
     # ra, dec, size in degrees
+    size/=2
     if len(hdu[0].data.shape)==2:
         cube=False
         ysize,xsize=hdu[0].data.shape
@@ -138,6 +139,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
             print 'Using LOFAR rms',rms_use
         print lofarmax/drlimit,rms_use*lofarlevel
         minlevel=max([lofarmax/drlimit,rms_use*lofarlevel])
+        print 'Using minimum level',minlevel
         levels=minlevel*2.0**np.linspace(0,14,30)
 
     hdu=opthdu
@@ -145,11 +147,14 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     if len(hdu[0].data.shape)>2:
         # This is an RGB image. Try to do something sensible with it
         vmins=[]
+        vmaxes=[]
         for i in range(3):
             mean,noise,vmax=find_noise_area(hdu,ra,dec,size,channel=i)
             vmin=mean+noisethresh*noise
             vmins.append(vmin)
-        aplpy.make_rgb_image(hdu.filename(),'rgb.png',stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2]) # FILENAME NOT SAFE
+            vmaxes.append(vmax)
+        vmax=max(vmaxes)
+        aplpy.make_rgb_image(hdu.filename(),'rgb.png',stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2],vmax_r=vmax,vmax_g=vmax,vmax_b=vmax) # FILENAME NOT SAFE
         f=aplpy.FITSFigure('rgb.png',north=True)
         print 'centring on',ra,dec,size
         f.recenter(ra,dec,width=size,height=size)

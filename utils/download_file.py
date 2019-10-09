@@ -8,6 +8,7 @@ from time import sleep
 def download_file(url,filename):
     if os.path.isfile(filename):
         print 'File',filename,'already exists, skipping'
+        return
     else:
         print 'Downloading',filename
 

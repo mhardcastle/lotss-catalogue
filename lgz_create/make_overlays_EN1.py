@@ -29,7 +29,7 @@ if __name__=='__main__':
 
     tname=sys.argv[1]
     t=Table.read(tname)
-    ot=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/EN1_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
+    ot=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/new_optcat_matches/EN1_ML_RUN_fin_overlap_srl_workflow_th.fits')
     # large source table for neighbours
     lt=ot[(ot['DC_Maj']>8/3600.0)]
 
@@ -87,6 +87,10 @@ if __name__=='__main__':
                     break
             else:
                 if 'Maj' in r.columns:
+                    if np.isnan(r['Maj']):
+                        r['Maj']=r['LGZ_Size']
+                        r['Min']=r['LGZ_Width']
+                        r['PA']=r['LGZ_PA']
                     tcopy=vstack((tcopy,r))
 
             ra=np.mean(tcopy['RA'])
