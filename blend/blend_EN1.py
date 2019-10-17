@@ -171,6 +171,7 @@ if __name__=='__main__':
     except:
         pass
 
+    print 'About to process an input file containing',len(t),'sources'
     # read lists
     print 'Reading data...'
     gals=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/EN1_merged_pos.fits')
@@ -187,7 +188,7 @@ if __name__=='__main__':
             continue
         id=r['Source_id'] # unique in this field!
         rgt=gt[gt['Source_id']==id]
-        print 'Contains',len(rgt),'Gaussians'
+        print name,'contains',len(rgt),'Gaussians'
         mlt=rgt[~np.isnan(rgt['lr_ra_fin'])]
         mlt['ra']=mlt['lr_ra_fin']
         mlt['dec']=mlt['lr_dec_fin']

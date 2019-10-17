@@ -212,6 +212,7 @@ class Source(object):
                     self.cd[cchild]['Deleted']=reason
                 else:
                     print 'Not deleting child',cchild,'as parent mismatch'
+
                 for gchild in self.cd[cchild]['Children']:
                     if self.gd[gchild]['Parent']==cchild:
                         self.gd[gchild]['Deleted']=reason
@@ -226,9 +227,13 @@ class Source(object):
 
     def get_comps(self,sourcename):
         components=[]
-        for c in self.sd[sourcename]['Children']:
-            if c in self.cd and 'Deleted' not in self.cd[c]:
-                components.append(c)
+        if 'Children' in self.sd[sourcename]:
+            for c in self.sd[sourcename]['Children']:
+                if c in self.cd and 'Deleted' not in self.cd[c]:
+                    components.append(c)
+        else:
+            print 'Source',sourcename,'has no children -- this should not happen!'
+            print self.sd[sourcename]
         return components
 
     def get_ncomps(self,sourcename):
@@ -328,6 +333,7 @@ def make_structure(field,warn=False):
         preselect_dir='/beegfs/lofar/deepfields/ELAIS-N1_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/en1'
         blend_dirs=['/beegfs/lofar/deepfields/ELAIS-N1_blend','/beegfs/lofar/deepfields/preselect_blend/en1/blend',lgz_dir+'/blend']
+        noid_file='/beegfs/lofar/deepfields/lgz/en1/noid/noid.txt'
     else:
         print 'Not in correct working directory'
         sys.exit(1)
@@ -402,6 +408,9 @@ def make_structure(field,warn=False):
         sname=r['Source_Name']
         s.create_source(sname,r) # will add to what's on record for
                                  # the source, if it already exists
+        if 'lr_ra_fin' in s.sd[sname]:
+            s.sd[sname]['old_ra']=s.sd[sname]['lr_ra_fin']
+            s.sd[sname]['old_dec']=s.sd[sname]['lr_dec_fin']
         s.sd[sname]['lr_ra_fin']=np.nan
         s.sd[sname]['lr_dec_fin']=np.nan
         s.sd[sname]['Children']=[]
@@ -425,7 +434,7 @@ def make_structure(field,warn=False):
             raise RuntimeError('No patches found in directory %s, did you get the pathname wrong?' % bd)
         for f in patches:
             name=f.replace(bd+'/','').replace('.txt','')
-            print 'Blend file for',name
+            print 'Blend file for',name,'is',f
             if name not in s.sd:
                 print name,'not in source list'
                 sys.exit(2)
@@ -439,8 +448,16 @@ def make_structure(field,warn=False):
             if lines[0]=='## Flagged':
                 s.sd[name]['Zoom_prob']=1.0 # send to TZI
             elif lines[0]=='## Unchanged':
-                # source stays as it is
-                pass
+                # source stays as it is, BUT lr must be accepted if present
+                if not np.isnan(s.sd[name]['lr_ra_fin']):
+                    print 'Accepting LR position for this source'
+                    s.sd[name]['optRA']=s.sd[name]['lr_ra_fin']
+                    s.sd[name]['optDec']=s.sd[name]['lr_dec_fin']
+                elif 'old_ra' in s.sd[name]:
+                    print 'Accepting pre-LGZ LR position for this source'
+                    s.sd[name]['optRA']=s.sd[name]['old_ra']
+                    s.sd[name]['optDec']=s.sd[name]['old_dec']
+                    
             elif lines[0]=='## Components':
                 print name,': output file to be processed!'
                 s.sd[name]['lr_ra_fin']=np.nan
@@ -581,6 +598,7 @@ def make_structure(field,warn=False):
         source=f.replace('.txt','').replace(lgz_dir+'/zoom/','')
         parsefile(source,s,dir=lgz_dir+'/zoom/')
         s.sd[source]['Created']='Too zoomed in'
+        s.sd[source]['Zoomfile']=f
 
     # component table won't now change, so generate it so it can be
     # passed to assemble_source
@@ -644,6 +662,47 @@ def make_structure(field,warn=False):
             s.sd[source]['optRA']=s.sd[source]['lr_ra_fin']
             s.sd[source]['optDec']=s.sd[source]['lr_dec_fin']
 
+    s.set_stage('NoID')
+    lines=open(noid_file).readlines()
+    group=[]
+    source=[]
+    for l in lines:
+        l=l.rstrip()
+        bits=l.split(',')
+        group.append(int(bits[0]))
+        source.append(bits[1])
+    for sname,g in zip(source,group):
+        if sname not in s.sd:
+            print 'Source',name,'already deleted, skipping'
+            continue
+        if 'optRA' in s.sd[sname] and not np.isnan(s.sd[sname]['optRA']):
+            print 'Source',name,'in noid list but has id, skipping'
+            continue 
+        s.sd[sname]['NoID']=g
+        if g==6:
+            s.delete_source(sname,'Artefact') # Artefact
+        elif g==8:
+            if 'Zoomfile' not in s.sd[sname]:
+                if 'Renamed_from' in s.sd[sname]:
+                    name=s.sd[sname]['Renamed_from']
+                else:
+                    name=sname
+                print 'Adding',name,'to zoom list'
+                s.zoomneeded.append(name)
+            else:
+                s.sd[sname]['NoID']=3
+        elif g==7 or g==9:
+            if 'Zoomfile' not in s.sd[sname]:
+                if 'LGZ' in s.sd[sname]['Created']:
+                    if 'Renamed_from' in s.sd[sname]:
+                        name=s.sd[sname]['Renamed_from']
+                    else:
+                        name=sname
+                    print 'Adding',name,'to zoom list'
+                    s.zoomneeded.append(name)
+            else:
+                s.sd[sname]['NoID']=3
+        
     return s
 
 def generate_table(sd,columns,keep_deleted=False): 
@@ -736,7 +795,7 @@ if __name__=='__main__':
     version='v0.2'
     
     print 'Constructing output table'
-    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
+    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('NoID',0),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
     write_table('sources-'+version+'.fits',s.sd,columns)
 
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Parent',None)]

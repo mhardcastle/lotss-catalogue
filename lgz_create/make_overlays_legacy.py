@@ -12,11 +12,13 @@ import glob
 from separation import separation
 from subim import extract_subim
 from image_utils import find_bbox,get_mosaic_name
+from overlay import show_overlay
 
 scale=3600.0 # scaling factor for region sizes
 
 if __name__=='__main__':
 
+    logfile=open('log.txt','w')
     imagedir=os.environ['IMAGEDIR']
     tname=sys.argv[1]
     lname=sys.argv[1].replace('.fits','-list.txt')
@@ -35,7 +37,8 @@ if __name__=='__main__':
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     lofarmaps=[l[1] for l in lines]
     psmaps=[l[2] for l in lines]
-    #firstmaps=[l[4] for l in lines]
+    wisemaps=[l[3] for l in lines]
+    firstmaps=[l[4] for l in lines]
 
     start=int(sys.argv[2])
     try:
@@ -72,6 +75,9 @@ if __name__=='__main__':
             lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
         if os.path.isdir(lofarfile):
             lofarfile+='/mosaic.fits'
+            if not os.path.isfile(lofarfile):
+                lofarfile=lofarfile.replace('mosaic.fits','mosaic-blanked.fits')
+            
 
         #print lofarfile
         if '.fits' not in lofarfile:
@@ -81,9 +87,7 @@ if __name__=='__main__':
 
         if os.path.isfile(manifestname):
             print 'Selected output file exists already'
-            sys.exit(0)
-
-        from overlay import show_overlay
+            continue
 
         ra,dec=r['RA'],r['DEC']
 
@@ -163,8 +167,13 @@ if __name__=='__main__':
         else:
             rms=None
 
-        pshdu=fits.open(imagedir+'/downloads/'+psmaps[i])
-        lhdu=extract_subim(lofarfile,ra,dec,size/1.8)
+        optfile=imagedir+'/downloads/'+psmaps[i]
+        print 'Using optical image',optfile
+        pshdu=fits.open(optfile)
+        # nan-blank
+        pshdu[0].data=np.where(pshdu[0].data>8,np.nan,pshdu[0].data)
+        
+        lhdu=extract_subim(lofarfile,ra,dec,size/1.5)
         lhdu.writeto('lofar.fits',clobber=True)
         #firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
         try:
@@ -173,10 +182,23 @@ if __name__=='__main__':
             peak=None
 
 
-        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5)
+        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5)
         
-        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5)
+        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,vmax_cap=0.5)
 
+        wiseimage=sourcename+'_W.png'
+        firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
+        whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
+        show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,
+                     overlay_cat=ots,overlay_scale=scale,coords_color='red',
+                     coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,
+                     save_name=wiseimage,no_labels=True,marker_ra=marker_ra,
+                     marker_dec=marker_dec,marker_lw=3,marker_color='cyan',
+                     title=title,peak=peak,lw_ellipse=3,ellipse_style=ls,
+                     ellipse_color='cyan',drlimit=1000,rms_use=rms,
+                     lofarlevel=2.5,noisethresh=0)
+
+        
         with open(manifestname,'w') as manifest:
             manifest.write('%i,%s,%s,%s,%f,%f,%f\n' % (i,psimage,pspimage,sourcename,ra,dec,size*3600.0))
 

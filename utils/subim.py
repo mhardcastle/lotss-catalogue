@@ -1,3 +1,4 @@
+import astropy
 from astropy.io import fits
 from astropy.wcs import WCS
 import numpy as np
@@ -14,7 +15,7 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
         raise RuntimeError('Can\'t make map from this')
 
     if verbose:
-        print f[hduid].data.shape
+        print 'Input image shape is',f[hduid].data.shape
     ds=f[hduid].data.shape[-2:]
     by,bx=ds
     xmin=int(x-size)
@@ -41,10 +42,16 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
     wn.wcs.crpix[0]=w.wcs.crpix[0]-xmin
     wn.wcs.crpix[1]=w.wcs.crpix[1]-ymin
     wn.wcs.cdelt=w.wcs.cdelt[0:2]
+    '''
     try:
         wn.wcs.pc=w.wcs.pc[0:2,0:2]
     except AttributeError:
         pass # pc is not present
+    try:
+        wn.wcs.cd=w.wcs.cd[0:2,0:2]
+    except AttributeError:
+        pass # cd is not present
+    '''
     wn.wcs.crval=w.wcs.crval[0:2]
     wn.wcs.ctype[0]=w.wcs.ctype[0]
     wn.wcs.ctype[1]=w.wcs.ctype[1]
@@ -77,10 +84,27 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
     return hdulist
 
 def extract_subim(filename,ra,dec,size,hduid=0,verbose=True):
-    if verbose:
-        print 'Opening',filename
-    orighdu=fits.open(filename)
-    psize=int(size/orighdu[hduid].header['CDELT2'])
+    """Extract a sub-image and return an HDU.
+    filename: the input FITS file
+    ra, dec: the position in degrees
+    size: the half-size in degrees
+    hduid: the element of the original HDU to use (default 0)
+    verbose: print diagnostics (default True)
+    """
+    if isinstance(filename,astropy.io.fits.hdu.hdulist.HDUList):
+        orighdu=filename
+    else:
+        if verbose:
+            print 'Opening',filename
+        orighdu=fits.open(filename)
+    if 'CDELT2' in orighdu[hduid].header:
+        delt=orighdu[hduid].header['CDELT2']
+    else:
+        # assuming no rotation here
+        delt=orighdu[hduid].header['CD2_2']
+        
+    psize=int(size/delt)
+    
     ndims=orighdu[hduid].header['NAXIS']
     pvect=np.zeros((1,ndims))
     lwcs=WCS(orighdu[hduid].header)
@@ -89,6 +113,13 @@ def extract_subim(filename,ra,dec,size,hduid=0,verbose=True):
     imc=lwcs.wcs_world2pix(pvect,0)
     x=imc[0][0]
     y=imc[0][1]
+    if verbose:
+        print 'Extracting sub-image'
     hdu=flatten(orighdu,ra,dec,x,y,psize,hduid=hduid,verbose=verbose)
+    '''
+    del(hdu[hduid].header['PC1_1'])
+    del(hdu[hduid].header['PC2_2'])
+    '''
+    hdu[hduid].header['CDELT2']=delt
+    hdu[hduid].header['CDELT1']=-delt
     return hdu
-    

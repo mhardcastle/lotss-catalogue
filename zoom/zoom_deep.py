@@ -208,6 +208,7 @@ if __name__=='__main__':
         sourcelist=[sourcename]
 
     sourcelist+=s.zoomneeded
+    mode='spitzer'
     for sourcename in sourcelist:
         if len(sourcelist)>1 and os.path.isfile(sourcename+'.txt'):
             print sourcename,'already has a zoom file'
@@ -284,7 +285,10 @@ if __name__=='__main__':
             #pshdu=extract_subim(imagedir+'/downloads/'+psmaps[i],ra,dec,size*2,hduid=1)
             print 'Lofarfile is',lofarfile
             lhdu=extract_subim(lofarfile,ra,dec,size*scalefactor)
-            whdu=extract_subim(spitzerfile,ra,dec,size*scalefactor)
+            if mode=='spitzer':
+                whdu=extract_subim(spitzerfile,ra,dec,size*scalefactor)
+            else:
+                whdu=extract_subim(ibandfile,ra,dec,size*scalefactor)
             try:
                 peak==r['Peak_flux']/1000.0
             except:
@@ -306,7 +310,7 @@ if __name__=='__main__':
 
             stop=False
             while not(stop):
-                print '(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, save (f)its, go to (n)ext, (Z)oom out, \n   (T)oggle galaxy overlay or (s)ave and continue?',
+                print '(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, save (f)its, go to (n)ext, (Z)oom out, \n   (i)nspect, (T)oggle galaxy overlay, change opt (I)mage or (s)ave and continue?',
                 command=raw_input()
                 if command=='s':
                     stop=True
@@ -337,6 +341,13 @@ if __name__=='__main__':
                     overlaygals=not(overlaygals)
                     plt.close()
                     break
+                elif command=='I':
+                    if mode=='spitzer':
+                        mode='optical'
+                    else:
+                        mode='spitzer'
+                    plt.close()
+                    break
                 else:
                     print 'Command not recognised!'
             if command=='s':
@@ -345,7 +356,7 @@ if __name__=='__main__':
                 s.set_size(sourcename,I.size)
             elif command=='d':
                 s.delete_source(sourcename,'Marked as LGZ artefact')
-
+            
             if stop:
                 break # out of outer while for scalefactor reset
             

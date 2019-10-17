@@ -29,7 +29,7 @@ def find_noise(a):
 
 def find_noise_area(hdu,ra,dec,size,channel=0):
     # ra, dec, size in degrees
-    size/=2
+    size/=1.5
     if len(hdu[0].data.shape)==2:
         cube=False
         ysize,xsize=hdu[0].data.shape
@@ -68,7 +68,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0):
             break
     return mean,noise,vmax
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid'):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid',logfile=None,sourcename=None,vmax_cap=None):
     '''
     show_overlay: make an overlay using AplPY.
     lofarhdu: the LOFAR cutout to use for contours
@@ -151,15 +151,21 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         for i in range(3):
             mean,noise,vmax=find_noise_area(hdu,ra,dec,size,channel=i)
             vmin=mean+noisethresh*noise
+            print 'channel',i,mean,noise,vmin,vmax
             vmins.append(vmin)
             vmaxes.append(vmax)
         vmax=max(vmaxes)
+        if vmax_cap is not None and vmax>vmax_cap:
+            vmax=vmax_cap
         aplpy.make_rgb_image(hdu.filename(),'rgb.png',stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2],vmax_r=vmax,vmax_g=vmax,vmax_b=vmax) # FILENAME NOT SAFE
         f=aplpy.FITSFigure('rgb.png',north=True)
         print 'centring on',ra,dec,size
         f.recenter(ra,dec,width=size,height=size)
         f.show_rgb()
-       
+        if logfile is not None:
+            mytuple=tuple([sourcename]+vmins+vmaxes+[vmax])
+            print mytuple
+            logfile.write('%s %f %f %f %f %f %f %f\n' % mytuple)
         
     else:
         mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
