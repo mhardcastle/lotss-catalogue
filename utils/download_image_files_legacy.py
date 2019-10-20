@@ -23,9 +23,9 @@ if __name__=='__main__':
         print r['RA'],r['DEC']
         lofarname=lm.find(r['RA'],r['DEC'])
         legacyname=get_legacy(r['RA'],r['DEC'],bands='zrg')
-        wisename=get_wise(r['RA'],r['DEC'],1)
-        firstname=get_first(r['RA'],r['DEC'])
-        print >>outfile,r['Source_Name'],lofarname,legacyname,wisename,firstname
+        #wisename=get_wise(r['RA'],r['DEC'],1)
+        #firstname=get_first(r['RA'],r['DEC'])
+        print >>outfile,r['Source_Name'],lofarname,legacyname#,wisename,firstname
 
     outfile.close()
 

@@ -317,6 +317,7 @@ def make_structure(field,warn=False):
         preselect_dir='/beegfs/lofar/deepfields/Bootes_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/bootes'
         blend_dirs=['/beegfs/lofar/deepfields/Bootes_blend','/beegfs/lofar/deepfields/preselect_blend/bootes/blend',lgz_dir+'/blend']
+        noid_file=None
     elif field=='lockman':
         ct=Table.read('/beegfs/lofar/deepfields/Lockman_LR/updated_LR_cols/LH_ML_RUN_fin_overlap_srl_workflow_th.fits')
         ct_nt=Table.read('/beegfs/lofar/deepfields/Lockman_LR/LH_ML_RUN_fin_overlap_srl_workflow.fits')
@@ -325,6 +326,7 @@ def make_structure(field,warn=False):
         preselect_dir='/beegfs/lofar/deepfields/Lockman_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/lockman'
         blend_dirs=['/beegfs/lofar/deepfields/Lockman_blend','/beegfs/lofar/deepfields/preselect_blend/lockman/blend',lgz_dir+'/blend']
+        noid_file=None
     elif field=='en1':
         ct=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/new_optcat_matches/EN1_ML_RUN_fin_overlap_srl_workflow_th.fits')
         ct_nt=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/EN1_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
@@ -475,6 +477,7 @@ def make_structure(field,warn=False):
                     gname=gt[gidi]['Source_Name']
                     # sanity check
                     if gname not in s.cd[name]['Children']:
+                        print s.cd[name]
                         raise RuntimeError('Gaussian %s not in child list' %gname)
                     gids.append(gidi)
                     gaussian_names.append(gname)
@@ -662,47 +665,48 @@ def make_structure(field,warn=False):
             s.sd[source]['optRA']=s.sd[source]['lr_ra_fin']
             s.sd[source]['optDec']=s.sd[source]['lr_dec_fin']
 
-    s.set_stage('NoID')
-    lines=open(noid_file).readlines()
-    group=[]
-    source=[]
-    for l in lines:
-        l=l.rstrip()
-        bits=l.split(',')
-        group.append(int(bits[0]))
-        source.append(bits[1])
-    for sname,g in zip(source,group):
-        if sname not in s.sd:
-            print 'Source',name,'already deleted, skipping'
-            continue
-        if 'optRA' in s.sd[sname] and not np.isnan(s.sd[sname]['optRA']):
-            print 'Source',name,'in noid list but has id, skipping'
-            continue 
-        s.sd[sname]['NoID']=g
-        if g==6:
-            s.delete_source(sname,'Artefact') # Artefact
-        elif g==8:
-            if 'Zoomfile' not in s.sd[sname]:
-                if 'Renamed_from' in s.sd[sname]:
-                    name=s.sd[sname]['Renamed_from']
-                else:
-                    name=sname
-                print 'Adding',name,'to zoom list'
-                s.zoomneeded.append(name)
-            else:
-                s.sd[sname]['NoID']=3
-        elif g==7 or g==9:
-            if 'Zoomfile' not in s.sd[sname]:
-                if 'LGZ' in s.sd[sname]['Created']:
+    if noid_file is not None:
+        s.set_stage('NoID')
+        lines=open(noid_file).readlines()
+        group=[]
+        source=[]
+        for l in lines:
+            l=l.rstrip()
+            bits=l.split(',')
+            group.append(int(bits[0]))
+            source.append(bits[1])
+        for sname,g in zip(source,group):
+            if sname not in s.sd:
+                print 'Source',name,'already deleted, skipping'
+                continue
+            if 'optRA' in s.sd[sname] and not np.isnan(s.sd[sname]['optRA']):
+                print 'Source',name,'in noid list but has id, skipping'
+                continue 
+            s.sd[sname]['NoID']=g
+            if g==6:
+                s.delete_source(sname,'Artefact') # Artefact
+            elif g==8:
+                if 'Zoomfile' not in s.sd[sname]:
                     if 'Renamed_from' in s.sd[sname]:
                         name=s.sd[sname]['Renamed_from']
                     else:
                         name=sname
                     print 'Adding',name,'to zoom list'
                     s.zoomneeded.append(name)
-            else:
-                s.sd[sname]['NoID']=3
-        
+                else:
+                    s.sd[sname]['NoID']=3
+            elif g==7 or g==9:
+                if 'Zoomfile' not in s.sd[sname]:
+                    if 'LGZ' in s.sd[sname]['Created']:
+                        if 'Renamed_from' in s.sd[sname]:
+                            name=s.sd[sname]['Renamed_from']
+                        else:
+                            name=sname
+                        print 'Adding',name,'to zoom list'
+                        s.zoomneeded.append(name)
+                else:
+                    s.sd[sname]['NoID']=3
+
     return s
 
 def generate_table(sd,columns,keep_deleted=False): 
@@ -792,7 +796,7 @@ if __name__=='__main__':
     
     sanity_check(s)
 
-    version='v0.2'
+    version='v0.3'
     
     print 'Constructing output table'
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('NoID',0),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]

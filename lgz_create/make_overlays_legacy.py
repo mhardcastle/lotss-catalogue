@@ -37,12 +37,14 @@ if __name__=='__main__':
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     lofarmaps=[l[1] for l in lines]
     psmaps=[l[2] for l in lines]
-    wisemaps=[l[3] for l in lines]
-    firstmaps=[l[4] for l in lines]
+    #wisemaps=[l[3] for l in lines]
+    #firstmaps=[l[4] for l in lines]
 
     start=int(sys.argv[2])
     try:
         end=int(sys.argv[3])+1
+        if end>len(t):
+            end=len(t)
     except:
         end=start+1
     for i in range(start,end):
@@ -157,10 +159,12 @@ if __name__=='__main__':
 
         ls=[]
         for nr in ots:
-            if nr[cname]==r['Source_Name']:
+            print nr[cname],sourcename
+            if nr[cname].rstrip()==sourcename:
                 ls.append('solid')
             else:
                 ls.append('dashed')
+        print ls
 
         if 'Isl_rms' in r.colnames:
             rms=r['Isl_rms']/1000.0
@@ -170,6 +174,10 @@ if __name__=='__main__':
         optfile=imagedir+'/downloads/'+psmaps[i]
         print 'Using optical image',optfile
         pshdu=fits.open(optfile)
+        if pshdu[0].header['NAXIS']==0:
+            print '*** No optical image! ***'
+            logfile.write('*** No optical %s %f %f ***\n' % (sourcename,r['RA'],r['DEC']))
+            continue
         # nan-blank
         pshdu[0].data=np.where(pshdu[0].data>8,np.nan,pshdu[0].data)
         
@@ -186,17 +194,17 @@ if __name__=='__main__':
         
         show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,vmax_cap=0.5)
 
-        wiseimage=sourcename+'_W.png'
-        firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
-        whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
-        show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,
-                     overlay_cat=ots,overlay_scale=scale,coords_color='red',
-                     coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,
-                     save_name=wiseimage,no_labels=True,marker_ra=marker_ra,
-                     marker_dec=marker_dec,marker_lw=3,marker_color='cyan',
-                     title=title,peak=peak,lw_ellipse=3,ellipse_style=ls,
-                     ellipse_color='cyan',drlimit=1000,rms_use=rms,
-                     lofarlevel=2.5,noisethresh=0)
+        #wiseimage=sourcename+'_W.png'
+        #firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
+        #whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
+        #show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,
+        #             overlay_cat=ots,overlay_scale=scale,coords_color='red',
+        #             coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,
+        #             save_name=wiseimage,no_labels=True,marker_ra=marker_ra,
+        #             marker_dec=marker_dec,marker_lw=3,marker_color='cyan',
+        #             title=title,peak=peak,lw_ellipse=3,ellipse_style=ls,
+        #             ellipse_color='cyan',drlimit=1000,rms_use=rms,
+        #             lofarlevel=2.5,noisethresh=0)
 
         
         with open(manifestname,'w') as manifest:

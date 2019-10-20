@@ -43,16 +43,32 @@ os.system('/soft/topcat/stilts tskymatch2 ra1=optRA dec1=optDec ra2=ALPHA_J2000 
 
 mergeout2=mergeout.replace('merged','merged_src')
 
+if field=='bootes':
+    print 'Fixing ID column!'
+    t=Table.read(mergeout)
+    t['NUMBER']=t['ID'].astype('int')
+    t['NUMBER'].mask=np.isnan(t['ID'])
+    t.write(mergeout,overwrite=True)
+
 os.system('/soft/topcat/stilts tmatch2  join=all1 values1=NUMBER values2=ID matcher=exact in1=%s in2=%s out=%s' % (mergeout,src,mergeout2))
 
 t=Table.read(mergeout2)
 finalname=mergeout2.replace('merged_src','final')
 print 'Remove unnecessary columns'
-t.remove_columns(['RA_2','DEC_2','FLAG_OVERLAP_2','FLAG_CLEAN_2','id', 'ID_OPTICAL', 'ID_SPITZER'])
+cols=['RA_2','DEC_2','FLAG_OVERLAP_2','FLAG_CLEAN_2','id', 'ID_OPTICAL', 'ID_SPITZER']
+for c in cols:
+    print c,
+    sys.stdout.flush()
+    if c in t.colnames:
+        t.remove_columns(c)
+
+print
 print 'Rename columns'
 #t['Separation_1'].name='Separation'
 for column in ['RA','DEC','FLAG_OVERLAP','flag_clean']:
-    t[column+'_1'].name=column
+    oldcol=column+'_1'
+    if oldcol in t.colnames:
+        t[oldcol].name=column
 
 print 'Remove whitespace padding:',
 sys.stdout.flush()

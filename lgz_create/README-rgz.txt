@@ -46,3 +46,7 @@ Upload:
 
 export PANOPTES_PASSWORD=whatever
 NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --project 8190 --workflow 11973
+
+(or for the LGZ version)
+
+NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --project 2513 --workflow 12374

@@ -6,15 +6,10 @@
 # lofarhdu must be a flattened (2D) LOFAR map. opthdu can be any type
 # of optical map. rms_use must be the local rms
 
+import os
 from time import sleep
 import numpy as np
-successful=False
-while not successful:
-    try:
-        import aplpy
-        successful=True
-    except:
-        sleep(np.random.rand()*20)
+import aplpy
 import matplotlib.pyplot as plt
 from astropy.wcs import WCS
 from astropy.table import Table
@@ -142,6 +137,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         print 'Using minimum level',minlevel
         levels=minlevel*2.0**np.linspace(0,14,30)
 
+    rgbname=None
     hdu=opthdu
 
     if len(hdu[0].data.shape)>2:
@@ -154,11 +150,12 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
             print 'channel',i,mean,noise,vmin,vmax
             vmins.append(vmin)
             vmaxes.append(vmax)
-        vmax=max(vmaxes)
+        vmax=np.nanmax(vmaxes)
         if vmax_cap is not None and vmax>vmax_cap:
             vmax=vmax_cap
-        aplpy.make_rgb_image(hdu.filename(),'rgb.png',stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2],vmax_r=vmax,vmax_g=vmax,vmax_b=vmax) # FILENAME NOT SAFE
-        f=aplpy.FITSFigure('rgb.png',north=True)
+        rgbname=os.tempnam('.','rgb')+'.png'
+        aplpy.make_rgb_image(hdu.filename(),rgbname,stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2],vmax_r=vmax,vmax_g=vmax,vmax_b=vmax)
+        f=aplpy.FITSFigure(rgbname,north=True)
         print 'centring on',ra,dec,size
         f.recenter(ra,dec,width=size,height=size)
         f.show_rgb()
@@ -265,4 +262,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         else:
             I=interactive_handler(f)
             fig.canvas.mpl_connect('button_press_event', I.onclick)
+
+    if rgbname is not None:
+        os.remove(rgbname)
+        
     return f
