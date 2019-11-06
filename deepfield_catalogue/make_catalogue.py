@@ -317,7 +317,7 @@ def make_structure(field,warn=False):
         preselect_dir='/beegfs/lofar/deepfields/Bootes_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/bootes'
         blend_dirs=['/beegfs/lofar/deepfields/Bootes_blend','/beegfs/lofar/deepfields/preselect_blend/bootes/blend',lgz_dir+'/blend']
-        noid_file=None
+        noid_file='/beegfs/lofar/deepfields/lgz/bootes/noid/noid.txt'
     elif field=='lockman':
         ct=Table.read('/beegfs/lofar/deepfields/Lockman_LR/updated_LR_cols/LH_ML_RUN_fin_overlap_srl_workflow_th.fits')
         ct_nt=Table.read('/beegfs/lofar/deepfields/Lockman_LR/LH_ML_RUN_fin_overlap_srl_workflow.fits')
@@ -326,7 +326,7 @@ def make_structure(field,warn=False):
         preselect_dir='/beegfs/lofar/deepfields/Lockman_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/lockman'
         blend_dirs=['/beegfs/lofar/deepfields/Lockman_blend','/beegfs/lofar/deepfields/preselect_blend/lockman/blend',lgz_dir+'/blend']
-        noid_file=None
+        noid_file='/beegfs/lofar/deepfields/lgz/lockman/noid/noid.txt'
     elif field=='en1':
         ct=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/new_optcat_matches/EN1_ML_RUN_fin_overlap_srl_workflow_th.fits')
         ct_nt=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/EN1_ML_RUN_fin_overlap_srl_workflow_fixed.fits')

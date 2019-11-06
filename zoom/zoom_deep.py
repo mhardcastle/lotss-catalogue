@@ -294,7 +294,14 @@ if __name__=='__main__':
             except:
                 peak=None
 
-            f=show_overlay(lhdu,whdu,ra,dec,size*scalefactor/initfactor,coords_color='red',coords_ra=s.sd[sourcename]['RA'],coords_dec=s.sd[sourcename]['DEC'],coords_lw=3,lw=2,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,block=False,interactive=False,drlimit=8000,peak=peak,plotpos=[(pwg,'+')])
+            try:
+                f=show_overlay(lhdu,whdu,ra,dec,size*scalefactor/initfactor,coords_color='red',coords_ra=s.sd[sourcename]['RA'],coords_dec=s.sd[sourcename]['DEC'],coords_lw=3,lw=2,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,block=False,interactive=False,drlimit=8000,peak=peak,plotpos=[(pwg,'+')])
+            except Exception as e:
+                print '*** Error making image ***'
+                print e
+                raw_input()
+                stop=True
+                break
 
             ora,odec=s.optid(sourcename)
 
