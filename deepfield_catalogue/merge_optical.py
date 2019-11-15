@@ -59,10 +59,11 @@ os.system('/soft/topcat/stilts tmatch2  join=all1 values1=NUMBER values2=ID matc
 t=Table.read(mergeout2)
 finalname=mergeout2.replace('merged_src','final')
 print 'Remove unnecessary columns'
-cols=['RA_2','DEC_2','FLAG_OVERLAP_2','FLAG_CLEAN_2','id', 'ID_OPTICAL', 'ID_SPITZER']
+cols=['RA_2','DEC_2','FLAG_OVERLAP_2','FLAG_CLEAN_2','id', 'ID_OPTICAL_2', 'ID_SPITZER_2']
 for fcol in t.colnames:
-    if fcol.endswith("_flux") or fcol.endswith("_fluxerr"):
+    if fcol.endswith("_fluxerr"):
         cols.append(fcol)
+        cols.append(fcol[:-3])
 
 for c in cols:
     print c,
@@ -73,7 +74,7 @@ for c in cols:
 print
 print 'Rename columns'
 #t['Separation_1'].name='Separation'
-for column in ['RA','DEC','FLAG_OVERLAP','flag_clean']:
+for column in ['RA','DEC','FLAG_OVERLAP','flag_clean', "ID_OPTICAL", "ID_SPITZER"]:
     oldcol=column+'_1'
     if oldcol in t.colnames:
         t[oldcol].name=column
