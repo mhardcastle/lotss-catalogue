@@ -26,7 +26,10 @@ def writeres():
 ##### edit the following lines to choose the sample and possible options
 
 dir='.'
-sample='noid'
+try:
+    sample=sys.argv[1]
+except:
+    sample='noid'
 options=('Position secure, no ID','Position secure, faint ID','Extended, no ID','Foreground object','Extended, multiple IDs','Artefact','Deblend','TZI/other issue','Possible ID')
 
 ##### don't change anything else

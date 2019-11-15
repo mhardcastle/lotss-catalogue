@@ -31,13 +31,14 @@ if __name__=='__main__':
 
     tname=sys.argv[1]
     t=Table.read(tname)
-
+    version='v0.4'
+    
     dir=os.getcwd()
     print 'Reading data...'
     if 'en1' in dir:
 
-        st=Table.read('/beegfs/lofar/deepfields/lgz/en1/final-v0.2.fits')
-        ot=Table.read('/beegfs/lofar/deepfields/lgz/en1/components-v0.2.fits')
+        st=Table.read('/beegfs/lofar/deepfields/lgz/en1/final-'+version+'.fits')
+        ot=Table.read('/beegfs/lofar/deepfields/lgz/en1/components-'+version+'.fits')
 
         # read in the big files that have all the data
         gals=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/correct_merging/add_uncat/EN1_MASTER_opt_spitzer_merged_cedit_apcorr_adduncat_lite.fits')
@@ -45,15 +46,15 @@ if __name__=='__main__':
         spitzerfile=fits.open('/beegfs/lofar/deepfields/ELAIS_N1_optical/optical_images/sw2band/EL_EN1_sw2band.fits')
         ibandfile=fits.open('/beegfs/lofar/deepfields/ELAIS_N1_optical/optical_images/iband/EL_EN1_iband.fits')
     elif 'bootes' in dir:
-        st=Table.read('/beegfs/lofar/deepfields/lgz/bootes/final-v0.2.fits')
-        ot=Table.read('/beegfs/lofar/deepfields/lgz/bootes/components-v0.2.fits')
+        st=Table.read('/beegfs/lofar/deepfields/lgz/bootes/final-'+version+'.fits')
+        ot=Table.read('/beegfs/lofar/deepfields/lgz/bootes/components-'+version+'.fits')
         lofarfile=fits.open('/beegfs/lofar/deepfields/Bootes_LOFAR/image_full_ampphase_di_m.NS_shift.int.facetRestored.blanked.scaled.fits')
         spitzerfile=fits.open('/beegfs/lofar/deepfields/Bootes_optical/SDWFS/I2_bootes.v32.fits')
         ibandfile=fits.open('/beegfs/lofar/deepfields/Bootes_merged_optical/Bootes_iband.fits')
         gals=Table.read('/beegfs/lofar/deepfields/Bootes_merged_optical/add_uncat/Bootes_MASTER_opt_spitzer_merged_adduncat_lite.fits')
     elif 'lockman' in dir:
-        st=Table.read('/beegfs/lofar/deepfields/lgz/lockman/final-v0.3.fits')
-        ot=Table.read('/beegfs/lofar/deepfields/lgz/lockman/components-v0.3.fits')
+        st=Table.read('/beegfs/lofar/deepfields/lgz/lockman/final-'+version+'.fits')
+        ot=Table.read('/beegfs/lofar/deepfields/lgz/lockman/components-'+version+'.fits')
         gals=Table.read('/beegfs/lofar/deepfields/Lockman_edited_cats/optical/add_uncat/LH_MASTER_opt_spitzer_merged_cedit_apcorr_adduncat_lite.fits')
         lofarfile=fits.open('/beegfs/lofar/deepfields/Lockman_LOFAR/image_full_ampphase_di_m.NS_shift.int.facetRestored.blanked.scaled.fits')
         spitzerfile=fits.open('/beegfs/lofar/deepfields/Lockman/LH_4d5band.fits')

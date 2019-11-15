@@ -9,9 +9,13 @@ import numpy as np
 dir=os.getcwd()
 field=os.path.basename(dir)
 print 'field is',field
+try:
+    skip_noid=(sys.argv[1]=='noid')
+except:
+    skip_noid=False
 
 if field=='en1':
-    mask='/beegfs/lofar/deepfields/ELAIS_N1_optical/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.blanked.scaled.rms_spmask.fits'
+    mask='/beegfs/lofar/deepfields/ELAIS_N1_optical/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.int.facetRestored-scaled.pybdsm.rmsd_I_spmask.fits'
     optcat='/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/correct_merging/add_uncat/EN1_MASTER_opt_spitzer_merged_cedit_apcorr_adduncat_lite.fits'
     src='/beegfs/lofar/deepfields/science_ready_catalogs/EN1_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_public.fits'
 elif field=='bootes':
@@ -56,6 +60,10 @@ t=Table.read(mergeout2)
 finalname=mergeout2.replace('merged_src','final')
 print 'Remove unnecessary columns'
 cols=['RA_2','DEC_2','FLAG_OVERLAP_2','FLAG_CLEAN_2','id', 'ID_OPTICAL', 'ID_SPITZER']
+for fcol in t.colnames:
+    if fcol.endswith("_flux") or fcol.endswith("_fluxerr"):
+        cols.append(fcol)
+
 for c in cols:
     print c,
     sys.stdout.flush()
@@ -90,6 +98,16 @@ print
 
 print 'Sorting'
 t.sort('RA')
+
+print 'Finalize NoID values'
+filter=(t['NoID']>0) & ~np.isnan(t['optRA'])
+print 'Set',np.sum(filter),'sources with NoID set but some ID to NoID=0'
+t['NoID']=np.where(filter,0,t['NoID'])
+filter=~np.isnan(t['optRA']) & t['NUMBER'].mask
+print 'Set',np.sum(filter),'sources with optRA set but no ID to NoID=2'
+t['NoID']=np.where(filter,2,t['NoID'])
+t['optRA']=np.where(filter,np.nan,t['optRA'])
+t['optDec']=np.where(filter,np.nan,t['optDec'])
 
 print 'Writing to disk'
 t.write(finalname,overwrite=True)

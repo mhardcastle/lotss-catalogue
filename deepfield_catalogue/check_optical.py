@@ -9,7 +9,7 @@ print 'filename is',filename
 t=Table.read(filename)
 
 print 'Total sources',len(t)
-print 'Sources with no optRA:',np.sum(np.isnan(t['optRA']))
+print 'Sources with no optRA:',np.sum(np.isnan(t['optRA'])),'(%.1f%%)' % (100.0*np.sum(np.isnan(t['optRA']))/len(t))
 t[np.isnan(t['optRA'])].write('noid.fits',overwrite=True)
 if 'NoID' in t.colnames:
     filter=np.isnan(t['optRA']) & (t['NoID']==0)
