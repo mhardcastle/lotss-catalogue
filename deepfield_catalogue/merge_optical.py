@@ -60,7 +60,7 @@ t=Table.read(mergeout2)
 finalname=mergeout2.replace('merged_src','final')
 print 'Remove unnecessary columns'
 
-cols=['RA_2','DEC_2','FLAG_OVERLAP_2','FLAG_CLEAN_2','id', 'ID_OPTICAL_2', 'ID_SPITZER_2']
+cols=['RA_2','DEC_2','FLAG_OVERLAP_2','FLAG_CLEAN_2','id', 'ID_OPTICAL_2', 'ID_SPITZER_2','ID_2','EBV_2']
 for fcol in t.colnames:
     if fcol.endswith("_fluxerr"):
         cols.append(fcol)
@@ -76,7 +76,7 @@ print
 print 'Rename columns'
 #t['Separation_1'].name='Separation'
 
-for column in ['ID','RA','DEC','FLAG_OVERLAP','flag_clean', "ID_OPTICAL", "ID_SPITZER"]:
+for column in ['ID','RA','DEC','FLAG_OVERLAP','flag_clean', 'ID_OPTICAL', 'ID_SPITZER','EBV']:
 
     oldcol=column+'_1'
     if oldcol in t.colnames:
