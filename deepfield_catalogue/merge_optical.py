@@ -76,12 +76,14 @@ print
 print 'Rename columns'
 #t['Separation_1'].name='Separation'
 
-for column in ['RA','DEC','FLAG_OVERLAP','flag_clean', "ID_OPTICAL", "ID_SPITZER"]:
+for column in ['ID','RA','DEC','FLAG_OVERLAP','flag_clean', "ID_OPTICAL", "ID_SPITZER"]:
 
     oldcol=column+'_1'
     if oldcol in t.colnames:
         t[oldcol].name=column
+        print oldcol,'->',column,':',
 
+print
 print 'Remove whitespace padding:',
 sys.stdout.flush()
 stringcols=[n for (n,ty) in t.dtype.descr if 'S' in ty]
