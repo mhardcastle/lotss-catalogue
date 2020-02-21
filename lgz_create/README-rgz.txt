@@ -38,7 +38,7 @@ python $LGZPATH/lgz_create/make_overlays_legacy.py file.fits 0 10
 Make the manifest file for upload
 
 cat > manifest.csv <<EOF
-subject_id,image_name_1,image_name_2,source_name,ra,dec,#size
+subject_id,image_name_1,image_name_2,image_name_3,source_name,ra,dec,#size
 EOF
 cat *-manifest.txt | sort -n -k 1 -t , >> manifest.csv
 
