@@ -1,0 +1,42 @@
+
+%run flow_python/match_2masx.py
+ in:
+    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.fits'
+    xsc_file = path+'2MASX_dr2_0hr.fits'
+ out:
+    lofarcat_file_psrt = path+'LoTSS_DR2_rolling.srl_0h.presort.fits'
+
+    
+%run flowchart/get_nearest_neighbours.py
+ in:
+    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.presort.fits'
+ out:
+    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
+     new cols: 'NN_sep','NN_LR', 'NN_sep', 'NN_idx', 'NN5_sep','NN4_sep', 'NN_Total_flux', 'NN_Frat', 'NN_Maj'
+
+%run flow_python/add_gaus_info.py  (can edit to redo)
+ in:
+    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+    lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.lr.fits'
+    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
+
+ out:
+    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
+      new_cols: 'Ng', 'G_max_sep', 'G_LR_max', 'Ng_LR_good','Ng_LR_good_unique','N_G_LR_matchsource','Flag_G_LR_problem'
+      
+
+
+%run flow_python/lofar_source_sorter_v2.py 1 isol    
+ in:
+    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
+    lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.lr.fits'
+    
+ out:
+    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step{st}.fits'.format(st=step)
+      new_cols: _many_
+      
+      
+      
