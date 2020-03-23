@@ -14,17 +14,9 @@ import astropy.units as u
 import os
 
 
-#path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
-#lofarcat_file = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.fits'
-#lofarcat_file_psrt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.presort.fits'
-
-
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-#lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.fits'
 lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.fits'
 lofarcat_file_psrt = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
-
-
 
 lofarcat = Table.read(lofarcat_file)
 

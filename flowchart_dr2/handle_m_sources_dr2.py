@@ -1,11 +1,14 @@
+import os
+import sys
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
 from astropy.table import Table, join, Column
 import astropy.units as u
 import astropy.coordinates as ac
 import utils.plot_util as pp
-import os
 
 from lofar_source_sorter_dr2 import Mask
 
@@ -38,7 +41,7 @@ if __name__=='__main__':
 
 
     step = int(sys.argv[1])
-    if step not in  [1,2]:
+    if step not in  [1]:
         print('unknown step',step)
         sys.exit(1)
 
@@ -50,9 +53,11 @@ if __name__=='__main__':
     #mode = 'nonisol'
 
     path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-    lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.fits'
-    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted.fits'
+    lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.lr.fits'
+    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step1.fits'
 
+    if not os.path.exists(lofarcat_file_srt):
+        print('{f} does not exist - first run lofar_source_sorter_v2.py to produce this'.format(f=lofarcat_file_srt))
 
     version = 'v1'
     
@@ -829,6 +834,10 @@ if __name__=='__main__':
                 print(t.name)
                 t.make_sample(lofarcat,Nsample=None)
         
-        
-    lofarcat.keep_columns(['Source_Name','M_Diagnosis_Code',mcflg])
-    lofarcat[M_small_m_nisol.mask].write(lofar_msource_flowchart_file, overwrite=True)
+    
+    outcat = Table([Column(name='Source_Name', data=lofarcat['Source_Name'][M_small_m_nisol.mask]),
+                    Column(name='M_Diagnosis_Code', data=lofarcat['M_Diagnosis_Code'][M_small_m_nisol.mask]),
+                    Column(name=mcflg, data=lofarcat[mcflg][M_small_m_nisol.mask])])
+    #lofarcat.keep_columns(['Source_Name','M_Diagnosis_Code',mcflg])
+    #lofarcat[M_small_m_nisol.mask].write(lofar_msource_flowchart_file, overwrite=True)
+    outcat.write(lofar_msource_flowchart_file, overwrite=True)

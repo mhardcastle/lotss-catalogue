@@ -161,22 +161,6 @@ if calculate_intersections:
         lofarcat['Intersects'] = cintersects
         
 
-    M_encloses = Mask(lofarcat['Encloses'],
-                    'Encloses',
-                    'encloses',
-                    qlabel='encloses?')
-    M_enclosed = Mask(lofarcat['Enclosed'],
-                    'Enclosed',
-                    'enclosed',
-                    qlabel='enclosed?')
-    M_intersects = Mask(lofarcat['Intersects'],
-                    'Intersects',
-                    'intersects',
-                    qlabel='intersects?')
-    M_encloses.make_sample(lofarcat)
-    M_enclosed.make_sample(lofarcat)
-    M_intersects.make_sample(lofarcat)
-    
 
 plot = False
 if plot:
@@ -192,6 +176,13 @@ if plot:
     ax.scatter(lofarcat['RA'], lofarcat['DEC'],s=1,c='gray')
     ax.set_ylim(lofarcat['DEC'].min(), lofarcat['DEC'].max())
     ax.set_xlim(lofarcat['RA'].max(), lofarcat['RA'].min())
+
+
+# put back in arcsec
+lofarcat['Maj'] = lofarcat['Maj'] *3600.
+lofarcat['Min'] = lofarcat['Min'] *3600.
+lofarcat['NN_Maj'] = lofarcat['NN_Maj'] *3600.
+lofarcat['NN_sep'] = lofarcat['NN_sep'] *3600.
 
 
 ## write output file

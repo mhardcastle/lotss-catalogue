@@ -5,21 +5,22 @@ get_msource_flags
 add flags to catalogue based on sub-flowchart of compact isolated m sources
 '''
 
-from lofar_source_sorter import Mask, Masks_disjoint_complete
+import os
 import numpy as np
+
 from astropy.table import Table, Column, join
 import astropy.coordinates as ac
 import astropy.units as u
-import os
+
+from lofar_source_sorter_dr2 import Mask, Masks_disjoint_complete
+
 
 #################################################################################
 
-path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
-lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.presort.fits'
 
 
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.fits'
+lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step1.fits'
 
 
 lofarcat = Table.read(lofarcat_file_srt)
@@ -38,8 +39,7 @@ lofarcat = Table.read(lofarcat_file_srt)
 #4: deblend workflow
 #5: LOFAR galaxy zoo 
 
-#msource_cat_file = path+'msources/LOFAR_flowchart.fixed.fits'
-msource_cat_file = path+'msources/isol_msources_flowchart_v2.fits'
+msource_cat_file = path+'msources/step1_isol_msources_flowchart_v1.fits'
 msource_cat = Table.read(msource_cat_file)
 
 if 'msource1_flag' in lofarcat.colnames:
@@ -49,19 +49,19 @@ if 'MC_flag1' in lofarcat.colnames:
 lofarcat.sort('Source_Name')
 tt=join(lofarcat, msource_cat, join_type='left', keys=['Source_Name'])
 tt['M_Diagnosis_Code'].fill_value = -1
-tt['MC_flag'].fill_value = -1
+tt['MC_flag1'].fill_value = -1
 tt = tt.filled()
 tt.sort('Source_Name')
 tt.rename_column('M_Diagnosis_Code','msource1_flag')
-tt.rename_column('MC_flag','MC_flag1')
+tt.rename_column('MC_flag1','MC1_flag1')
 
 
 lofarcat.add_column(tt['msource1_flag'])
-lofarcat.add_column(tt['MC_flag1'])
+lofarcat.add_column(tt['MC1_flag1'])
 
 # 
 # compact non-isolated m sources
-msource_cat_file = path+'msources/nonisol_msources_flowchart_v2.fits'
+msource_cat_file = path+'msources/step1_nonisol_msources_flowchart_v1.fits'
 msource_cat = Table.read(msource_cat_file)
 
 if 'msource2_flag' in lofarcat.colnames:
@@ -71,15 +71,15 @@ if 'MC_flag2' in lofarcat.colnames:
 lofarcat.sort('Source_Name')
 tt=join(lofarcat, msource_cat, join_type='left', keys=['Source_Name'])
 tt['M_Diagnosis_Code'].fill_value = -1
-tt['MC_flag'].fill_value = -1
+tt['MC_flag1'].fill_value = -1
 tt = tt.filled()
 tt.sort('Source_Name')
 tt.rename_column('M_Diagnosis_Code','msource2_flag')
-tt.rename_column('MC_flag','MC_flag2')
+tt.rename_column('MC_flag1','MC2_flag1')
 
 
 lofarcat.add_column(tt['msource2_flag'])
-lofarcat.add_column(tt['MC_flag2'])
+lofarcat.add_column(tt['MC2_flag1'])
 
 
 

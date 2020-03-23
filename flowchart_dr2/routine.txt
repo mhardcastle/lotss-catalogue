@@ -1,7 +1,7 @@
+path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
 
 %run flow_python/match_2masx.py
  in:
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
     lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.fits'
     xsc_file = path+'2MASX_dr2_0hr.fits'
  out:
@@ -10,7 +10,6 @@
     
 %run flowchart/get_nearest_neighbours.py
  in:
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
     lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.presort.fits'
  out:
     lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
@@ -18,7 +17,6 @@
 
 %run flow_python/add_gaus_info.py  (can edit to redo)
  in:
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
     lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.lr.fits'
     lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
 
@@ -28,15 +26,35 @@
       
 
 
-%run flow_python/lofar_source_sorter_v2.py 1 isol    
+%run flow_python/lofar_source_sorter_v2.py 1    
  in:
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
     lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
     lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.lr.fits'
     
  out:
-    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step{st}.fits'.format(st=step)
+    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step1.fits'
       new_cols: _many_
       
       
-      
+%run flow_python/handle_m_sources_dr2.py 1 nonisol 
+%run flow_python/handle_m_sources_dr2.py 1 isol
+  in:
+    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.sorted_step1.fits'
+  out:
+    msources/step1_nonisol_msources_flowchart_v1.fits
+    msources/step1_isol_msources_flowchart_v1.fits
+
+%run flow_python/get_msource_flags.py
+  in:
+    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step1.fits' 
+  out:
+    adds columns MC_flag, M_Diagnosis_Code (from MC_flag[12] and msource[12]_flag
+
+%run flow_python/lofar_source_sorter_v2.py 2
+  in:
+    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.sorted_step1.fits'
+  out:
+    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step2.fits'
+
+
+
