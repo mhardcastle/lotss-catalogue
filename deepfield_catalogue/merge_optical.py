@@ -59,7 +59,23 @@ mergeout2=mergeout.replace('merged','merged_src')
 #    t['NUMBER'].mask=np.isnan(t['ID'])
 #    t.write(mergeout,overwrite=True)
 
-os.system('/soft/topcat/stilts tmatch2  join=all1 values1=ID values2=ID matcher=exact in1=%s in2=%s out=%s' % (mergeout,src,mergeout2))
+# Join the src and src_ze columns
+src_t = Table.read(src)
+src_ze_t = Table.read(src_ze)
+
+new_z_cols = ["Z_SPEC", "Z_SOURCE", "Z_QUAL"]
+for col in new_z_cols:
+    src_t[col] = src_ze_t[col]
+del src_ze_t
+# Write this to a tmp file
+src_v2_fname = field + "_src_v2_tmp.fits"
+src_t.write(src_v2_fname, overwrite=True)
+
+os.system('/soft/topcat/stilts tmatch2  join=all1 values1=ID values2=ID matcher=exact in1=%s in2=%s out=%s' % (mergeout,src_v2_fname,mergeout2))
+
+# Delete the tmp src file
+if os.path.exists(src_v2_fname):
+    os.system("rm " + src_v2_fname)
 
 t=Table.read(mergeout2, character_as_bytes=False)
 finalname=mergeout2.replace('merged_src','final')
@@ -87,13 +103,6 @@ for column in ['ID','RA','DEC','FLAG_OVERLAP','flag_clean', 'ID_OPTICAL', 'ID_SP
     if oldcol in t.colnames:
         t[oldcol].name=column
         print oldcol,'->',column,':',
-
-# Add three new redshift columns (**overwrites 'Z_SPEC'**)
-src_zen = Table.read(src_ze, character_as_bytes=False)
-new_z_cols = ["Z_SPEC", "Z_SOURCE", "Z_QUAL"]
-for col in new_z_cols:
-    t[col] = src_zen[col]
-del src_zen
 
 # Read in XID+ catalogue and update the FIR data for sources that were re-run
 xid_t = Table.read(xid)
