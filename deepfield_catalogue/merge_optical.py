@@ -122,7 +122,7 @@ for col in xid_cols:
         t[col][in_fin] = xid_t[col]
     else:
         # Make a new column
-        t[col] = np.nan
+        t[col] = False
         t[col][in_fin] = xid_t[col]
 
 print
