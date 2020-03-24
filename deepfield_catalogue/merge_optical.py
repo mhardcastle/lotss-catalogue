@@ -77,10 +77,6 @@ else:
     src_v2_fname=src
 os.system('/soft/topcat/stilts tmatch2  join=all1 values1=ID values2=ID matcher=exact in1=%s in2=%s out=%s' % (mergeout,src_v2_fname,mergeout2))
 
-# Delete the tmp src file
-if os.path.exists(src_v2_fname):
-    os.system("rm " + src_v2_fname)
-
 t=Table.read(mergeout2)
 finalname=mergeout2.replace('merged_src','final')
 print 'Remove unnecessary columns'
