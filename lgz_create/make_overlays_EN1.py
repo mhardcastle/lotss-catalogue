@@ -70,7 +70,10 @@ if __name__=='__main__':
         marker_dec=None
         title=None
         maxsize=180
-        minsize=60
+        if 'LGZ_Size' in t.colnames and r['LGZ_Size']>0:
+            minsize=r['LGZ_Size']*1.1
+        else:
+            minsize=60
         
         # resize the image to look for interesting neighbours
         iter=0
