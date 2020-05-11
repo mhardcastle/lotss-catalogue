@@ -267,7 +267,7 @@ class Source(object):
         self.sd[sourcename]['lr_dec_fin']=np.nan
 
     def set_size(self,sourcename,size):
-        self.sd[sourcename]['LGZ_Size']=size
+        self.sd[sourcename]['Manual_Size']=size
     
     def optid(self,sourcename):
         if 'optRA' in self.sd[sourcename]:
@@ -554,7 +554,10 @@ def make_structure(field,warn=False):
                                 clist=gt[these_gids]
                                 r=assemble_source(clist)
                                 sname=r['Source_Name']
-                                r['Assoc']=len(clist)
+                                if len(clist)==1:
+                                    r['Assoc']=0
+                                else:
+                                    r['Assoc']=len(clist)
                                 r['Assoc_Qual']=1
                                 r['ID_Qual']=1
                                 r['Blend_prob']=0
@@ -602,6 +605,7 @@ def make_structure(field,warn=False):
         parsefile(source,s,dir=lgz_dir+'/zoom/')
         s.sd[source]['Created']='Too zoomed in'
         s.sd[source]['Zoomfile']=f
+        s.sd[source]['LGZ_assembly_required']=True
 
     # component table won't now change, so generate it so it can be
     # passed to assemble_source
@@ -636,24 +640,29 @@ def make_structure(field,warn=False):
                 s.zoomneeded.append(name)
             clist=new_ct[cids]
             r=assemble_source(clist)
+            if 'Manual_Size' in s.sd[name]:
+                print 'Adding manual size measurement'
+                r['LGZ_Size']=s.sd[name]['Manual_Size']
             sname=r['Source_Name']
             if sname!=name:
-                print 'Renaming old source',name,'to',sname
+                print 'Renaming old source',name,'created by',s.sd[name]['Created'],'to',sname
                 r['Renamed_from']=name
-                for key in s.sd[name]:
-                    if key not in r:
-                        r[key]=s.sd[name][key]
-                r['Assoc']=len(r['Children'])
                 s.delete_source(name,'Renamed',descend=False)
-                for comp in r['Children']:
-                    s.cd[comp]['Parent']=sname
+
+            for key in s.sd[name]:
+                if key not in r:
+                    r[key]=s.sd[name][key]
+            for comp in r['Children']:
+                s.cd[comp]['Parent']=sname
+
+            r['Assoc']=len(r['Children'])
             s.create_source(sname,r)
             if 'Deleted' in s.sd[sname]:
                 del(s.sd[sname]['Deleted'])
-            if s.sd[sname]['Art_prob']>0.5:
+            if 'Art_prob' in s.sd[sname] and s.sd[sname]['Art_prob']>0.5:
                 s.delete_source(sname,'LGZ artefact')
             del s.sd[sname]['LGZ_assembly_required']
-
+            
     # finally sort out optical positions
     for source in s.sd:
         if 'Deleted' in s.sd[source]:
@@ -708,6 +717,22 @@ def make_structure(field,warn=False):
                     else:
                         s.sd[sname]['NoID']=3
 
+    s.set_stage('Assoc check')
+    # At this point Assoc should be correct except for sources where
+    # e.g. a zoom file has over-ridden a de-blend. Fix those
+    for source in s.sd:
+        if 'Deleted' in s.sd[source]:
+            continue
+        if len(s.sd[source]['Children'])>1:
+            if 'Assoc' not in s.sd[source]:
+                print 'Fixing',source,'created by',s.sd[source]['Created'],'which has assoc unset but',len(s.sd[source]['Children']),'children'
+            elif s.sd[source]['Assoc']!=len(s.sd[source]['Children']):
+                print 'Fixing',source,'created by',s.sd[source]['Created'],'which has assoc =',s.sd[source]['Assoc'],'but',len(s.sd[source]['Children']),'children'
+                s.sd[source]['Assoc']=len(s.sd[source]['Children'])
+        elif len(s.sd[source]['Children'])==1:
+            if 'Assoc' in s.sd[source] and s.sd[source]['Assoc']!=0:
+                print 'Fixing',source,'created by',s.sd[source]['Created'],'which has assoc =',s.sd[source]['Assoc'],'but',len(s.sd[source]['Children']),'children'
+                s.sd[source]['Assoc']=0
     return s
 
 def generate_table(sd,columns,keep_deleted=False): 
@@ -742,6 +767,23 @@ def sanity_check(s):
                 print s.sd[source]
                 errors+=1
             else:
+                # add children/assoc integrity check
+                nchildren=len(s.sd[source]['Children'])
+                if 'Assoc' not in s.sd[source]:
+                    if nchildren>1:
+                        print 'Source',source,'has unset assoc but more than one child'
+                        errors+=1
+                    else:
+                        #fine
+                        pass
+                elif s.sd[source]['Assoc']==0 and nchildren!=1:
+                    print 'Source',source,'has assoc=0 but more than 1 child'
+                    errors+=1
+                elif s.sd[source]['Assoc']>0 and nchildren!=s.sd[source]['Assoc']:
+                    print 'Source',source,'has assoc', s.sd[source]['Assoc'],'but',nchildren,'children'
+                    errors+=1
+                              
+                    
                 for component in s.sd[source]['Children']:
                     if 'Deleted' in s.cd[component]:
                         print source
@@ -797,7 +839,7 @@ if __name__=='__main__':
     
     sanity_check(s)
 
-    version='v0.6'
+    version='v0.7'
     
     print 'Constructing output table'
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('NoID',0),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
