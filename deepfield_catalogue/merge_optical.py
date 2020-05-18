@@ -20,18 +20,30 @@ if field=='en1':
     src='/beegfs/lofar/deepfields/science_ready_catalogs/EN1_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public.fits'
     xid='/beegfs/lofar/deepfields/ELAIS_N1_FIR_prelim/XID+_lofar_ELAIS-N1_v0.5_20200113.fits'
     src_ze='/beegfs/lofar/deepfields/science_ready_catalogs/EN1_opt_spitzer_merged_vac_opt3as_irac4as_specz.v2.fits'
+    new_lr_path = "/beegfs/lofar/deepfields/LR_update/en1/EN1_ML_RUN_fin_overlap_srl.fits"
+    lr_vis_path = "/beegfs/lofar/deepfields/LR_update/en1/EN1_lr_in_old_not_new_pos.txt"
+    lr_th = 0.056
+    changeid_path = "/beegfs/lofar/deepfields/LR_update/en1/EN1_change_IDs.txt"
 elif field=='bootes':
     mask='/beegfs/lofar/deepfields/Bootes_merged_optical/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.blanked.scaled.rms_spmask.fits'
     optcat='/beegfs/lofar/deepfields/Bootes_merged_optical/add_uncat/Bootes_MASTER_opt_spitzer_merged_adduncat_lite.fits'
     src='/beegfs/lofar/deepfields/science_ready_catalogs/Bootes_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public.fits'
     xid='/beegfs/lofar/deepfields/Bootes_FIR/XID+_lofar_Bootes_v0.5_20200209.fits'
     src_ze=None
+    new_lr_path = "/beegfs/lofar/deepfields/LR_update/bootes/Bootes_ML_RUN_fin_overlap_srl.fits"
+    lr_vis_path = "/beegfs/lofar/deepfields/LR_update/bootes/Bootes_lr_in_old_not_new_pos.txt"
+    lr_th = 0.22
+    changeid_path = None
 elif field=='lockman':
     mask='/beegfs/lofar/deepfields/Lockman_edited_cats/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.blanked.scaled.rms_spmask.fits'
     optcat='/beegfs/lofar/deepfields/Lockman_edited_cats/optical/add_uncat/LH_MASTER_opt_spitzer_merged_cedit_apcorr_adduncat_lite.fits'
     src='/beegfs/lofar/deepfields/science_ready_catalogs/LH_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public.fits'
     xid='/beegfs/lofar/deepfields/Lockman_FIR/XID+_lofar_Lockman_v0.5_20200303.fits'
     src_ze='/beegfs/lofar/deepfields/science_ready_catalogs/LH_opt_spitzer_merged_vac_opt3as_irac4as_specz.v2.fits'
+    new_lr_path = "/beegfs/lofar/deepfields/LR_update/lockman/LH_ML_RUN_fin_overlap_srl.fits"
+    lr_vis_path = "/beegfs/lofar/deepfields/LR_update/lockman/LH_lr_in_old_not_new_pos.txt"
+    lr_th = 0.055
+    changeid_path = "/beegfs/lofar/deepfields/LR_update/lockman/Lockman_change_IDs.txt"
 else:
     raise RuntimeError('Field not supported!')
     
@@ -48,6 +60,19 @@ print 'Applying final flags'
 final_flag(field,outfile,flagname)
 
 mergeout=flagname.replace('flagged','merged')
+
+# If field is not Bootes, then update the optRA and optDec of some sources to change to the correct ID
+if field is not "bootes":
+    print 'Updating the optRA and optDec of some sources before merging'
+    changeid = Table.read(changeid_path, format='ascii')
+    ft = Table.read(flagname, character_as_bytes=False)
+
+    in_flagged = np.isin(ft["Source_Name"], changeid["Source_Name"])
+    print 'Changing ID for ',np.sum(in_flagged),' sources'
+    ft["optRA"][in_flagged] = np.copy(changeid["optRA"])
+    ft["optDec"][in_flagged] = np.copy(changeid["optDec"])
+
+    ft.write(flagname, overwrite=True)
 
 os.system('/soft/topcat/stilts tskymatch2 ra1=optRA dec1=optDec ra2=ALPHA_J2000 dec2=DELTA_J2000 error=1.5 join=all1 in1=%s in2=%s out=%s' % (flagname,optcat,mergeout))
 
@@ -145,6 +170,30 @@ for c in stringcols:
     sys.stdout.flush()
     t[c]=[s.rstrip() for s in t[c]]
 print
+
+print 'Updating the LR values and Position_from flag for subset that were later visually inspected'
+# if field is not "bootes":
+new_lr = Table.read(new_lr_path, character_as_bytes=False)
+lr_vis = Table.read(lr_vis_path, format='ascii')
+
+# Firstly, update the lr_th columns, setting a minimum value of 1.1*lr_th if needed?
+raw_in_fin = np.isin(t["Source_Name"], new_lr["Source_Name"])
+_, ind_t, ind_new_lr = np.intersect1d(np.array(t["Source_Name"]), np.array(new_lr["Source_Name"]), return_indices=True)
+
+# Check that intersect1d is run correctly
+assert np.sum(raw_in_fin) == len(ind_t), "Something has gone wrong in intersect1d!"
+
+# Copy over the new LR values
+t["lr_fin"][ind_t] = np.copy(new_lr["lr_fin"][ind_new_lr])
+
+# Also set a minimum LR value? I don't think this is needed
+# low_lr = t["lr_fin"] <= lr_th
+# print("No. of low LR sources: {0}".np.sum(low_lr))
+# t["lr_fin"][low_lr] = 1.1 * lr_th
+
+# Update the Position_from for the subset that were visually inspected
+vis_in_fin = np.isin(t["Source_Name"], lr_vis["Source_Name"])
+t["Position_from"][vis_in_fin] = "Visual inspection"
 
 print 'Remove -99s:',
 dblcols=[n for (n,ty) in t.dtype.descr if ('f8' in ty or 'f4' in ty)]
