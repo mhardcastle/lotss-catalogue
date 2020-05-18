@@ -62,10 +62,10 @@ final_flag(field,outfile,flagname)
 mergeout=flagname.replace('flagged','merged')
 
 # If field is not Bootes, then update the optRA and optDec of some sources to change to the correct ID
-if field is not "bootes":
+if changeid is not None:
     print 'Updating the optRA and optDec of some sources before merging'
     changeid = Table.read(changeid_path, format='ascii')
-    ft = Table.read(flagname, character_as_bytes=False)
+    ft = Table.read(flagname)
 
     in_flagged = np.isin(ft["Source_Name"], changeid["Source_Name"])
     print 'Changing ID for ',np.sum(in_flagged),' sources'
@@ -173,7 +173,7 @@ print
 
 print 'Updating the LR values and Position_from flag for subset that were later visually inspected'
 # if field is not "bootes":
-new_lr = Table.read(new_lr_path, character_as_bytes=False)
+new_lr = Table.read(new_lr_path)
 lr_vis = Table.read(lr_vis_path, format='ascii')
 
 # Firstly, update the lr_th columns, setting a minimum value of 1.1*lr_th if needed?
