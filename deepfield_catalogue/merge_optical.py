@@ -61,6 +61,19 @@ final_flag(field,outfile,flagname)
 
 mergeout=flagname.replace('flagged','merged')
 
+# If field is not Bootes, then update the optRA and optDec of some sources to change to the correct ID
+if field is not "bootes":
+    print 'Updating the optRA and optDec of some sources before merging'
+    changeid = Table.read(changeid_path, format='ascii')
+    ft = Table.read(flagname, character_as_bytes=False)
+
+    in_flagged = np.isin(ft["Source_Name"], changeid["Source_Name"])
+    print 'Changing ID for ',np.sum(in_flagged),' sources'
+    ft["optRA"][in_flagged] = np.copy(changeid["optRA"])
+    ft["optDec"][in_flagged] = np.copy(changeid["optDec"])
+
+    ft.write(flagname, overwrite=True)
+
 os.system('/soft/topcat/stilts tskymatch2 ra1=optRA dec1=optDec ra2=ALPHA_J2000 dec2=DELTA_J2000 error=1.5 join=all1 in1=%s in2=%s out=%s' % (flagname,optcat,mergeout))
 
 mergeout2=mergeout.replace('merged','merged_src')
