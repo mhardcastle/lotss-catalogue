@@ -196,6 +196,7 @@ if __name__=='__main__':
         size/=3600.0
         print 'Lofarfile is',lofarfile
         lhdu=extract_subim(lofarfile,ra,dec,size*2)
+        lhdu.writeto('lofar.fits',overwrite=True)
         try:
             peak==r['Peak_flux']/1000.0
         except:

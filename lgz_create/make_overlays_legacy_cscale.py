@@ -120,12 +120,12 @@ if __name__=='__main__':
         ra,dec=r['RA'],r['DEC']
         print 'Original RA DEC is',ra,dec
         
-        try:
-            marker_ra=r['ra']
-            marker_dec=r['dec']
-        except:
-            marker_ra=None
-            marker_dec=None
+        #try:
+        #    marker_ra=r['ra']
+        #    marker_dec=r['dec']
+        #except:
+        marker_ra=None
+        marker_dec=None
 
         title=None
 
@@ -256,7 +256,7 @@ if __name__=='__main__':
         ots=ot[seps<size*2]
 
         #ots=ots[ots['Source_Name']!=""] # removes artefacts
-        ots.write(sourcename+'-ellipses.fits',overwrite=True)
+        #ots.write(sourcename+'-ellipses.fits',overwrite=True)
         ls=[]
         for nr in ots:
             print nr[cname],sourcename

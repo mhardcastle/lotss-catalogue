@@ -129,6 +129,9 @@ def parsefile(sourcename,ss,dir=''):
     ss.sd[sourcename]['Zoom_prob']=0
     ss.sd[sourcename]['Imagemissing_prob']=0
     ss.sd[sourcename]['Hostbroken_prob']=0
+    if 'Children' not in ss.sd[sourcename]:
+        # because this is a zoom file for a source that doesn't exist
+        ss.sd[sourcename]['Children']=[]
     if 'Deleted' in ss.sd[sourcename]:
         del(ss.sd[sourcename]['Deleted'])
     lc=0
@@ -240,7 +243,10 @@ class Source(object):
         ncomp=[]
         for k in self.sd:
             if k!=sourcename and 'Deleted' not in self.sd[k]:
-                ncomp+=self.sd[k]['Children']
+                if 'Children' not in self.sd[k]:
+                    print 'Children missing!',k,self.sd[k]
+                else:
+                    ncomp+=self.sd[k]['Children']
         return ncomp
 
     def set_components(self,sourcename,componentlist):
@@ -253,6 +259,9 @@ class Source(object):
             if 'Deleted' in self.cd[comp]:
                 del(self.cd[comp]['Deleted']) 
             for checksource in self.sd:
+                if 'Children' not in self.sd[checksource]:
+                    print 'Children field missing!',checksource,self.sd[checksource]
+                    self.sd[checksource]['Children']=[]
                 if checksource!=sourcename and comp in self.sd[checksource]['Children']:
                    self.sd[checksource]['Children'].remove(comp)
                    if self.sd[checksource]['Children']==[]:
@@ -582,6 +591,7 @@ def make_structure(field,warn=False):
                                         print 'Not deleting parent',parent
                                     s.cd[g]=deepcopy(s.gd[g])
                                     s.cd[g]['Created']='Promoted from Gaussian'
+                                    s.cd[g]['Deblended_from']=name
                                     s.gd[g]['Parent']=g
                                     s.cd[g]['Children']=[g]
                                     s.cd[g]['Parent']=sname
@@ -599,7 +609,7 @@ def make_structure(field,warn=False):
 
     s.set_stage('Too zoomed in')
 
-    g=glob.glob(lgz_dir+'/zoom/*.txt')
+    g=glob.glob(lgz_dir+'/zoom/ILTJ*.txt')
     for f in g:
         source=f.replace('.txt','').replace(lgz_dir+'/zoom/','')
         parsefile(source,s,dir=lgz_dir+'/zoom/')
@@ -667,7 +677,8 @@ def make_structure(field,warn=False):
     for source in s.sd:
         if 'Deleted' in s.sd[source]:
             continue
-        if 'optRA' in s.sd[source]:
+        if 'optRA' in s.sd[source] or 'lr_ra_fin' not in s.sd[source]:
+            # RH 'or' because we may have a TZI source with no opt ID
             s.sd[source]['Position_from']='Visual inspection'
         else:
             s.sd[source]['Position_from']='LR'
@@ -845,7 +856,7 @@ if __name__=='__main__':
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('NoID',0),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
     write_table('sources-'+version+'.fits',s.sd,columns)
 
-    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Parent',None)]
+    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Deblended_from',""),('Parent',None)]
     rename=[('Source_Name','Component_Name'),('Parent','Parent_Source')]
     write_table('components-'+version+'.fits',s.cd,columns,rename=rename)
 
