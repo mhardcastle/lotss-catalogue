@@ -172,16 +172,24 @@ for c in stringcols:
 print
 
 print 'Updating the LR values and Position_from flag for subset that were later visually inspected'
-# if field is not "bootes":
 new_lr = Table.read(new_lr_path)
 lr_vis = Table.read(lr_vis_path, format='ascii')
 
 # Firstly, update the lr_th columns, setting a minimum value of 1.1*lr_th if needed?
-raw_in_fin = np.isin(t["Source_Name"], new_lr["Source_Name"])
-_, ind_t, ind_new_lr = np.intersect1d(np.array(t["Source_Name"]), np.array(new_lr["Source_Name"]), return_indices=True)
+ar1 = np.array(t["Source_Name"])
+ar2 = np.array(new_lr["Source_Name"])
+aux = np.concatenate((ar1, ar2))
+aux_sort_indices = np.argsort(aux, kind='mergesort')
+aux = aux[aux_sort_indices]
+
+mask = aux[1:] == aux[:-1]
+int1d = aux[:-1][mask]
+
+ind_t = aux_sort_indices[:-1][mask]
+ind_new_lr = aux_sort_indices[1:][mask] - ar1.size
 
 # Check that intersect1d is run correctly
-assert np.sum(raw_in_fin) == len(ind_t), "Something has gone wrong in intersect1d!"
+assert np.sum(raw_in_fin) == len(ind_t), "Something has gone wrong in finding common values"
 
 # Copy over the new LR values
 t["lr_fin"][ind_t] = np.copy(new_lr["lr_fin"][ind_new_lr])
