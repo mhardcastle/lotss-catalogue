@@ -62,10 +62,10 @@ final_flag(field,outfile,flagname)
 mergeout=flagname.replace('flagged','merged')
 
 # If field is not Bootes, then update the optRA and optDec of some sources to change to the correct ID
-if field is not "bootes":
+if changeid is not None:
     print 'Updating the optRA and optDec of some sources before merging'
     changeid = Table.read(changeid_path, format='ascii')
-    ft = Table.read(flagname, character_as_bytes=False)
+    ft = Table.read(flagname)
 
     in_flagged = np.isin(ft["Source_Name"], changeid["Source_Name"])
     print 'Changing ID for ',np.sum(in_flagged),' sources'
@@ -132,6 +132,8 @@ for column in ['ID','RA','DEC','FLAG_OVERLAP','flag_clean', 'ID_OPTICAL', 'ID_SP
 # Read in XID+ catalogue and update the FIR data for sources that were re-run
 xid_t = Table.read(xid)
 in_fin = np.isin(t["Source_Name"], xid_t["Source_Name"])
+in_xid = np.isin(xid_t["Source_Name"], t["Source_Name"])
+print np.sum(in_fin), np.sum(in_xid)
 
 # Hack for setting instrument name in flag_* to lower case - currently only needed for EN1
 flags = [aa for aa in xid_t.colnames if aa.startswith("flag_")]
@@ -153,11 +155,11 @@ for blah in spurious_cols:
 # Update the XID+ columns into the final catalogue columns + any new columns
 for col in xid_cols:
     if col in t.colnames:
-        t[col][in_fin] = xid_t[col]
+        t[col][in_fin] = xid_t[col][in_xid]
     else:
         # Make a new column
         t[col] = False
-        t[col][in_fin] = xid_t[col]
+        t[col][in_fin] = xid_t[col][in_xid]
 
 print
 print 'Remove whitespace padding:',
@@ -171,7 +173,7 @@ print
 
 print 'Updating the LR values and Position_from flag for subset that were later visually inspected'
 # if field is not "bootes":
-new_lr = Table.read(new_lr_path, character_as_bytes=False)
+new_lr = Table.read(new_lr_path)
 lr_vis = Table.read(lr_vis_path, format='ascii')
 
 # Firstly, update the lr_th columns, setting a minimum value of 1.1*lr_th if needed?

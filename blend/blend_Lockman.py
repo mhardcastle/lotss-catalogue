@@ -176,7 +176,7 @@ if __name__=='__main__':
     print 'Reading data...'
     gals=Table.read('/beegfs/lofar/deepfields/Lockman_edited_cats/optical/Lockman_merged_pos.fits')
     lofarfile=fits.open('/beegfs/lofar/deepfields/Lockman_LOFAR/image_full_ampphase_di_m.NS_shift.int.facetRestored.blanked.scaled.fits')
-    spitzerfile=fits.open('/beegfs/lofar/deepfields/Lockman/LH_4d5band.fits')
+    spitzerfile=fits.open('/beegfs/lofar/deepfields/Lockman/LH_4d5band_old.fits')
     rbandfile=fits.open('/beegfs/lofar/deepfields/Lockman/LH_rband.fits')
 
     gt=Table.read('/beegfs/lofar/deepfields/Lockman_LR/updated_LR_cols/LH_ML_RUN_fin_overlap_gaul_workflow_th.fits')

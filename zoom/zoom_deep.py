@@ -162,7 +162,7 @@ if __name__=='__main__':
         opt=opt[flt]
         idname='NUMBER'
         lofarfile=fits.open('/beegfs/lofar/deepfields/Lockman_LOFAR/image_full_ampphase_di_m.NS_shift.int.facetRestored.blanked.scaled.fits')
-        spitzerfile=fits.open('/beegfs/lofar/deepfields/Lockman/LH_4d5band.fits')
+        spitzerfile=fits.open('/beegfs/lofar/deepfields/Lockman/LH_4d5band_old.fits')
         rbandfile=fits.open('/beegfs/lofar/deepfields/Lockman/LH_rband.fits')
 
     elif field=='en1':
@@ -205,7 +205,14 @@ if __name__=='__main__':
             
                 sourcelist.append(sourcename)
     else:
-        sourcelist=[sourcename]
+        if sourcename.startswith('ILTJ'):
+            sourcelist=[sourcename]
+        else:
+            # maybe this is a file with a list of sources
+            if not os.path.isfile(sourcename):
+                raise RuntimeError('Cannot parse entity on command line')
+            else:
+                sourcelist=[l.rstrip() for l in open(sourcename).readlines()]
 
     sourcelist+=s.zoomneeded
     mode='spitzer'
@@ -336,7 +343,7 @@ if __name__=='__main__':
                 elif command=='f':
                     lhdu.writeto(sourcename+'.fits',overwrite=True)
                     print 'Saved as',sourcename+'.fits'
-                    os.system('ds9 '+sourcename+'.fits')
+                    os.system('ds9 '+sourcename+'.fits &')
                 elif len(command)>0 and command[0]=='Z':
                     try:
                         scalefactor=int(command[1:])
