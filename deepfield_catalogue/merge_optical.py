@@ -62,7 +62,7 @@ final_flag(field,outfile,flagname)
 mergeout=flagname.replace('flagged','merged')
 
 # If field is not Bootes, then update the optRA and optDec of some sources to change to the correct ID
-if changeid is not None:
+if changeid_path is not None:
     print 'Updating the optRA and optDec of some sources before merging'
     changeid = Table.read(changeid_path, format='ascii')
     ft = Table.read(flagname)
@@ -187,9 +187,6 @@ int1d = aux[:-1][mask]
 
 ind_t = aux_sort_indices[:-1][mask]
 ind_new_lr = aux_sort_indices[1:][mask] - ar1.size
-
-# Check that intersect1d is run correctly
-assert np.sum(raw_in_fin) == len(ind_t), "Something has gone wrong in finding common values"
 
 # Copy over the new LR values
 t["lr_fin"][ind_t] = np.copy(new_lr["lr_fin"][ind_new_lr])
