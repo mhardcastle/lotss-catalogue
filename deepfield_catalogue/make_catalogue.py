@@ -13,6 +13,7 @@ import astropy.units as u
 import shapely
 from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
+from separation import separation
 
 # ellipse code taken from old process_lgz
 
@@ -135,6 +136,8 @@ def parsefile(sourcename,ss,dir=''):
     if 'Deleted' in ss.sd[sourcename]:
         del(ss.sd[sourcename]['Deleted'])
     lc=0
+    ra=None
+    dec=None
     while lc<len(lines):
         l=lines[lc]
         if l=="":
@@ -164,7 +167,10 @@ def parsefile(sourcename,ss,dir=''):
             elif bits[1]=="Blend":
                 ss.sd[sourcename]['Blend_prob']=1.0
         lc+=1
-    
+    if ra is None:
+        ss.set_opt(sourcename,np.nan,np.nan)
+        ss.sd[sourcename]['NoID']=11
+        
 class Source(object):
     def __init__(self):
         self.gd=defaultdict(dict)
@@ -222,6 +228,15 @@ class Source(object):
                     else:
                         print 'Not deleting Gaussian child',gchild,'as parent mismatch'
 
+    def delete_component(self,n,reason,descend=True):
+        print 'Deleting component',n,'for reason',reason
+        self.cd[n]['Deleted']=reason
+        for gchild in self.cd[n]['Children']:
+            if self.gd[gchild]['Parent']==n:
+                self.gd[gchild]['Deleted']=reason
+            else:
+                print 'Not deleting Gaussian child',gchild,'as parent mismatch'
+                       
     def delete_gaussian(self,n,reason):
         print 'Deleting Gaussian',n,'for reason',reason
         self.gd[n]['Deleted']=reason
@@ -326,7 +341,7 @@ def make_structure(field,warn=False):
         preselect_dir='/beegfs/lofar/deepfields/Bootes_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/bootes'
         blend_dirs=['/beegfs/lofar/deepfields/Bootes_blend','/beegfs/lofar/deepfields/preselect_blend/bootes/blend',lgz_dir+'/blend']
-        noid_files=['/beegfs/lofar/deepfields/lgz/bootes/noid/noid.txt','/beegfs/lofar/deepfields/lgz/bootes/noid2/noid2.txt']
+        noid_files=['/beegfs/lofar/deepfields/lgz/bootes/noid/noid.txt','/beegfs/lofar/deepfields/lgz/bootes/noid2/noid2.txt','/beegfs/lofar/deepfields/lgz/bootes/noid10/noid10.txt']
     elif field=='lockman':
         ct=Table.read('/beegfs/lofar/deepfields/Lockman_LR/updated_LR_cols/LH_ML_RUN_fin_overlap_srl_workflow_th.fits')
         ct_nt=Table.read('/beegfs/lofar/deepfields/Lockman_LR/LH_ML_RUN_fin_overlap_srl_workflow.fits')
@@ -335,7 +350,7 @@ def make_structure(field,warn=False):
         preselect_dir='/beegfs/lofar/deepfields/Lockman_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/lockman'
         blend_dirs=['/beegfs/lofar/deepfields/Lockman_blend','/beegfs/lofar/deepfields/preselect_blend/lockman/blend',lgz_dir+'/blend']
-        noid_files=['/beegfs/lofar/deepfields/lgz/lockman/noid/noid.txt','/beegfs/lofar/deepfields/lgz/lockman/noid2/noid2.txt']
+        noid_files=['/beegfs/lofar/deepfields/lgz/lockman/noid/noid.txt','/beegfs/lofar/deepfields/lgz/lockman/noid2/noid2.txt','/beegfs/lofar/deepfields/lgz/lockman/noid10/noid10.txt']
     elif field=='en1':
         ct=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/new_optcat_matches/EN1_ML_RUN_fin_overlap_srl_workflow_th.fits')
         ct_nt=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/EN1_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
@@ -344,7 +359,7 @@ def make_structure(field,warn=False):
         preselect_dir='/beegfs/lofar/deepfields/ELAIS-N1_preselect'
         lgz_dir='/beegfs/lofar/deepfields/lgz/en1'
         blend_dirs=['/beegfs/lofar/deepfields/ELAIS-N1_blend','/beegfs/lofar/deepfields/preselect_blend/en1/blend',lgz_dir+'/blend']
-        noid_files=['/beegfs/lofar/deepfields/lgz/en1/noid/noid.txt','/beegfs/lofar/deepfields/lgz/en1/noid2/noid2.txt']
+        noid_files=['/beegfs/lofar/deepfields/lgz/en1/noid/noid.txt','/beegfs/lofar/deepfields/lgz/en1/noid2/noid2.txt','/beegfs/lofar/deepfields/lgz/en1/noid10/noid10.txt']
     else:
         print 'Not in correct working directory'
         sys.exit(1)
@@ -517,6 +532,7 @@ def make_structure(field,warn=False):
                         s.sd[name]['OptID_Name']="None"
                         s.sd[name]['optRA']=np.nan
                         s.sd[name]['optDec']=np.nan
+                        s.sd[name]['noID']=11
                 else:
                     print "It's complicated"
                     # This means that the component has been split
@@ -603,6 +619,12 @@ def make_structure(field,warn=False):
                                 s.sd[sname]['optRA']=ra
                                 s.sd[sname]['optDec']=dec
                                 s.sd[sname]['OptID_Name']='Altered'
+                                s.sd[sname]['NoID']=0
+                            else:
+                                s.sd[sname]['NoID']=11
+                                s.sd[sname]['OptID_Name']="None"
+                                s.sd[sname]['optRA']=np.nan
+                                s.sd[sname]['optDec']=np.nan
                             
             else:
                 raise RuntimeError('Cannot parse input file...'+lines[0])
@@ -611,6 +633,7 @@ def make_structure(field,warn=False):
 
     g=glob.glob(lgz_dir+'/zoom/ILTJ*.txt')
     for f in g:
+        print 'Zoomfile',f
         source=f.replace('.txt','').replace(lgz_dir+'/zoom/','')
         parsefile(source,s,dir=lgz_dir+'/zoom/')
         s.sd[source]['Created']='Too zoomed in'
@@ -658,6 +681,7 @@ def make_structure(field,warn=False):
                 print 'Renaming old source',name,'created by',s.sd[name]['Created'],'to',sname
                 r['Renamed_from']=name
                 s.delete_source(name,'Renamed',descend=False)
+                        
 
             for key in s.sd[name]:
                 if key not in r:
@@ -665,6 +689,13 @@ def make_structure(field,warn=False):
             for comp in r['Children']:
                 s.cd[comp]['Parent']=sname
 
+            if name!=sname:
+                components=list(s.cd)
+                for comp in components:
+                    if s.cd[comp]['Parent']==name:
+                        s.delete_component(comp,'Orphaned')
+
+                
             r['Assoc']=len(r['Children'])
             s.create_source(sname,r)
             if 'Deleted' in s.sd[sname]:
@@ -700,9 +731,9 @@ def make_structure(field,warn=False):
                 if sname not in s.sd:
                     print 'Source',name,'already deleted, skipping'
                     continue
-                if 'optRA' in s.sd[sname] and not np.isnan(s.sd[sname]['optRA']):
-                    print 'Source',name,'in noid list but has id, skipping'
-                    continue 
+                #if 'optRA' in s.sd[sname] and not np.isnan(s.sd[sname]['optRA']):
+                #    print 'Source',sname,'in noid list but has id, skipping'
+                #    continue 
                 s.sd[sname]['NoID']=g
                 if g==6:
                     s.delete_source(sname,'Artefact') # Artefact
@@ -728,6 +759,41 @@ def make_structure(field,warn=False):
                     else:
                         s.sd[sname]['NoID']=3
 
+    s.set_stage('Opt ID overlap check')
+    names=[]
+    optras=[]
+    optdecs=[]
+    for name in s.sd:
+        if 'Deleted' in s.sd[name]:
+            continue
+        if 'optRA' in s.sd[name]:
+            names.append(name)
+            optras.append(s.sd[name]['optRA'])
+            optdecs.append(s.sd[name]['optDec'])
+    t=Table([names,optras,optdecs],names=['Source_Name','optRA','optDec'])
+    print 'Made table of length',len(t)
+    count=0
+    for r in t:
+        if np.isnan(r['optRA']): continue
+        dist=separation(r['optRA'],r['optDec'],t['optRA'],t['optDec'])
+        filt=dist<1.5/3600.0
+        sm=np.sum(filt)
+        if sm>1:
+            tf=t[filt]
+            for sname in tf['Source_Name']:
+                print 'Checking duplicate ID source',sname
+                if 'Zoomfile' not in s.sd[sname]:
+                    name=sname
+                    if 'LGZ' in s.sd[sname]['Created']:
+                        if 'Renamed_from' in s.sd[sname]:
+                            name=s.sd[sname]['Renamed_from']
+                    print 'Adding',name,'to zoom list'
+                    s.zoomneeded.append(name)
+                else:
+                    print '*** problem -- source',sname,'with zoom file',s.sd[sname]['Zoomfile'],'has duplicate ID'
+            count+=sm
+    print 'Total number of problem duplicates is',count
+                        
     s.set_stage('Assoc check')
     # At this point Assoc should be correct except for sources where
     # e.g. a zoom file has over-ridden a de-blend. Fix those
@@ -761,7 +827,11 @@ def generate_table(sd,columns,keep_deleted=False):
             if c in sd[sn]:
                 column.append(sd[sn][c])
             elif default is None:
-                raise RuntimeError('Source %s (created by route %s) missing required key %s' % (sn,sd[sn]['Created'],c))
+                if 'Created' not in sd[sn]:
+                    print sd[sn]
+                    raise RuntimeError('Source %s ** without creation info ** missing required key %s' % (sn,c))
+                else:  
+                    raise RuntimeError('Source %s (created by route %s) missing required key %s' % (sn,sd[sn]['Created'],c))
             else:
                 column.append(default)
         cols.append(column)
@@ -816,12 +886,18 @@ def sanity_check(s):
 
     for component in s.cd:
         if 'Deleted' not in s.cd[component] and 'Checked' not in s.cd[component]:
-            parent=s.cd[component]['Parent']
-            print 'Component',component,'neither deleted nor part of a source (alleged parent is',parent,' and creation route is',s.cd[component]['Created'],')'
-            if 'Deleted' in s.sd[parent]:
-                print 'Parent is deleted for reason',s.sd[parent]['Deleted']
+            if 'Parent' not in s.cd[component]:
+                print 'Component',component,'has no parent!!'
+                print s.cd[component]
             else:
-                print s.sd[parent]
+                parent=s.cd[component]['Parent']
+                print 'Component',component,'neither deleted nor part of a source (alleged parent is',parent,' and creation route is',s.cd[component]['Created'],')'
+                if parent in s.sd and 'Deleted' in s.sd[parent]:
+                    print 'Parent is deleted for reason',s.sd[parent]['Deleted']
+                elif parent not in s.sd:
+                    print 'Parent',parent,'does not exist'
+                else:
+                    print 'Parent properties are',s.sd[parent]
             errors+=1
 
     for gaussian in s.gd:

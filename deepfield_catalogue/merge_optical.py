@@ -213,14 +213,23 @@ print 'Sorting'
 t.sort('RA')
 
 print 'Finalize NoID values'
-filter=(t['NoID']>0) & ~np.isnan(t['optRA'])
+filter=(t['NoID']>0) & ~t['ID'].mask
 print 'Set',np.sum(filter),'sources with NoID set but some ID to NoID=0'
 t['NoID']=np.where(filter,0,t['NoID'])
-filter=~np.isnan(t['optRA']) & t['ID'].mask
-print 'Set',np.sum(filter),'sources with optRA set but no ID to NoID=2'
-t['NoID']=np.where(filter,2,t['NoID'])
+filter=~np.isnan(t['optRA']) & (t['NoID']==0) & t['ID'].mask
+print 'Set',np.sum(filter),'sources with optRA set and NoID=0 but no ID to NoID=10'
+t['NoID']=np.where(filter,10,t['NoID'])
+print 'Remove optRA, optDec from all sources with NoID>0'
+filter=(t['NoID']==0)
 t['optRA']=np.where(filter,np.nan,t['optRA'])
 t['optDec']=np.where(filter,np.nan,t['optDec'])
-
+# As per e-mail conversation of 23/05/20, NoID 9 -> 2 and 7 -> 5
+print 'Fix up NoID categories'
+for old,new in [(9,2),(7,5)]:
+    filter=(t['NoID']==old)
+    t['NoID']=np.where(filter,new,t['NoID'])
+filter=(t['NoID']==11)
+new=np.where(t['S_Code']=='S',1,3)
+t['NoID']=np.where(filter,new,t['NoID'])
 print 'Writing to disk'
 t.write(finalname,overwrite=True)
