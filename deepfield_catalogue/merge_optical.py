@@ -18,32 +18,35 @@ if field=='en1':
     mask='/beegfs/lofar/deepfields/ELAIS_N1_optical/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.int.facetRestored-scaled.pybdsm.rmsd_I_spmask.fits'
     optcat='/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/correct_merging/add_uncat/EN1_MASTER_opt_spitzer_merged_cedit_apcorr_adduncat_lite.fits'
     src='/beegfs/lofar/deepfields/science_ready_catalogs/EN1_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public.fits'
-    xid='/beegfs/lofar/deepfields/ELAIS_N1_FIR_prelim/XID+_lofar_ELAIS-N1_v0.5_20200113.fits'
+    xid_o='/beegfs/lofar/deepfields/ELAIS_N1_FIR_prelim/XID+_lofar_ELAIS-N1_v0.5_20200113.fits'
     src_ze='/beegfs/lofar/deepfields/science_ready_catalogs/EN1_opt_spitzer_merged_vac_opt3as_irac4as_specz.v2.fits'
     new_lr_path = "/beegfs/lofar/deepfields/LR_update/en1/EN1_ML_RUN_fin_overlap_srl.fits"
     lr_vis_path = "/beegfs/lofar/deepfields/LR_update/en1/EN1_lr_in_old_not_new_pos.txt"
     lr_th = 0.056
     changeid_path = "/beegfs/lofar/deepfields/LR_update/en1/EN1_change_IDs.txt"
+    xid_re="/beegfs/lofar/deepfields/changes_v0.7_fir/XID+_lofar_ELAIS-N1_v0.7_changes.fits"
 elif field=='bootes':
     mask='/beegfs/lofar/deepfields/Bootes_merged_optical/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.blanked.scaled.rms_spmask.fits'
     optcat='/beegfs/lofar/deepfields/Bootes_merged_optical/add_uncat/Bootes_MASTER_opt_spitzer_merged_adduncat_lite.fits'
     src='/beegfs/lofar/deepfields/science_ready_catalogs/Bootes_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public.fits'
-    xid='/beegfs/lofar/deepfields/Bootes_FIR/XID+_lofar_Bootes_v0.5_20200209.fits'
+    xid_o='/beegfs/lofar/deepfields/Bootes_FIR/XID+_lofar_Bootes_v0.5_20200209.fits'
     src_ze=None
     new_lr_path = "/beegfs/lofar/deepfields/LR_update/bootes/Bootes_ML_RUN_fin_overlap_srl.fits"
     lr_vis_path = "/beegfs/lofar/deepfields/LR_update/bootes/Bootes_lr_in_old_not_new_pos.txt"
     lr_th = 0.22
+    xid_re="/beegfs/lofar/deepfields/changes_v0.7_fir/XID+_lofar_Bootes_v0.7_changes.fits"
     changeid_path = None
 elif field=='lockman':
     mask='/beegfs/lofar/deepfields/Lockman_edited_cats/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.blanked.scaled.rms_spmask.fits'
     optcat='/beegfs/lofar/deepfields/Lockman_edited_cats/optical/add_uncat/LH_MASTER_opt_spitzer_merged_cedit_apcorr_adduncat_lite.fits'
     src='/beegfs/lofar/deepfields/science_ready_catalogs/LH_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public.fits'
-    xid='/beegfs/lofar/deepfields/Lockman_FIR/XID+_lofar_Lockman_v0.5_20200303.fits'
+    xid_o='/beegfs/lofar/deepfields/Lockman_FIR/XID+_lofar_Lockman_v0.5_20200303.fits'
     src_ze='/beegfs/lofar/deepfields/science_ready_catalogs/LH_opt_spitzer_merged_vac_opt3as_irac4as_specz.v2.fits'
     new_lr_path = "/beegfs/lofar/deepfields/LR_update/lockman/LH_ML_RUN_fin_overlap_srl.fits"
     lr_vis_path = "/beegfs/lofar/deepfields/LR_update/lockman/LH_lr_in_old_not_new_pos.txt"
     lr_th = 0.055
     changeid_path = "/beegfs/lofar/deepfields/LR_update/lockman/Lockman_change_IDs.txt"
+    xid_re="/beegfs/lofar/deepfields/changes_v0.7_fir/XID+_lofar_Lockman_v0.7_changes.fits"
 else:
     raise RuntimeError('Field not supported!')
     
@@ -130,36 +133,37 @@ for column in ['ID','RA','DEC','FLAG_OVERLAP','flag_clean', 'ID_OPTICAL', 'ID_SP
         print oldcol,'->',column,':',
 
 # Read in XID+ catalogue and update the FIR data for sources that were re-run
-xid_t = Table.read(xid)
-in_fin = np.isin(t["Source_Name"], xid_t["Source_Name"])
-in_xid = np.isin(xid_t["Source_Name"], t["Source_Name"])
-print np.sum(in_fin), np.sum(in_xid)
+for fname in [xid_o, xid_re]:
+    xid_t = Table.read(fname)
+    in_fin = np.isin(t["Source_Name"], xid_t["Source_Name"])
+    in_xid = np.isin(xid_t["Source_Name"], t["Source_Name"])
+    print np.sum(in_fin), np.sum(in_xid)
 
-# Hack for setting instrument name in flag_* to lower case - currently only needed for EN1
-flags = [aa for aa in xid_t.colnames if aa.startswith("flag_")]
-for flagc in flags:
-    if "pacs" not in flagc.lower():
-        xid_t[flagc].name = flagc.lower()
-    else:
-        print(flagc)
-        flagc_split = flagc.split("_")
-        flagc_new = flagc_split[0] + "_PACS_" + flagc_split[-1]
-        xid_t[flagc].name = flagc_new
+    # Hack for setting instrument name in flag_* to lower case - currently only needed for EN1
+    flags = [aa for aa in xid_t.colnames if aa.startswith("flag_")]
+    for flagc in flags:
+        if "pacs" not in flagc.lower():
+            xid_t[flagc].name = flagc.lower()
+        else:
+            print(flagc)
+            flagc_split = flagc.split("_")
+            flagc_new = flagc_split[0] + "_PACS_" + flagc_split[-1]
+            xid_t[flagc].name = flagc_new
 
-# Remove some duplicate columns
-xid_cols = xid_t.colnames
-spurious_cols = [aa for aa in xid_cols if aa.startswith("RA") or aa.startswith("Dec") or aa.startswith("Source_Name")]
-for blah in spurious_cols:
-    xid_cols.remove(blah)
+    # Remove some duplicate columns
+    xid_cols = xid_t.colnames
+    spurious_cols = [aa for aa in xid_cols if aa.startswith("RA") or aa.startswith("Dec") or aa.startswith("Source_Name")]
+    for blah in spurious_cols:
+        xid_cols.remove(blah)
 
-# Update the XID+ columns into the final catalogue columns + any new columns
-for col in xid_cols:
-    if col in t.colnames:
-        t[col][in_fin] = xid_t[col][in_xid]
-    else:
-        # Make a new column
-        t[col] = False
-        t[col][in_fin] = xid_t[col][in_xid]
+    # Update the XID+ columns into the final catalogue columns + any new columns
+    for col in xid_cols:
+        if col in t.colnames:
+            t[col][in_fin] = xid_t[col][in_xid]
+        else:
+            # Make a new column
+            t[col] = False
+            t[col][in_fin] = xid_t[col][in_xid]
 
 print
 print 'Remove whitespace padding:',
