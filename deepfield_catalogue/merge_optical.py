@@ -62,7 +62,7 @@ final_flag(field,outfile,flagname)
 mergeout=flagname.replace('flagged','merged')
 
 # If field is not Bootes, then update the optRA and optDec of some sources to change to the correct ID
-if changeid is not None:
+if changeid_path is not None:
     print 'Updating the optRA and optDec of some sources before merging'
     changeid = Table.read(changeid_path, format='ascii')
     ft = Table.read(flagname)
@@ -188,9 +188,6 @@ int1d = aux[:-1][mask]
 ind_t = aux_sort_indices[:-1][mask]
 ind_new_lr = aux_sort_indices[1:][mask] - ar1.size
 
-# Check that intersect1d is run correctly
-assert np.sum(raw_in_fin) == len(ind_t), "Something has gone wrong in finding common values"
-
 # Copy over the new LR values
 t["lr_fin"][ind_t] = np.copy(new_lr["lr_fin"][ind_new_lr])
 
@@ -216,14 +213,23 @@ print 'Sorting'
 t.sort('RA')
 
 print 'Finalize NoID values'
-filter=(t['NoID']>0) & ~np.isnan(t['optRA'])
+filter=(t['NoID']>0) & ~t['ID'].mask
 print 'Set',np.sum(filter),'sources with NoID set but some ID to NoID=0'
 t['NoID']=np.where(filter,0,t['NoID'])
-filter=~np.isnan(t['optRA']) & t['ID'].mask
-print 'Set',np.sum(filter),'sources with optRA set but no ID to NoID=2'
-t['NoID']=np.where(filter,2,t['NoID'])
+filter=~np.isnan(t['optRA']) & (t['NoID']==0) & t['ID'].mask
+print 'Set',np.sum(filter),'sources with optRA set and NoID=0 but no ID to NoID=10'
+t['NoID']=np.where(filter,10,t['NoID'])
+print 'Remove optRA, optDec from all sources with NoID>0'
+filter=(t['NoID']==0)
 t['optRA']=np.where(filter,np.nan,t['optRA'])
 t['optDec']=np.where(filter,np.nan,t['optDec'])
-
+# As per e-mail conversation of 23/05/20, NoID 9 -> 2 and 7 -> 5
+print 'Fix up NoID categories'
+for old,new in [(9,2),(7,5)]:
+    filter=(t['NoID']==old)
+    t['NoID']=np.where(filter,new,t['NoID'])
+filter=(t['NoID']==11)
+new=np.where(t['S_Code']=='S',1,3)
+t['NoID']=np.where(filter,new,t['NoID'])
 print 'Writing to disk'
 t.write(finalname,overwrite=True)
