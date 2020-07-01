@@ -187,7 +187,7 @@ for ii, fc in enumerate(fcol):
     t["FErr_{0}_u".format(fcol_suff[ii])][bad_fluxes] = np.nan
 
     # If the flag_* columns don't need to be edited for these, then uncomment this line
-    t["flag_{0}_{1}".format(inst[ii], wave[ii])][bad_fluxes] = ~t["flag_{0}_{1}".format(inst[ii], wave[ii])][bad_fluxes]
+    # t["flag_{0}_{1}".format(inst[ii], wave[ii])][bad_fluxes] = ~t["flag_{0}_{1}".format(inst[ii], wave[ii])][bad_fluxes]
 
 print
 print 'Remove whitespace padding:',
