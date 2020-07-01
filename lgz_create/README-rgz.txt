@@ -8,7 +8,10 @@ export PYTHONPATH=$LGZPATH/utils:$PYTHONPATH
 export IMAGEDIR=/data1/MRP1/LRGZ/images
 export LOTSS_COMPONENT_CATALOGUE=/data1/MRP1/LRGZ/components/LOFAR_HBA_T1_DR1_merge_ID_v1.2.comp.fits
 
-(for Herts, IMAGEDIR=/data/lofar/DR2 )
+(for Herts
+
+export IMAGEDIR=/data/lofar/DR2
+export LOTSS_COMPONENT_CATALOGUE=/data/lofar/DR2/catalogues/LoTSS_DR2_v100.srl.fits
 
 Montage needs to be on your PATH: e.g. at Herts
 
@@ -50,3 +53,14 @@ NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --
 (or for the LGZ version)
 
 NODE_ENV=production panoptes-subject-uploader ./manifest.csv --username mjh22 --project 2513 --workflow 12374
+
+
+For MKSP version:
+
+cat > manifest.csv <<EOF
+subject_id,image_name_1,image_name_2,image_name_3,image_name_4,source_name,mksp_id,ra,dec,#size
+EOF
+cat *-manifest.txt | sort -n -k 1 -t , >> manifest.csv
+
+NODE_ENV=production panoptes-subject-uploader ./manifest-fixed.csv --username mjh22 --project 2513 --workflow 15197
+

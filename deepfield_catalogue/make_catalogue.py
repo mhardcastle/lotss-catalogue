@@ -334,6 +334,7 @@ def make_structure(field,warn=False):
     print 'Reading data...'
 
     if field=='bootes':
+        fluxscale=0.859
         ct=Table.read('/beegfs/lofar/deepfields/Bootes_LR/new_fdeep_matches/Bootes_ML_RUN_fin_overlap_srl_workflow_th.fits')
         ct_nt=Table.read('/beegfs/lofar/deepfields/Bootes_LR/Bootes_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
         allgals=Table.read('/beegfs/lofar/deepfields/Bootes_merged_optical/Bootes_merged_pos.fits')
@@ -343,6 +344,7 @@ def make_structure(field,warn=False):
         blend_dirs=['/beegfs/lofar/deepfields/Bootes_blend','/beegfs/lofar/deepfields/preselect_blend/bootes/blend',lgz_dir+'/blend']
         noid_files=['/beegfs/lofar/deepfields/lgz/bootes/noid/noid.txt','/beegfs/lofar/deepfields/lgz/bootes/noid2/noid2.txt','/beegfs/lofar/deepfields/lgz/bootes/noid10/noid10.txt']
     elif field=='lockman':
+        fluxscale=0.920
         ct=Table.read('/beegfs/lofar/deepfields/Lockman_LR/updated_LR_cols/LH_ML_RUN_fin_overlap_srl_workflow_th.fits')
         ct_nt=Table.read('/beegfs/lofar/deepfields/Lockman_LR/LH_ML_RUN_fin_overlap_srl_workflow.fits')
         allgals=Table.read('/beegfs/lofar/deepfields/Lockman_edited_cats/optical/Lockman_merged_pos.fits')
@@ -352,6 +354,7 @@ def make_structure(field,warn=False):
         blend_dirs=['/beegfs/lofar/deepfields/Lockman_blend','/beegfs/lofar/deepfields/preselect_blend/lockman/blend',lgz_dir+'/blend']
         noid_files=['/beegfs/lofar/deepfields/lgz/lockman/noid/noid.txt','/beegfs/lofar/deepfields/lgz/lockman/noid2/noid2.txt','/beegfs/lofar/deepfields/lgz/lockman/noid10/noid10.txt']
     elif field=='en1':
+        fluxscale=None
         ct=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/new_optcat_matches/EN1_ML_RUN_fin_overlap_srl_workflow_th.fits')
         ct_nt=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_LR/EN1_ML_RUN_fin_overlap_srl_workflow_fixed.fits')
         allgals=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/EN1_merged_pos_all.fits')
@@ -365,7 +368,14 @@ def make_structure(field,warn=False):
         sys.exit(1)
 
     s=Source()
+    if fluxscale is not None:
+        s.set_stage('Rescale fluxes')
+        for t in [ct,ct_nt,gt]:
+            for c in t.colnames:
+                if 'flux' in c or 'rms' in c or 'mean' in c:
+                    t[c]*=fluxscale
 
+    
     s.set_stage('Ingest components')
     for r in ct:
         name=r['Source_Name']
@@ -926,7 +936,7 @@ if __name__=='__main__':
     
     sanity_check(s)
 
-    version='v0.7'
+    version='v0.8'
     
     print 'Constructing output table'
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('NoID',0),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
