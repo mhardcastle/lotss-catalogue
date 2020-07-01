@@ -182,7 +182,7 @@ for ii, fc in enumerate(fcol):
     bad_fluxes = (t[fc] >= 1e14) | (t["FErr_{0}_l".format(fcol_suff[ii])] >= 1e14) | (t["FErr_{0}_u".format(fcol_suff[ii])] >= 1e14)
     # print("{0}: {1}".format(fc, np.sum(bad_fluxes)))
 
-    t[fcol][bad_fluxes] = np.nan
+    t[fc][bad_fluxes] = np.nan
     t["FErr_{0}_l".format(fcol_suff[ii])][bad_fluxes] = np.nan
     t["FErr_{0}_u".format(fcol_suff[ii])][bad_fluxes] = np.nan
 
