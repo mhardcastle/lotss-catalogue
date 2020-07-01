@@ -14,12 +14,13 @@ try:
 except:
     skip_noid=False
 
+src_ze=None
 if field=='en1':
     mask='/beegfs/lofar/deepfields/ELAIS_N1_optical/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.int.facetRestored-scaled.pybdsm.rmsd_I_spmask.fits'
     optcat='/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/correct_merging/add_uncat/EN1_MASTER_opt_spitzer_merged_cedit_apcorr_adduncat_lite.fits'
-    src='/beegfs/lofar/deepfields/science_ready_catalogs/EN1_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public.fits'
+    src='/beegfs/lofar/deepfields/science_ready_catalogs/EN1_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public_v0.3.fits'
     xid_o='/beegfs/lofar/deepfields/ELAIS_N1_FIR_prelim/XID+_lofar_ELAIS-N1_v0.5_20200113.fits'
-    src_ze='/beegfs/lofar/deepfields/science_ready_catalogs/EN1_opt_spitzer_merged_vac_opt3as_irac4as_specz.v2.fits'
+    #src_ze='/beegfs/lofar/deepfields/science_ready_catalogs/EN1_opt_spitzer_merged_vac_opt3as_irac4as_specz.v2.fits'
     new_lr_path = "/beegfs/lofar/deepfields/LR_update/en1/EN1_ML_RUN_fin_overlap_srl.fits"
     lr_vis_path = "/beegfs/lofar/deepfields/LR_update/en1/EN1_lr_in_old_not_new_pos.txt"
     lr_th = 0.056
@@ -28,9 +29,9 @@ if field=='en1':
 elif field=='bootes':
     mask='/beegfs/lofar/deepfields/Bootes_merged_optical/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.blanked.scaled.rms_spmask.fits'
     optcat='/beegfs/lofar/deepfields/Bootes_merged_optical/add_uncat/Bootes_MASTER_opt_spitzer_merged_adduncat_lite.fits'
-    src='/beegfs/lofar/deepfields/science_ready_catalogs/Bootes_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public.fits'
+    src='/beegfs/lofar/deepfields/science_ready_catalogs/Bootes_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public_v0.3.fits'
     xid_o='/beegfs/lofar/deepfields/Bootes_FIR/XID+_lofar_Bootes_v0.5_20200209.fits'
-    src_ze=None
+    #src_ze=None
     new_lr_path = "/beegfs/lofar/deepfields/LR_update/bootes/Bootes_ML_RUN_fin_overlap_srl.fits"
     lr_vis_path = "/beegfs/lofar/deepfields/LR_update/bootes/Bootes_lr_in_old_not_new_pos.txt"
     lr_th = 0.22
@@ -39,9 +40,9 @@ elif field=='bootes':
 elif field=='lockman':
     mask='/beegfs/lofar/deepfields/Lockman_edited_cats/radio_optical_overlap_masks/image_full_ampphase_di_m.NS_shift.blanked.scaled.rms_spmask.fits'
     optcat='/beegfs/lofar/deepfields/Lockman_edited_cats/optical/add_uncat/LH_MASTER_opt_spitzer_merged_cedit_apcorr_adduncat_lite.fits'
-    src='/beegfs/lofar/deepfields/science_ready_catalogs/LH_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public.fits'
+    src='/beegfs/lofar/deepfields/science_ready_catalogs/LH_opt_spitzer_merged_vac_opt3as_irac4as_all_hpx_masses_public_v0.3.fits'
     xid_o='/beegfs/lofar/deepfields/Lockman_FIR/XID+_lofar_Lockman_v0.5_20200303.fits'
-    src_ze='/beegfs/lofar/deepfields/science_ready_catalogs/LH_opt_spitzer_merged_vac_opt3as_irac4as_specz.v2.fits'
+    #src_ze='/beegfs/lofar/deepfields/science_ready_catalogs/LH_opt_spitzer_merged_vac_opt3as_irac4as_specz.v2.fits'
     new_lr_path = "/beegfs/lofar/deepfields/LR_update/lockman/LH_ML_RUN_fin_overlap_srl.fits"
     lr_vis_path = "/beegfs/lofar/deepfields/LR_update/lockman/LH_lr_in_old_not_new_pos.txt"
     lr_th = 0.055
