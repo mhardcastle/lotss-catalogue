@@ -166,6 +166,29 @@ for fname in [xid_o, xid_re]:
             t[col] = False
             t[col][in_fin] = xid_t[col][in_xid]
 
+"""
+Clean the unphysical FIR fluxes/fluxerr columns + flag_* columns
+"""
+# Get the flux columns and the instrument names in the correct format for the flag_* FIR columns
+fcol = [col for col in t.colnames if col.startswith("F_")]
+fcol_suff = ["_".join(cc.split("_")[1:]) for cc in fcol]  # FErr_MIPS_24_l and *_u
+inst = [aa.split("_")[1].lower() if "PACS" not in aa else aa.split("_")[1] for aa in fcol]
+wave = [aa.split("_")[-1] for aa in fcol]
+
+# Select unphysical fluxes for each FIR wavelength and set to NaN's
+# Also update the respective flag_* columns?
+for ii, fc in enumerate(fcol):
+    # If either the fluxes or the upper/lower bounds on fluxes are unphysical
+    bad_fluxes = (t[fc] >= 1e14) | (t["FErr_{0}_l".format(fcol_suff[ii])] >= 1e14) | (t["FErr_{0}_u".format(fcol_suff[ii])] >= 1e14)
+    # print("{0}: {1}".format(fc, np.sum(bad_fluxes)))
+
+    t[fcol][bad_fluxes] = np.nan
+    t["FErr_{0}_l".format(fcol_suff[ii])][bad_fluxes] = np.nan
+    t["FErr_{0}_u".format(fcol_suff[ii])][bad_fluxes] = np.nan
+
+    # If the flag_* columns don't need to be edited for these, then uncomment this line
+    t["flag_{0}_{1}".format(inst[ii], wave[ii])][bad_fluxes] = ~t["flag_{0}_{1}".format(inst[ii], wave[ii])][bad_fluxes]
+
 print
 print 'Remove whitespace padding:',
 sys.stdout.flush()
