@@ -28,7 +28,7 @@ class Mask:
     color - for flowchart: color to plot the mask (default: None=black)
     '''
     
-    def __init__(self, mask, trait, label=None, level=0, verbose=True, masterlist=None, qlabel=None, color=None):
+    def __init__(self, mask, trait, label=None, level=0, verbose=True, masterlist=None, qlabel=None, color=None, maskflag=None, maskflagstr=''):
         self.mask = mask
         if qlabel is not None :
             self.qlabel = qlabel
@@ -55,6 +55,15 @@ class Mask:
         self.has_children = False
         self.has_parent = False
         
+        self.maskflagstr = maskflagstr
+        self.maskflag = maskflag
+        if maskflag is not None:
+            self.mask2 = maskflag  #[self.mask]
+            self.set_mllab()
+        else:
+            self.mask2 = self.mask
+            self.set_mllab()
+        
         self.Nchildren = 0
         self.children = None
         self.parent = None
@@ -66,6 +75,18 @@ class Mask:
             self.print_frac()
         
         return
+    
+    def set_mllab(self):
+        if self.mask2 is None:
+            self.mllab = ''
+        else:
+            n1 = np.sum(self.mask & (self.mask2==1))
+            n2 = np.sum(self.mask & (self.mask2==0))
+            Ni = np.sum(self.mask)
+            p1 = 100.*n1/Ni
+            p2 = 100.*n2/Ni
+            mlstr = self.maskflagstr
+            self.mllab='\n{mlstr:s} {n1:d}:{n2:d}  ({p1:.0f}:{p2:.0f}%)\n'.format(mlstr=mlstr,n1=n1,n2=n2,p1=p1,p2=p2)
     
     def percent(self):
         return 100.*np.sum(self.mask)/self.N
@@ -97,14 +118,16 @@ class Mask:
         # edgelabel is the answer to the question asked to get here
         '''
         newmask = self.mask & joinmask
+        newmaskflag = self.maskflag 
         newtraits = list(self.traits)  # copy list of traits - lists are mutable!!
         newtraits.append(newtrait)     # append new trait onto copy
         newlevel = self.level + 1
         
+        
         if label is None:
             label = newtrait
         
-        childmask = Mask(newmask, newtraits, label, level=newlevel, masterlist=masterlist, verbose=verbose, qlabel=qlabel, color=color)  
+        childmask = Mask(newmask, newtraits, label, level=newlevel, masterlist=masterlist, verbose=verbose, qlabel=qlabel, color=color, maskflag=newmaskflag, maskflagstr=self.maskflagstr)  
         
         childmask.has_parent = True
         childmask.parent = self
@@ -171,12 +194,13 @@ if __name__=='__main__':
 
 
     step = int(sys.argv[1])
-    if step not in  [1,2,3]:
+    if step not in  [1,2,3,4]:
         print('unknown step',step)
         sys.exit(1)
     # step 1 is first assign FC_flag1
     # step 2 is after running msource stuff
-    # step 3 is after visual classification if we do that this time
+    # step 3 is after running msource stuff and inputs from ML
+    # step 4 is after visual classification if we do that this time
     
         
     size_large = 15.           # in arcsec
@@ -184,7 +208,7 @@ if __name__=='__main__':
     size_huge = 25.            # in arcsec
     #separation2 = 30.          # in arcsec
     lLR_thresh = 0.404            # LR threshold
-    fluxcut = 10               # in mJy
+    fluxcut = 8.               # in mJy
     fluxcut2 = 2.5               # in mJy
 
     ### Required INPUTS
@@ -241,8 +265,11 @@ if __name__=='__main__':
         fixlist = ['ILTJ140430.41+560657.9'] 
         for s in fixlist:
             lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 2
-    elif step == 2:
-        print('visual sorting done')
+    elif step == 3:
+        print('need ML outputs')
+        print('machine learning has been run, now to give them the right ID flags')
+        if 'ML_flag' not in lofarcat.colnames:
+            raise  RuntimeError('need the ML_flag -- run get_ml_flags.py')  ## 1 for LR, 0 for LGZ
     else:
         print('step {s} not defined, quitting'.format(s=step))
         sys.exit(1)
@@ -256,7 +283,7 @@ if __name__=='__main__':
     big2masx = lofarcat['2MASX_match_large']
 
     # step 1 happens before we have visual classifications - if any ever for dr2
-    if step in [1,2]:
+    if step in [1,2,3]:
         # we start with no flagging - visual, other
         cleanflag = np.ones(len(lofarcat),dtype=bool)
         cleanflag0 = np.zeros(len(lofarcat),dtype=bool)
@@ -281,7 +308,7 @@ if __name__=='__main__':
         if 'double_flag' not in lofarcat.colnames:
             lofarcat.add_column(Column(data=cleanflag0, name='double_flag'))
         
-    elif step == 3:
+    elif step == 4:
         # get the visual flags (must run get_visual_flags for these after doing visual confirmation - classify_*.py)
         if 'clustered_flag' not in lofarcat.colnames:
             raise  RuntimeError('need the visual flag information for the clustered sources')
@@ -412,7 +439,8 @@ if __name__=='__main__':
     M_all = Mask(lofarcat['RA'] > -1,
                     'all',
                     qlabel='artefact?\n(visual confirmation)',
-                    masterlist=masterlist)
+                    masterlist=masterlist,
+                    maskflag=lofarcat['ML_flag'], maskflagstr='LR:LGZ')
 
     # artefacts
     M_all_artefact = M_all.submask(artefact_flag,
@@ -506,8 +534,18 @@ if __name__=='__main__':
     # good lr
     lf_match =   (nhuge_faint_flag == 2)
     
+    ## we have outputs from machine learning ... can go here
+    #if step == 3:
+        #M_large_faint_lgz = M_large_faint.submask(lf_artefacts,
+                            #'artefact',
+                            #edgelabel='N(r)',
+                            #qlabel='artefact\n(visually confirmed)',
+                            #color='gray',
+                            #masterlist=masterlist)
+        #lofarcat['ID_flag'][M_large_faint_artefact.mask] = -1
+        
     # if we have outputs from visual sorting we can go here
-    if step == 3:
+    if step == 4:
         M_large_faint_artefact = M_large_faint.submask(lf_artefacts,
                             'artefact',
                             edgelabel='N(r)',
@@ -634,10 +672,10 @@ if __name__=='__main__':
                         'nisol',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}")'.format(s=size_large, nn=separation1),
                         edgelabel='N',
-                        qlabel='Clustered?\n(NN5<{nn:.0f}"))'.format(s=size_large, nn=separation1),
+                        qlabel='Clustered?\n(NN5<{nn:.0f}")'.format(s=size_large, nn=separation1),
                         masterlist=masterlist)
     
-    if step == 3:
+    if step == 4:
         M_small_nisol_artefact = M_small_nisol.submask((lofarcat['NN5_sep'] <= separation1) & (clustered_flag == 1),
                             'artefact',
                             edgelabel='N(r)',
@@ -662,7 +700,7 @@ if __name__=='__main__':
                             qlabel='S?',
                             masterlist=masterlist)
         
-    elif step in [1,2]:
+    elif step in [1,2,3]:
         # we have no clustered flag
         M_small_nisol_tbc = M_small_nisol.submask((lofarcat['NN5_sep'] <= separation1),
                             'tbc',
@@ -672,7 +710,7 @@ if __name__=='__main__':
                             masterlist=masterlist)
         lofarcat['ID_flag'][M_small_nisol_tbc.mask] = 5
 
-        M_small_nisol_nclustered = M_small_nisol.submask((lofarcat['NN5_sep'] > separation1) | ((lofarcat['NN5_sep'] <= separation1)),
+        M_small_nisol_nclustered = M_small_nisol.submask((lofarcat['NN5_sep'] > separation1),
                             'nclustered',
                             'compact not isolated (s<{s:.0f}", NN5>{nn:.0f}")'.format(s=size_large, nn=separation1),
                             edgelabel='N',
@@ -791,7 +829,7 @@ if __name__=='__main__':
                         masterlist=masterlist)
     lofarcat['ID_flag'][M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.mask] = 5
     
-    if step == 3:
+    if step == 4:
         M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep_lgz = M_small_nisol_nclustered_S_nlr_NNnlr_simflux_sep.submask(lofarcat['double_flag'] == 2,
                             'lgz',
                             edgelabel='complex',
@@ -927,12 +965,20 @@ if __name__=='__main__':
     i = 0
     for t in masterlist:
         if not t.has_children:
+            print(i, np.sum(lofarcat[fcflg][t.mask]==7))
             lofarcat[fcflg][t.mask] = i
+            print(i, np.sum(t.mask))
             i += 1
             
+    print(fcflg,'count')
+    t,i = np.unique(lofarcat[fcflg], return_counts=True)
+    for tt,ii in zip(t,i): print(tt,ii)
+    
 
     ## write output file
     lofarcat.write(lofarcat_file_srt, overwrite=True)
+
+    #sys.exit()
 
     # make flowchart from list of masks
     plot_flowchart = True
@@ -982,11 +1028,11 @@ if __name__=='__main__':
             else:
                 shape='parallelogram'   # end point is a final mask
                 if t.p < 1.:
-                    label='- {i:n} -\n{lab:s}\n{n:n}\n{p:.2f}%'.format(i=i,lab=t.qlabel,n=t.n,p=t.p)
+                    label='- {i:n} -\n{lab:s}\n{n:n}\n{p:.2f}%{mllab:s}'.format(i=i,lab=t.qlabel,n=t.n,p=t.p,mllab=t.mllab)
                 elif t.p < 10.:
-                    label='- {i:n} -\n{lab:s}\n{n:n}\n{p:.1f}%'.format(i=i,lab=t.qlabel,n=t.n,p=t.p)
+                    label='- {i:n} -\n{lab:s}\n{n:n}\n{p:.1f}%{mllab:s}'.format(i=i,lab=t.qlabel,n=t.n,p=t.p,mllab=t.mllab)
                 else:
-                    label='- {i:n} -\n{lab:s}\n{n:n}\n{p:.0f}%'.format(i=i,lab=t.qlabel,n=t.n,p=t.p)
+                    label='- {i:n} -\n{lab:s}\n{n:n}\n{p:.0f}%{mllab:s}'.format(i=i,lab=t.qlabel,n=t.n,p=t.p,mllab=t.mllab)
                 i += 1
             if t.color:
                 c = t.color
@@ -1028,8 +1074,8 @@ if __name__=='__main__':
     for tt,ii in zip(t,i): print(tt,ii)
     
     
-    print('FC_flag1 count')
-    t,i = np.unique(lofarcat['FC_flag1'], return_counts=True)
+    print(fcflg,'count')
+    t,i = np.unique(lofarcat[fcflg], return_counts=True)
     for tt,ii in zip(t,i): print(tt,ii)
     
     print('MC1_flag1 count')
