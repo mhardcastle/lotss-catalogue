@@ -192,8 +192,19 @@ def Masks_disjoint_complete(masklist):
 
 if __name__=='__main__':
 
+    if len(sys.argv) == 1:
+        print("Usage is : python lofar_source_sorter_dr2.py field_code step_no ")
+        print('E.g.: python lofar_source_sorter_dr2.py 0 1 ')
+        sys.exit(1)
 
-    step = int(sys.argv[1])
+    h = str(sys.argv[1])
+    if 'h' not in h:
+        h+='h'
+    if h not in  ['0h','13h']:
+        print('unknown field code (should be 0h or 13h)',h)
+        sys.exit(1)
+        
+    step = int(sys.argv[2])
     if step not in  [1,2,3,4]:
         print('unknown step',step)
         sys.exit(1)
@@ -216,28 +227,32 @@ if __name__=='__main__':
 
     path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
     
+    version ='v100'
+    
     if step == 1:
         # lr infor is in the catalogue - this makes things easier
-        lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
-        lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.lr.fits'
+        lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.fits'.format(h=h,version=version)
+        #lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(h=h,version=version)
     elif step >= 2:
-        lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.sorted_step1.fits'
-        lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.lr.fits'
+        lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.sorted_step1.fits'.format(h=h,version=version)
+        #lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(h=h,version=version)
         
 
 
     # output file - with updated columns
-    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step{st}.fits'.format(st=step)
+    lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.sorted_step{st}.fits'.format(h=h,version=version,st=step)
 
 
 
-    # Gaus catalogue
-    lofargcat = Table.read(lofargcat_file)
+    ## Gaus catalogue
+    #lofargcat = Table.read(lofargcat_file)
     # only relevant gaussians are in M or C sources
-    lofargcat = lofargcat[lofargcat['S_Code'] != 'S']
+    #lofargcat = lofargcat[lofargcat['S_Code'] != 'S']
 
     # Source catalogue
     lofarcat = Table.read(lofarcat_file)
+    
+    Nlofarcat = len(lofarcat)
 
     # these two added with add_gaus_info.py
     needgaus = False
@@ -253,6 +268,9 @@ if __name__=='__main__':
     
     if step == 1:
         print('msources have not yet been handled, but we need to give them FC_flags')
+        
+        # add a temporary ML_flag - set all to 0 for LGZ
+        lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='ML_flag'))
     elif step == 2:
         print('msources have been handled, now to give them the right ID flags')
         if 'msource1_flag' not in lofarcat.colnames:
@@ -274,6 +292,15 @@ if __name__=='__main__':
         print('step {s} not defined, quitting'.format(s=step))
         sys.exit(1)
 
+    lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='WEAVE_priority1'))
+    ind8hr = (lofarcat['RA']>= 0) & (lofarcat['RA']<= 360) & (lofarcat['DEC']>= 26) & (lofarcat['DEC']<= 41)
+    ind13hr45 = (lofarcat['RA']>= 0) & (lofarcat['RA']<= 360) & (lofarcat['DEC']>= 40) & (lofarcat['DEC']<= 45)
+    ind13hr60 = (lofarcat['RA']>= 110) & (lofarcat['RA']<= 135) & (lofarcat['DEC']>= 60) & (lofarcat['DEC']<= 65)
+    
+    lofarcat['WEAVE_priority1'][ind8hr] = True
+    lofarcat['WEAVE_priority1'][ind13hr45] = True
+    lofarcat['WEAVE_priority1'][ind13hr60] = True
+    print('{} sources out of {} with WEAVE_priority1 ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority1'])/Nlofarcat))
 
 
     # this is easy to run...
@@ -285,7 +312,7 @@ if __name__=='__main__':
     # step 1 happens before we have visual classifications - if any ever for dr2
     if step in [1,2,3]:
         # we start with no flagging - visual, other
-        cleanflag = np.ones(len(lofarcat),dtype=bool)
+        cleanflag = np.ones(Nlofarcat,dtype=bool)
         cleanflag0 = np.zeros(len(lofarcat),dtype=bool)
         clustered_flag = cleanflag0
         Lclustered_flag = cleanflag0
@@ -436,11 +463,30 @@ if __name__=='__main__':
 
     masterlist = []
 
-    M_all = Mask(lofarcat['RA'] > -1,
+    M_all_full = Mask(lofarcat['RA'] > -1,
                     'all',
-                    qlabel='artefact?\n(visual confirmation)',
+                    qlabel='weave priority?\n(visual confirmation)',
                     masterlist=masterlist,
                     maskflag=lofarcat['ML_flag'], maskflagstr='LR:LGZ')
+
+
+    #non -weave
+    M_all_noweave = M_all_full.submask(~lofarcat['WEAVE_priority1'],
+                        'artefact',
+                        'Artefact\n(visually confirmed)',
+                        edgelabel='Y',
+                        color='gray',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_all_noweave.mask] = -1
+    
+    # non-weave
+    M_all = M_all_full.submask(lofarcat['WEAVE_priority1'],
+                        'artefact',
+                        'Artefact\n(visually confirmed)',
+                        edgelabel='Y',
+                        color='gray',
+                        masterlist=masterlist)
+    lofarcat['ID_flag'][M_all.mask] = -1
 
     # artefacts
     M_all_artefact = M_all.submask(artefact_flag,
@@ -938,7 +984,7 @@ if __name__=='__main__':
                   
 
     # make a test sample for each final mask
-    makesample = 1
+    makesample = 0
     if makesample:
         for t in masterlist:
             if not t.has_children :
@@ -975,8 +1021,6 @@ if __name__=='__main__':
     for tt,ii in zip(t,i): print(tt,ii)
     
 
-    ## write output file
-    lofarcat.write(lofarcat_file_srt, overwrite=True)
 
     #sys.exit()
 
@@ -1052,9 +1096,10 @@ if __name__=='__main__':
         #Optional prog=['neato'|'dot'|'twopi'|'circo'|'fdp'|'nop']
         #neato, dot, twopi, circo, fdp, nop, wc, acyclic, gvpr, gvcolor, ccomps, sccmap, tred, sfdp.
         A.layout('dot') # layout with dot
-        A.draw('flow_step{st:d}_s{s:.0f}_nn{nn:.0f}.png'.format(st=step,s=size_large,nn=separation1)) # write to file
-        A.draw('flow_step{st:d}_s{s:.0f}_nn{nn:.0f}.pdf'.format(st=step,s=size_large,nn=separation1)) # write to file
-        A.write('flow_step{st:d}_s{s:.0f}_nn{nn:.0f}.dot'.format(st=step,s=size_large,nn=separation1)) # write to file
+        outname = 'flow_{version}_step{st:d}_s{s:.0f}_nn{nn:.0f}'.format(version=version,st=step,s=size_large,nn=separation1)
+        A.draw(outname+'.png') # write to file
+        A.draw(outname+'.pdf') # write to file
+        A.write(outname+'.dot') # write to file
 
 
 
@@ -1078,256 +1123,20 @@ if __name__=='__main__':
     t,i = np.unique(lofarcat[fcflg], return_counts=True)
     for tt,ii in zip(t,i): print(tt,ii)
     
-    print('MC1_flag1 count')
-    t,i = np.unique(lofarcat['MC1_flag1'], return_counts=True)
-    for tt,ii in zip(t,i): print(tt,ii)
-    print('MC2_flag1 count')
-    t,i = np.unique(lofarcat['MC2_flag1'], return_counts=True)
-    for tt,ii in zip(t,i): print(tt,ii)
+    if 'MC1_flag1' in lofarcat.colnames:
+        print('MC1_flag1 count')
+        t,i = np.unique(lofarcat['MC1_flag1'], return_counts=True)
+        for tt,ii in zip(t,i): print(tt,ii)
+    if 'MC2_flag1' in lofarcat.colnames:
+        print('MC2_flag1 count')
+        t,i = np.unique(lofarcat['MC2_flag1'], return_counts=True)
+        for tt,ii in zip(t,i): print(tt,ii)
+
+
+    ## write output file
+    lofarcat.write(lofarcat_file_srt, overwrite=True)
 
 
     ## TESTING ##
     ## check gaus ML
-
-
-
-if 0:
-    fluxcuts = np.logspace(-4, 0, 1000)
-    nS_fluxcuts = np.nan*np.zeros(len(fluxcuts))
-    for fi,fluxcut in enumerate(fluxcuts):
-        m = lofarcat['Total_flux']/1e3 > fluxcut
-        nS_fluxcuts[fi] = 1.*np.sum(lofarcat['S_Code'][m] == 'S') /np.sum(m)
-        #nS_fluxcuts[fi] = 1.*np.sum(m)
-    f,ax = pp.paper_single_ax()
-    ax.plot(fluxcuts, nS_fluxcuts)
-    ax.set_ylabel('f(Single) ($S>S_{cut}$)')
-    ax.set_xlabel('$\log S_{cut}$ [Jy]')
-    plt.savefig('fraction_single_vs_S')
-
-
-    sizecuts = np.linspace(15, 60, 10)
-    fluxcuts = np.logspace(-3, 1, 1000)
-    f,ax = pp.paper_single_ax()
-    for si,sizecut in enumerate(sizecuts):
-        ms = lofarcat['Maj'] > sizecut
-        nS_fluxcuts = np.nan*np.zeros(len(fluxcuts))
-        for fi,fluxcut in enumerate(fluxcuts):
-            m = ms & (lofarcat['Total_flux']/1e3 > fluxcut)
-            nS_fluxcuts[fi] = 1.*np.sum(m) /np.sum(ms)
-        ax.plot(fluxcuts, nS_fluxcuts)
-    #ax.set_ylabel('$f(Maj>Maj_{cut})$ ($S>S_{cut}$)')
-    #ax.set_xlabel('$\log S_{cut}$ [Jy]')
-    plt.savefig('fraction_large_vs_S')
-
-
-
-    sizecuts = np.arange(10, 35, 1)
-    NNcuts = np.arange(20, 125, 5)
-    IM = np.zeros((len(sizecuts), len(NNcuts)))
-    fluxcuts = np.logspace(-3, 1, 1000)
-    f,ax = pp.paper_single_ax()
-    for si,sizecut in enumerate(sizecuts):
-        for ni,NNcut in enumerate(NNcuts):
-            m = (lofarcat['Maj'] <= sizecut) & (lofarcat['NN_sep'] >= NNcut)
-            IM[si,ni] = np.sum(m)
-    IM = IM/Ncat
-    c = ax.imshow(IM.T, origin='lower', extent=(10,60, 20,120))
-    cbar = plt.colorbar(c)
-    cbar.set_label('fraction')
-    ax.invert_xaxis()
-    ax.set_xlabel(r'$<$ size [arcsec]')
-    ax.set_ylabel(r'$>$ NN separation [arcsec]')
-    plt.savefig('number_compact_isolated')
-
-    f,axs = plt.subplots(1,2,sharex=False,sharey=True,figsize=(12,6))
-    ax=axs[0]
-    ax.plot(NNcuts,IM.T)
-    ax.set_ylabel('fraction')
-    ax.set_xlabel(r'$>$ NN separation [arcsec]')
-    ax=axs[1]
-    ax.plot(sizecuts,IM)
-    ax.set_xlabel(r'$<$ size [arcsec]')
-
-
-    nb=100
-    if step == 2:
-        # plot LR distribuion for different classes
-        f,ax = pp.paper_single_ax()
-        _ =ax.hist(np.log10(1.+lofarcat['LR']), bins=100, normed=True, log=False,histtype='step',color='k',linewidth=2,label='All')
-        _ =ax.hist(np.log10(1.+lofarcat['LR'][M_small_isol_S.mask]), bins=100, normed=True, histtype='step', label=M_small_isol_S.name.replace('_','\_'))
-        #_ =ax.hist(np.log10(1.+lofarcat['LR'][m_small_isol_nS]), bins=100, normed=True, histtype='step', label=l_small_isol_nS)
-        _ =ax.hist(np.log10(1.+lofarcat['LR'][M_small_nisol.mask]), bins=100, normed=True, histtype='step', label=M_small_nisol.name.replace('_','\_'))
-        _ =ax.hist(np.log10(1.+lofarcat['LR'][M_large.mask]), bins=100, normed=True, histtype='step', label=M_large.name.replace('_','\_'))
-        _ =ax.hist(np.log10(1.+lofarcat['LR'][M_large_faint_complex.mask]), bins=100, normed=True, histtype='step', label=M_large_faint_complex.name.replace('_','\_'))
-        #_ =ax.hist(np.log10(1.+lofarcat['LR'][M_large_faint_nhuge_n2masx.mask]), bins=100, normed=True, histtype='step', label=M_large_faint_nhuge_n2masx.name.replace('_','\_'))
-        ax.legend()
-        ax.set_ylim(0,2)
-        ax.set_xlabel('$\log (1+LR)$')
-        ax.set_ylabel('$N$')
-        plt.savefig('lr_dist_classes')
-
-    # plot LR distribuion for different classes
-    f,ax = pp.paper_single_ax()
-    counts, xedges, yedges, im =ax.hist2d(np.log10(1.+lofarcat['LR']), np.log10(lofarcat['Maj']), bins=100, density=True, vmin=0, vmax=2, label='')
-    cbar = plt.colorbar(im, ax=ax)
-    ax.legend()
-    #ax.set_ylim(0,2)
-    ax.set_xlabel('$\log (1+LR)$')
-    ax.set_ylabel('$\log$ Maj [arcsec]')
-    cbar.set_label('$N$')
-    plt.savefig('lr_dist_size')
-
-    f,ax = pp.paper_single_ax()
-    counts, xedges, yedges, im =ax.hist2d(np.log10(1.+lofarcat['LR']), np.log10(lofarcat['Total_flux']), bins=100, density=True, vmin=0, vmax=2, label='')
-    cbar = plt.colorbar(im, ax=ax)
-    ax.legend()
-    #ax.set_ylim(0,2)
-    ax.set_xlabel('$\log (1+LR)$')
-    ax.set_ylabel('$\log S$ [Jy]')
-    cbar.set_label('$N$')
-    plt.savefig('lr_dist_flux')
-
-
-
-    #f,ax = pp.paper_single_ax()
-    #f = plt.figure()
-    f,axs = plt.subplots(1,2,sharex=True,sharey=True,figsize=(12,6))
-    ax = axs[0]
-    counts, xedges, yedges, im =ax.hist2d(np.log10(lofarcat['Maj'][M_S.mask]), np.log10(lofarcat['Total_flux'][m_S]), bins=100, label='')
-    cbar = plt.colorbar(im, ax=ax)
-    x1,x2 = ax.get_xlim()
-    y1,y2 = ax.get_ylim()
-    ax.vlines(np.log10(15.),y1,y2)
-    ax.hlines(np.log10(10.),x1,x2)
-    ax.legend()
-    ax.set_title('S')
-    #ax.set_ylim(0,2)
-    ax.set_xlabel('$\log $ Maj [arcsec]')
-    ax.set_ylabel('$\log S$ [mJy]')
-    cbar.set_label('$N$')
-    ax = axs[1]
-    counts, xedges, yedges, im =ax.hist2d(np.log10(lofarcat['Maj'][~M_S.mask]), np.log10(lofarcat['Total_flux'][~m_S]), bins=100, label='')
-    cbar = plt.colorbar(im, ax=ax)
-    x1,x2 = ax.get_xlim()
-    y1,y2 = ax.get_ylim()
-    ax.vlines(np.log10(15.),y1,y2)
-    ax.hlines(np.log10(10.),x1,x2)
-    ax.legend()
-    ax.set_title('!S')
-    #ax.set_ylim(0,2)
-    ax.set_xlabel('$\log $ Maj [arcsec]')
-    #ax.set_ylabel('$\log S$ [mJy]')
-    cbar.set_label('$N$')
-    plt.savefig('lr_dist_size_flux')
-
-
-
-
-    #f,ax = pp.paper_single_ax()
-    #f = plt.figure()
-    f,axs = plt.subplots(1,2,sharex=True,sharey=True,figsize=(12,6))
-    ax = axs[0]
-    counts, xedges, yedges, im =ax.hist2d((lofarcat['Maj'][M_lr.mask]), (lofarcat['NN_sep'][M_lr.mask]), bins=200, range=((0,50),(0,200)), label='')
-    cbar = plt.colorbar(im, ax=ax)
-    x1,x2 = ax.get_xlim()
-    y1,y2 = ax.get_ylim()
-    ax.vlines((15.),y1,y2)
-    ax.hlines((10.),x1,x2)
-    ax.legend()
-    ax.set_title('good LR')
-    #ax.set_ylim(0,2)
-    ax.set_xlabel('Maj [arcsec]')
-    ax.set_ylabel('NN separation [arcsec]')
-    cbar.set_label('$N$')
-    ax = axs[1]
-    counts, xedges, yedges, im =ax.hist2d((lofarcat['Maj'][~M_lr.mask]), (lofarcat['NN_sep'][~M_lr.mask]), bins=200, range=((0,50),(0,200)), label='')
-    cbar = plt.colorbar(im, ax=ax)
-    x1,x2 = ax.get_xlim()
-    y1,y2 = ax.get_ylim()
-    ax.vlines((15.),y1,y2)
-    ax.hlines((10.),x1,x2)
-    ax.legend()
-    ax.set_title('bad LR')
-    #ax.set_ylim(0,2)
-    ax.set_xlabel('Maj [arcsec]')
-    #ax.set_ylabel('$\log S$ [mJy]')
-    cbar.set_label('$N$')
-    plt.savefig('lr_dist_size_nnsep')
-
-
-
-
-
-    # # diagnostic plots 
-
-
-    # plot size distribution
-    f, ax = pp.paper_single_ax()
-    ax.hist(lofarcat['Maj'][~maskDC0], range=(0,80), bins=100, histtype='step', label='All')
-    ax.hist(lofarcat['Maj'][~maskDC0&M_S.mask], range=(0,80), bins=100, histtype='step', label='S')
-    ax.hist(lofarcat['Maj'][~maskDC0&M_M.mask], range=(0,80), bins=100, histtype='step', label='M')
-    ax.hist(lofarcat['Maj'][~maskDC0&M_C.mask], range=(0,80), bins=100, histtype='step', label='C')
-    ax.set_xlabel('Major Axis [arcsec]')
-    ax.set_ylabel('N')
-    ax.legend()
-    plt.savefig('size_dist_classes')
-
-
-    # plot nearest neighbour distribution
-    f,ax = pp.paper_single_ax()
-    ax.hist(lofarcat['NN_sep'], bins=100, histtype='step', label='All')
-    ax.hist(lofarcat['NN_sep'][M_S.mask], bins=100, histtype='step', label='S')
-    ax.set_xlabel('Nearest source [arcsec]')
-    ax.set_ylabel('N')
-    ax.legend()
-    plt.savefig('NNdist_dist')
-
-
-    # 2D histogram : size-nearest neighbour distance
-    # for 'S' sources
-    f,ax = pp.paper_single_ax()
-    X =  lofarcat['NN_sep'][~maskDC0&M_S.mask]
-    Y = lofarcat['Maj'][~maskDC0&M_S.mask]
-    H, xe, ye =  np.histogram2d( X, Y, bins=(100,100), normed=True)
-    H2 = H.T
-    xc = (xe[1:] +xe[:-1] )/2.
-    yc = (ye[1:] +ye[:-1] )/2.
-    c = ax.contour(xc, yc, H2, [0.5])
-    xind = np.sum(X>xe[:,np.newaxis],axis=0)-1
-    yind = np.sum(Y>ye[:,np.newaxis],axis=0)-1
-    Hval = H2[yind,xind]
-    c = ax.scatter(X, Y,c=Hval,s=10, edgecolor='none',zorder=1)
-    x1,x2 = ax.get_xlim()
-    y1,y2 = ax.get_ylim()
-    ax.hlines(size_large,x1,x2,colors='k',linestyle='dashed')
-    ax.vlines(separation1,y1,y2,colors='k',linestyle='dashed')
-    ax.set_xlabel('NN separation [arcsec]')
-    ax.set_ylabel('DCmaj [arcsec]')
-    ax.contour(xc, yc, H2)
-    plt.savefig('size_NNdist_dist_s')
-
-
-    # and 'M' sources
-    f,ax = pp.paper_single_ax()
-    X =  lofarcat['NN_sep'][~maskDC0&M_M.mask]
-    Y = lofarcat['Maj'][~maskDC0&M_M.mask]
-    H, xe, ye =  np.histogram2d( X, Y, bins=(100,100), normed=True)
-    H2 = H.T
-    xc = (xe[1:] +xe[:-1] )/2.
-    yc = (ye[1:] +ye[:-1] )/2.
-    c = ax.contour(xc, yc, H2, [0.5])
-    xind = np.sum(X>xe[:,np.newaxis],axis=0)-1
-    yind = np.sum(Y>ye[:,np.newaxis],axis=0)-1
-    Hval = H2[yind,xind]
-    c = ax.scatter(X, Y,c=Hval,s=10, edgecolor='none',zorder=1)
-    x1,x2 = ax.get_xlim()
-    y1,y2 = ax.get_ylim()
-    ax.hlines(size_large,x1,x2,colors='k',linestyle='dashed')
-    ax.vlines(separation1,y1,y2,colors='k',linestyle='dashed')
-    ax.set_xlabel('NN separation [arcsec]')
-    ax.set_ylabel('DCmaj [arcsec]')
-    ax.contour(xc, yc, H2)
-    plt.savefig('size_NNdist_dist_m')
-
-
 

@@ -13,6 +13,7 @@ path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
     lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.presort.fits'
  out:
     lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
+
      new cols: 'NN_sep','NN_LR', 'NN_sep', 'NN_idx', 'NN5_sep','NN4_sep', 'NN_Total_flux', 'NN_Frat', 'NN_Maj'
 
 %run flow_python/add_gaus_info.py  (can edit to redo)

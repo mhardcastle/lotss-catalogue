@@ -3,12 +3,25 @@ add_gaus_info.py
 add some info on the gaussians to the lofar source table
 - it's a bit slow to do the separation calculation for all M sources, so do it once and save it
 '''
+import sys
 import numpy as np
 from astropy.table import Table, join, Column
 import astropy.coordinates as ac
 
 
 if __name__=='__main__':
+
+    if len(sys.argv) == 1:
+        print("Usage is : python add_gaus_info.py field_code ")
+        print('E.g.: python add_gaus_info.py 0 ')
+        sys.exit(1)
+
+    h = str(sys.argv[1])
+    if 'h' not in h:
+        h+='h'
+    if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
+        print('unknown field code (should be 0h or 13h)',h)
+        sys.exit(1)
 
     ### Required INPUTS
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
@@ -18,8 +31,8 @@ if __name__=='__main__':
     redo = True
 
     path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-    lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.lr.fits'
-    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
+    lofargcat_file = path+'lr/LoTSS_DR2_v100.gaus_{h}.lr-full.fits'.format(h=h)
+    lofarcat_file = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
 
     gaus_cols = ['Ng', 'G_max_sep', 'G_LR_max', 'Ng_LR_good','Ng_LR_good_unique','N_G_LR_matchsource','Flag_G_LR_problem']
 
@@ -132,17 +145,22 @@ if __name__=='__main__':
         ig = np.where(lofargcat['Source_Name']==sid)[0]
         Ng = len(ig)
         lofarcat['Ng'][i]= Ng
+        if Ng == 0: ## this should not happen! but apparently does?
+            print(sid, Ng)
+            lofarcat['G_max_sep'][i] = np.nan
+        else:
         
         
-        gcoords = ac.SkyCoord(lofargcat['RA'][ig], lofargcat['DEC'][ig])
-        _, sep, _ = gcoords.match_to_catalog_sky(gcoords, nthneighbor=Ng)
-        lofarcat['G_max_sep'][i] = np.max(sep.to('arcsec').value)
+            gcoords = ac.SkyCoord(lofargcat['RA'][ig], lofargcat['DEC'][ig])
+            _, sep, _ = gcoords.match_to_catalog_sky(gcoords, nthneighbor=Ng)
+            lofarcat['G_max_sep'][i] = np.max(sep.to('arcsec').value)
         
         
         
     print('calculating LR stuff for m sources - this can be slow')
     m_S = lofarcat['S_Code'] =='S'
-    minds = np.where(~m_S)[0]
+    #minds = np.where(~m_S)[0]
+    minds = np.where(lofarcat['Ng']>1)[0]
     for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
         ig = np.where(lofargcat['Source_Name']==sid)[0]
         lofarcat['G_LR_max'][i]= np.nanmax(lofargcat['lr'][ig])

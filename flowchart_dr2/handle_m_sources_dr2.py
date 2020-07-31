@@ -40,25 +40,36 @@ if __name__=='__main__':
     fluxcut = 10               # in mJy
     fluxcut2 = 2.5               # in mJy
 
+    if len(sys.argv == 1):
+        print("Usage is : python handle_m_sources_dr2.py field_code step_no mode")
+        print('E.g.: python handle_m_sources_dr2.py 0 1 nonisol')
+        sys.exit(1)
 
-    step = int(sys.argv[1])
+    h = str(sys.argv[1])
+    if 'h' not in h:
+        h+='h'
+    if h not in  ['0h','13h']:
+        print('unknown field code (should be 0h or 13h)',h)
+        sys.exit(1)
+
+    step = int(sys.argv[2])
     if step not in  [1,2]:
         print('unknown step',step)
         sys.exit(1)
 
-    mode = sys.argv[2]
+    mode = sys.argv[3]
     if mode.lower() not in ['isol', 'nonisol']:
         print('unknown mode',mode)
         sys.exit(1)
     #mode = 'isol'
     #mode = 'nonisol'
 
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-    lofargcat_file = path+'LoTSS_DR2_rolling.gaus_0h.lr.fits'
-    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step1.fits'
+    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/lr/'
+    lofargcat_file = path+'LoTSS_DR2_rolling.gaus_{h}.lr.fits'.format(h=hr)
+    lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_{h}.sorted_step1.fits'.format(h=hr)
 
     if not os.path.exists(lofarcat_file_srt):
-        print('{f} does not exist - first run lofar_source_sorter_v2.py to produce this'.format(f=lofarcat_file_srt))
+        print('{f} does not exist - first run lofar_source_sorter_dr2.py to produce this'.format(f=lofarcat_file_srt))
 
     version = 'v1'
     
@@ -73,7 +84,7 @@ if __name__=='__main__':
     #lofar_msource_flowchart_file = path + 'msources/LOFAR_flowchart.fixed.fits'
     if not os.path.exists(path + 'msources/'):
         os.mkdir(path + 'msources/')
-    lofar_msource_flowchart_file = path + 'msources/step{st:d}_{m}_msources_flowchart_{v}.fits'.format(st=step, m=mode,v=version)
+    lofar_msource_flowchart_file = path + 'msources/{h}_step{st:d}_{m}_msources_flowchart_{v}.fits'.format(h=h,st=step, m=mode,v=version)
 
     # Gaus catalogue
     lofargcat = Table.read(lofargcat_file)
@@ -832,9 +843,9 @@ if __name__=='__main__':
         #Optional prog=['neato'|'dot'|'twopi'|'circo'|'fdp'|'nop']
         #neato, dot, twopi, circo, fdp, nop, wc, acyclic, gvpr, gvcolor, ccomps, sccmap, tred, sfdp.
         A.layout('dot') # layout with dot
-        A.draw('flow_step{st:d}_s{s:.0f}_nn{nn:.0f}_msources_{m}_{v}.png'.format(st=step,s=size_large,nn=separation1,v=version,m=mode)) # write to file
-        A.draw('flow_step{st:d}_s{s:.0f}_nn{nn:.0f}_msources_{m}_{v}.pdf'.format(st=step,s=size_large,nn=separation1,v=version,m=mode)) # write to file
-        A.write('flow_step{st:d}_s{s:.0f}_nn{nn:.0f}_msources_{m}_{v}.dot'.format(st=step,s=size_large,nn=separation1,v=version,m=mode)) # write to file
+        A.draw('flow_{h}_step{st:d}_s{s:.0f}_nn{nn:.0f}_msources_{m}_{v}.png'.format(h=h,st=step,s=size_large,nn=separation1,v=version,m=mode)) # write to file
+        A.draw('flow_{h}_step{st:d}_s{s:.0f}_nn{nn:.0f}_msources_{m}_{v}.pdf'.format(h=h,st=step,s=size_large,nn=separation1,v=version,m=mode)) # write to file
+        A.write('flow_{h}_step{st:d}_s{s:.0f}_nn{nn:.0f}_msources_{m}_{v}.dot'.format(h=h,st=step,s=size_large,nn=separation1,v=version,m=mode)) # write to file
 
         
     # make a test sample for each final mask

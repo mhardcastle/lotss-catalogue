@@ -13,19 +13,53 @@ from astropy.table import Table, Column
 import astropy.coordinates as ac
 import astropy.units as u
 import os
+import sys
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import utils.plotting as pp
 
+
+
+from multiprocessing import Process, Value, Array
+
+def f(n, a):
+    n.value = 3.1415927
+    for i in range(len(a)):
+        a[i] = -a[i]
+
+def test_multi():
+    num = Value('d', 0.0)
+    arr = Array('i', range(10))
+    arr2 = Array('i', range(10))
+
+    p = Process(target=f, args=(num, arr))
+    p.start()
+    p.join()
+
+    print num.value
+    print arr[:]
+    
+    
+
 #path = '/local/wwilliams/projects/radio_imaging/lofar_surveys/LoTSS-DR1-July21-2017/'
 #lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.95_masked.srl.fixed.sorted.fits'
 
 
+if len(sys.argv) == 1:
+    print("Usage is : python add_gaus_info.py field_code ")
+    print('E.g.: python add_gaus_info.py 0 ')
+    sys.exit(1)
 
+h = str(sys.argv[1])
+if 'h' not in h:
+    h+='h'
+if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
+    print('unknown field code (should be 0h or 13h)',h)
+    sys.exit(1)
 
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
+lofarcat_filepsrt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
 
 
 

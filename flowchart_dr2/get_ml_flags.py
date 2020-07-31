@@ -4,7 +4,7 @@
 get_msource_flags
 add flags to catalogue based on sub-flowchart of compact isolated m sources
 '''
-
+import sys
 import os
 import numpy as np
 
@@ -19,11 +19,27 @@ from lofar_source_sorter_dr2 import Mask, Masks_disjoint_complete
 
 
 
+
+
+if len(sys.argv) == 1:
+    print("Usage is : python get_ml_flags.py field_code ")
+    print('E.g.: python get_ml_flags.py 0 ')
+    sys.exit(1)
+
+h = str(sys.argv[1])
+if 'h' not in h:
+    h+='h'
+if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
+    print('unknown field code (should be 0h or 13h)',h)
+    sys.exit(1)
+
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step1.fits'
+lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step1.fits'.format(h=h)
+
 
 
 lofarcat = Table.read(lofarcat_file_srt)
+
 
 
 
