@@ -2,15 +2,15 @@
 match_2masx
 get_nearest_neighbours
 add_gaus_info
-
-lofar_source_sorter 1
-
-handle_m_sources_dr2 1 nonisol
-handle_m_sources_dr2 1 nisol
-get_msource_flags
-
 get_ml_flags
 
-lofar_source_sorter 2
+lofar_source_sorter 13 1
+
+handle_m_sources_dr2 13 1 nonisol
+handle_m_sources_dr2 13 1 nisol
+get_msource_flags
+
+
+lofar_source_sorter 13 2
 
 

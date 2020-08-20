@@ -13,8 +13,8 @@ scat = Table.read (path+'lr/LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',
 gcat = Table.read (path+'lr/LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='gaus'))
 
 h='13h'
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
-scat = Table.read(lofarcat_file_srt)
+#lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
+#scat = Table.read(lofarcat_file_srt)
 
 # manually down for now ... but could be determined from np.unique
 dup_names = ['ILTJ104642.23+371846.1',
@@ -87,5 +87,6 @@ for dup in dup_names:
     print(gcat[gi])
 
 
+#scat.write (path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h),overwrite=True)
 scat.write (path+'LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='srl'),overwrite=True)
 gcat.write (path+'LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='gaus'),overwrite=True)
