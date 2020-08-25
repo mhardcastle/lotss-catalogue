@@ -5,12 +5,21 @@ add_gaus_info
 get_ml_flags
 
 lofar_source_sorter 13 1
-
-handle_m_sources_dr2 13 1 nonisol
-handle_m_sources_dr2 13 1 nisol
-get_msource_flags
-
-
+handle_m_sources_dr2 13 1 all
 lofar_source_sorter 13 2
 
 
+
+python flow_python/lofar_source_sorter_dr2.py 13 1 3
+python flow_python/handle_m_sources_dr2.py 13 1 all 3
+python flow_python/lofar_source_sorter_dr2.py 13 2 3
+
+
+python flow_python/lofar_source_sorter_dr2.py 13 1 4
+python flow_python/handle_m_sources_dr2.py 13 1 all 4
+python flow_python/lofar_source_sorter_dr2.py 13 2 4
+
+
+python flow_python/lofar_source_sorter_dr2.py 13 1 5
+python flow_python/handle_m_sources_dr2.py 13 1 all 5
+python flow_python/lofar_source_sorter_dr2.py 13 2 5

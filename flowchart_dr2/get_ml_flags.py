@@ -35,7 +35,7 @@ if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
 
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
 #lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step1.fits'.format(h=h)
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
+lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
 
 
 
@@ -104,4 +104,4 @@ tt.remove_column('Source_Name_2')
 #################################################################################
 
 ## write output file
-tt.write(lofarcat_file_srt, overwrite=True)
+tt.write(lofarcat_file_srt, overwrite=True, serialize_meta=True)

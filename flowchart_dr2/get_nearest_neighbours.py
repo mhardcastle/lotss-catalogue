@@ -23,7 +23,7 @@ if __name__=='__main__':
     # lofar source catalogue
 
     path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-    lofarcat_file = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
+    lofarcat_file = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
 
 
     # Source catalogue
@@ -53,5 +53,5 @@ if __name__=='__main__':
         lofarcat.add_column(Column(lofarcat['Maj'][f_nn_idx], 'NN_Maj'))
         
         
-    lofarcat.write(lofarcat_file, overwrite=True)
+    lofarcat.write(lofarcat_file, overwrite=True, serialize_meta=True)
         

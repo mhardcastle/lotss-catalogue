@@ -27,7 +27,7 @@ if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
     sys.exit(1)
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
 lofarcat_file = path+'lr/LoTSS_DR2_v100.srl_{h}.lr-full.fits'.format(h=h)
-lofarcat_file_psrt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
+lofarcat_file_psrt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
 
 lofarcat = Table.read(lofarcat_file)
 
@@ -156,4 +156,4 @@ print('{n:n} 2MASX sources out of {nall:n} have a possible LOFAR match'.format(n
 
 if os.path.exists(lofarcat_file_psrt):
     os.remove(lofarcat_file_psrt)
-lofarcat.write(lofarcat_file_psrt)
+lofarcat.write(lofarcat_file_psrt, overwrite=True, serialize_meta=True)
