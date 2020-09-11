@@ -30,7 +30,7 @@ for t in ['srl','gaus']:
         scat.sort('Source_Name')
         
         print('LoTSS_DR2_v100.{t}_s{h}.lr.fits: '.format(h=h,t=t), len(scat), 'sources')
-        scat.write(path+'LoTSS_DR2_v100.{t}_s{h}.lr-full.fits'.format(h=h,t=t), overwrite=True)
+        scat.write(path+'LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h=h,t=t), overwrite=True)
 
 
 

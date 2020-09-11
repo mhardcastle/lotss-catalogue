@@ -142,7 +142,15 @@ if __name__=='__main__':
 
     
     if version == 'v100':
-        lLR_thresh = 0.309            # LR threshold
+        
+        if h == '13h':
+            lLR_thresh = 0.309            # LR threshold
+        elif h == '0h':
+            lLR_thresh = 0.394            # LR threshold
+        else:
+            print('LR threshold not implemented for field',h)
+            sys.exit(1)
+        
         #lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.sorted.v1.fits'
     else:
         print('Unknown version, quitting')

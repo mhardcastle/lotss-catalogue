@@ -1,25 +1,25 @@
 
 match_2masx
-get_nearest_neighbours
 add_gaus_info
+get_nearest_neighbours
 get_ml_flags
-
-lofar_source_sorter 13 1
-handle_m_sources_dr2 13 1 all
-lofar_source_sorter 13 2
-
-
-
-python flow_python/lofar_source_sorter_dr2.py 13 1 3
-python flow_python/handle_m_sources_dr2.py 13 1 all 3
-python flow_python/lofar_source_sorter_dr2.py 13 2 3
 
 
 python flow_python/lofar_source_sorter_dr2.py 13 1 4
 python flow_python/handle_m_sources_dr2.py 13 1 all 4
 python flow_python/lofar_source_sorter_dr2.py 13 2 4
 
+TODO python flow_python/lofar_source_sorter_dr2.py 13 3 4
 
-python flow_python/lofar_source_sorter_dr2.py 13 1 5
-python flow_python/handle_m_sources_dr2.py 13 1 all 5
-python flow_python/lofar_source_sorter_dr2.py 13 2 5
+
+
+python flow_python/append_cats.py 
+
+## 0 hr field
+python flow_python/match_2masx.py 0 
+python flow_python/add_gaus_info.py 0 
+python flow_python/get_nearest_neighbours.py 0 
+python flow_python/get_ml_flags.py 0 
+python flow_python/lofar_source_sorter_dr2.py 0 1 4
+python flow_python/handle_m_sources_dr2.py 0 1 all 4
+python flow_python/lofar_source_sorter_dr2.py 0 2 4

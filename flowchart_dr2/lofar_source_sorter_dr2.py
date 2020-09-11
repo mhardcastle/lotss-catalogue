@@ -233,7 +233,13 @@ if __name__=='__main__':
     separation1 = 45.          # in arcsec
     size_huge = 25.            # in arcsec
     #separation2 = 30.          # in arcsec
-    lLR_thresh = 0.309            # LR threshold
+    if h == '13h':
+        lLR_thresh = 0.309            # LR threshold
+    elif h == '0h':
+        lLR_thresh = 0.394            # LR threshold
+    else:
+        print('LR threshold not implemented for field',h)
+        sys.exit(1)
     fluxcut = 8.               # in mJy
     #fluxcut2 = 4.0               # in mJy
     #fluxcut2 = 3.0               # in mJy
@@ -243,7 +249,7 @@ if __name__=='__main__':
     ##LR threshold
     ##s0h -> 0.394
     ##s13h -> 0.328
-    ##n13h -> 0.309 
+    ##n13h -> 0.309  -- note, adopt this level for both N and S
 
     ### Required INPUTS
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
@@ -327,11 +333,16 @@ if __name__=='__main__':
 
     if step == 1:
         lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='WEAVE_priority1'))
+        lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='WEAVE_priority1a'))
         lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='WEAVE_priority2'))
         lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='WEAVE_priority3'))
         ind8hr = (lofarcat['RA']>= 110) & (lofarcat['RA']<= 135) & (lofarcat['DEC']>= 26) & (lofarcat['DEC']<= 41)
         ind13hr45 = (lofarcat['RA']>= 130) & (lofarcat['RA']<= 280) & (lofarcat['DEC']>= 40) & (lofarcat['DEC']<= 45)
-        ind13hr60 = (lofarcat['RA']>= 120) & (lofarcat['RA']<= 240) & (lofarcat['DEC']>= 60) & (lofarcat['DEC']<= 65)
+        ind13hr60_1a = (lofarcat['RA']>= 120) & (lofarcat['RA']<= 240) & (lofarcat['DEC']>= 60) & (lofarcat['DEC']<= 65)
+        ind13hr60 = (lofarcat['RA']>= 120) & (lofarcat['RA']<= 240) & (lofarcat['DEC']>= 59) & (lofarcat['DEC']<= 65.5)
+        
+        # 0hr start with all
+        ind0hr = (lofarcat['RA']>= 0) & (lofarcat['RA']<= 360) & (lofarcat['DEC']>= -90) & (lofarcat['DEC']<= 90)
         
         #dr1_mos_ids = ['P10Hetdex', 'P11Hetdex12', 'P12Hetdex11', 'P14Hetdex04', 'P15Hetdex13', 'P164+55', 'P169+55', 'P16Hetdex13', 'P173+55', 'P178+55', 'P182+55', 'P187+55', 'P18Hetdex03', 'P191+55', 'P196+55', 'P19Hetdex17', 'P1Hetdex15', 'P200+55', 'P205+55', 'P206+50', 'P206+52', 'P209+55', 'P21', 'P210+47', 'P211+50', 'P213+47', 'P214+55', 'P217+47', 'P218+55', 'P219+50', 'P219+52', 'P221+47', 'P223+50', 'P223+52', 'P223+55', 'P225+47', 'P227+50', 'P227+53', 'P22Hetdex04', 'P23Hetdex20', 'P25Hetdex09', 'P26Hetdex03', 'P27Hetdex09', 'P29Hetdex19', 'P30Hetdex06', 'P33Hetdex08', 'P34Hetdex06', 'P35Hetdex10', 'P37Hetdex15', 'P38Hetdex07', 'P39Hetdex19', 'P3Hetdex16', 'P41Hetdex', 'P42Hetdex07', 'P4Hetdex16', 'P6', 'P7Hetdex11', 'P8Hetdex']
         #indhetdex = np.zeros(len(lofarcat),dtype=bool)
@@ -340,19 +351,26 @@ if __name__=='__main__':
             #indhetdex[indm] = True
             
             
-        
-        lofarcat['WEAVE_priority1'][ind13hr60] = True
-        
-        print('{} sources out of {} with WEAVE_priority1 ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority1'])/Nlofarcat))
-        
-        
-        lofarcat['WEAVE_priority3'][ind8hr] = True  
-        lofarcat['WEAVE_priority2'][ind13hr45] = True
-        
-        ## remove dr1 area:   - temp take out - slow and small area
-        #indhetdex = inHETDEX(lofarcat['RA'],lofarcat['DEC'])
-        #lofarcat['WEAVE_priority1'][indhetdex] = False
-        print('{} sources out of {} with WEAVE_priority1 not hetdex ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority1'])/Nlofarcat))
+        if h =='13h':
+            lofarcat['WEAVE_priority1a'][ind13hr60_1a] = True  # this is the initial bit done - later expanded to full priority 1 area
+            
+            lofarcat['WEAVE_priority1'][ind13hr60] = True
+            
+            print('{} sources out of {} with WEAVE_priority1 ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority1'])/Nlofarcat))
+            
+            
+            lofarcat['WEAVE_priority2'][ind8hr] = True  
+            lofarcat['WEAVE_priority3'][ind13hr45] = True
+            
+            ## remove dr1 area:   - temp take out - slow and small area
+            #indhetdex = inHETDEX(lofarcat['RA'],lofarcat['DEC'])
+            #lofarcat['WEAVE_priority1'][indhetdex] = False
+            print('{} sources out of {} with WEAVE_priority1 not hetdex ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority1'])/Nlofarcat))
+            
+        elif h =='0h':
+            lofarcat['WEAVE_priority1'][ind0hr] = True
+            
+            print('{} sources out of {} with WEAVE_priority1 ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority1'])/Nlofarcat))
 
 
     # this is easy to run...
@@ -530,9 +548,10 @@ if __name__=='__main__':
 
 
     
-    # non-weave
+    weave_sel = (lofarcat['WEAVE_priority1']==True) | (lofarcat['WEAVE_priority2']==True)
+    # weave
     # 10
-    M_all = M_all_full.submask(lofarcat['WEAVE_priority1']==True,
+    M_all = M_all_full.submask(weave_sel,
                         'weave',
                         'Weave priority',
                         edgelabel='Y',
@@ -543,7 +562,7 @@ if __name__=='__main__':
 
     #non -weave
     # 11
-    M_all_noweave = M_all_full.submask(lofarcat['WEAVE_priority1']==False,
+    M_all_noweave = M_all_full.submask(~weave_sel,
                         'no_weave',
                         'No Weave priority',
                         edgelabel='N',
