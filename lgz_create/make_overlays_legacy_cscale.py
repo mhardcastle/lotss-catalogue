@@ -61,7 +61,7 @@ if __name__=='__main__':
     # read lists
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     lofarmaps=[l[1] for l in lines]
-    psmaps=[l[2] for l in lines]
+    psmaps=[l[-1] for l in lines if len(l)>1]
     #wisemaps=[l[3] for l in lines]
     #firstmaps=[l[4] for l in lines]
 

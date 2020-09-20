@@ -15,7 +15,7 @@ def filter_table(cat,mask,outname):
 
     t=Table.read(cat)
     mask=fits.open(mask)
-    if len(mask[0].data.shape)>2:
+    if 'CTYPE3' in mask[0].header:
         print('Flattening the mask')
         mask=flatten(mask,None,None,None,None,None)
     

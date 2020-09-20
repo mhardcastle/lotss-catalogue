@@ -5,6 +5,8 @@ import os
 
 if __name__=='__main__':
     t=Table.read(sys.argv[1])
+    if 'Dec' in t.colnames:
+        t['Dec'].name='DEC'
     outfilename=sys.argv[1].replace('.fits','-list.txt')
     if not(os.path.isfile(outfilename)):
         startpoint=0

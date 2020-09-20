@@ -218,10 +218,12 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         if not isinstance(plotpos,list):
             plotpos=[(plotpos,'x'),]
         for element in plotpos:
+            # originally this stated:
             # if a colour is specified assume it's for a filled shape and unfill it
+            # but this doesn't seem sensible...
             if len(element)==3:
                 t,marker,edgecolor=element
-                facecolor='None'
+                facecolor=edgecolor # was 'None'
             else:
                 t,marker=element
                 edgecolor='white'
