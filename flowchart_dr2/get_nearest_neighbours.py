@@ -1,4 +1,4 @@
-
+import sys
 import numpy as np
 from astropy.table import Table, join, Column
 import astropy.coordinates as ac
@@ -7,11 +7,23 @@ import astropy.units as u
 
 if __name__=='__main__':
 
+    if len(sys.argv) == 1:
+        print("Usage is : python get_nearest_neighbours.py field_code ")
+        print('E.g.: python get_nearest_neighbours.py 0 ')
+        sys.exit(1)
+        
+    h = str(sys.argv[1])
+    if 'h' not in h:
+        h+='h'
+    if h not in  ['0h','13h']:
+        print('unknown field code (should be 0h or 13h)',h)
+        sys.exit(1)
+        
     ### Required INPUTS
     # lofar source catalogue
 
     path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-    lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
+    lofarcat_file = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
 
 
     # Source catalogue
@@ -41,5 +53,5 @@ if __name__=='__main__':
         lofarcat.add_column(Column(lofarcat['Maj'][f_nn_idx], 'NN_Maj'))
         
         
-    lofarcat.write(lofarcat_file, overwrite=True)
+    lofarcat.write(lofarcat_file, overwrite=True, serialize_meta=True)
         
