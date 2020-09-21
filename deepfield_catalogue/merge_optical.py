@@ -240,6 +240,14 @@ print
 print 'Sorting'
 t.sort('RA')
 
+# Fix the 3 sources (1 in EN1 and 2 in Lockman) with NoID=0 and ID=masked (21/09/2020)
+if changeid_path is not None:
+    print 'Fixing the NoID and ID column inconsistency'
+    changeid = Table.read(changeid_path, format='ascii')
+    # Update the NoID value to the correct one based on visual inspection
+    in_t_fin = np.isin(t["Source_Name"], changeid["Source_Name"])
+    t["NoID"][in_t_fin] = np.copy(changeid["NoID"])
+
 print 'Finalize NoID values'
 filter=(t['NoID']>0) & ~t['ID'].mask
 print 'Set',np.sum(filter),'sources with NoID set but some ID to NoID=0'
