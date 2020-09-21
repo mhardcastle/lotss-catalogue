@@ -248,7 +248,7 @@ filter=~np.isnan(t['optRA']) & (t['NoID']==0) & t['ID'].mask
 print 'Set',np.sum(filter),'sources with optRA set and NoID=0 but no ID to NoID=10'
 t['NoID']=np.where(filter,10,t['NoID'])
 print 'Remove optRA, optDec from all sources with NoID>0'
-filter=(t['NoID']==0)
+filter=(t['NoID']>0)
 t['optRA']=np.where(filter,np.nan,t['optRA'])
 t['optDec']=np.where(filter,np.nan,t['optDec'])
 # As per e-mail conversation of 23/05/20, NoID 9 -> 2 and 7 -> 5

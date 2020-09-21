@@ -5,8 +5,10 @@ import os
 
 if __name__=='__main__':
     t=Table.read(sys.argv[1])
-    if 'Dec' in t.colnames:
-        t['Dec'].name='DEC'
+    if 'ra' in t.colnames:
+        t['ra'].name='RA'
+    if 'dec' in t.colnames:
+        t['dec'].name='DEC'
     outfilename=sys.argv[1].replace('.fits','-list.txt')
     if not(os.path.isfile(outfilename)):
         startpoint=0
@@ -25,9 +27,9 @@ if __name__=='__main__':
         print r['RA'],r['DEC']
         lofarname=lm.find(r['RA'],r['DEC'])
         legacyname=get_legacy(r['RA'],r['DEC'],bands='zrg')
-        #wisename=get_wise(r['RA'],r['DEC'],1)
+        wisename=get_wise(r['RA'],r['DEC'],1)
         #firstname=get_first(r['RA'],r['DEC'])
-        print >>outfile,r['Source_Name'],lofarname,legacyname#,wisename,firstname
-
+        print >>outfile,r['Source_Name'],lofarname,legacyname,wisename#,firstname
+        outfile.flush()
     outfile.close()
 

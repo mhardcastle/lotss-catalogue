@@ -18,18 +18,24 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
         print 'Input image shape is',f[hduid].data.shape
     ds=f[hduid].data.shape[-2:]
     by,bx=ds
-    xmin=int(x-size)
-    if xmin<0:
+    if size is None:
         xmin=0
-    xmax=int(x+size)
-    if xmax>bx:
-        xmax=bx
-    ymin=int(y-size)
-    if ymin<0:
         ymin=0
-    ymax=int(y+size)
-    if ymax>by:
+        xmax=bx
         ymax=by
+    else:
+        xmin=int(x-size)
+        if xmin<0:
+            xmin=0
+        xmax=int(x+size)
+        if xmax>bx:
+            xmax=bx
+        ymin=int(y-size)
+        if ymin<0:
+            ymin=0
+        ymax=int(y+size)
+        if ymax>by:
+            ymax=by
     
     if ymax<=ymin or xmax<=xmin:
         # this can only happen if the required position is not on the map

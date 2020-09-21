@@ -43,12 +43,20 @@ if __name__=='__main__':
     tname=sys.argv[1]
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
+    # If we have 'Size' in colnames this is some kind of derived
+    # catalogue: in that case don't try to estimate the size but just
+    # use this one.
+    have_size='Size' in t.colnames
+
     # Annotated PyBDSF table
     ot=Table.read(os.environ['LOTSS_COMPONENT_CATALOGUE'])
     if 'Component_Name' in ot.colnames:
+        # this is the final component table
         cname='Component_Name'
+        pname='Parent_Source'
     else:
         cname='Source_Name'
+        pname=cname
     
     # large source table for neighbours
     #lt=ot[(ot['Total_flux']>3) & (ot['Maj']>8)]
@@ -61,7 +69,7 @@ if __name__=='__main__':
     # read lists
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     lofarmaps=[l[1] for l in lines]
-    psmaps=[l[-1] for l in lines if len(l)>1]
+    psmaps=[l[2] for l in lines]
     #wisemaps=[l[3] for l in lines]
     #firstmaps=[l[4] for l in lines]
 
@@ -120,137 +128,19 @@ if __name__=='__main__':
         ra,dec=r['RA'],r['DEC']
         print 'Original RA DEC is',ra,dec
         
-        #try:
-        #    marker_ra=r['ra']
-        #    marker_dec=r['dec']
-        #except:
-        marker_ra=None
-        marker_dec=None
+        try:
+            marker_ra=r['ra']
+            marker_dec=r['dec']
+        except:
+            marker_ra=None
+            marker_dec=None
 
-        title=None
-
-        # new part of the algorithm: first look for any ellipses that
-        # intersect the current one(s) (using ot)
-
-        iter=0
-        checktable=Table(r)
-        checktable['ellipse']=None
-        checktable['ellipse'][0]=ellipse(r,ra,dec)
-        ctlen=1
-        while True:
-            tcopy=ot
-            tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
-            filt=tcopy['dist']<180
-            filt&=tcopy['dist']>0
-            tcopy=tcopy[filt]
-            if len(tcopy)==0:
-                print 'No neighbours found!'
-                break
-            tcopy['ellipse']=None
-            for j in range(len(tcopy)):
-                tcopy[j]['ellipse']=ellipse(tcopy[j],ra,dec)
-            intersect=[]
-            for row in checktable:
-                filt=[]
-                for row2 in tcopy:
-                    if row[cname]==row2[cname]:
-                        result=False
-                    else:
-                        result=intersects(row,row2)
-                    print 'Check intercept between',row[cname],'and',row2[cname],'result is',result
-                    
-                    filt.append(result)
-            print 'Filt is',filt
-            itable=tcopy[filt]
-            print 'Length of checktable is',len(checktable)
-            print 'Length of itable is',len(itable)
-            interim=vstack((checktable,itable))
-            print 'Length of interim table is',len(interim)
-            names=list(set(interim[cname]))
-            print 'Names are',names
-            filt=[False]*len(interim)
-            for n in names:
-                pos=np.argmax(interim[cname]==n)
-                filt[pos]=True
-            checktable=interim[filt]
-            print 'New checktable length is',len(checktable)
-            if len(checktable)==ctlen:
-                print 'Checktable length converged!'
-                break
-            ctlen=len(checktable)
-            iter+=1
-            if iter==10:
-                print 'Not converged!'
-                break
-
-        print checktable
-        '''
-        import matplotlib.pyplot as plt
-        for r in checktable:
-            x,y=r['ellipse'].exterior.xy
-            plt.plot(x,y)
-        plt.savefig('poly.pdf')
-        '''
-        #ra,dec,size=find_bbox(checktable)
-        
-        # resize the image to look for interesting neighbours (using lt)
-        iter=0
-        flux=r['Total_flux']
-        while True:
-            startra,startdec=ra,dec
-            tcopy=lt
-            tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
-            filt=tcopy['dist']<180
-            filt&=tcopy['Total_flux']>flux/3.0 # look for similar flux
-            tcopy=tcopy[filt]
-            print 'Iter',iter,'found',len(tcopy),'neighbours'
-
-            # include checktable
-            interim=vstack((tcopy,checktable))
-            # de-dupe again
-            names=list(set(interim[cname]))
-            print 'Names are',names
-            filt=[False]*len(interim)
-            for n in names:
-                pos=np.argmax(interim[cname]==n)
-                filt[pos]=True
-            tcopy=interim[filt]
-            
-            ra=np.mean(tcopy['RA'])
-            dec=np.mean(tcopy['DEC'])
-            
-            newra,newdec,size=find_bbox(tcopy)
-            print '     size is',size
-
-            if startra==ra and startdec==dec:
-                break
-            iter+=1
-            if iter==10:
-                break
-
-        # now find the bounding box of the resulting collection
-        ra,dec,size=find_bbox(tcopy)
-
-        if np.isnan(size):
-            ra=r['RA']
-            dec=r['DEC']
-            size=60
-
-        if size>300.0:
-            # revert just to original
-            ra,dec=r['RA'],r['DEC']
-            tcopy=checktable
-            ra,dec,size=find_bbox(tcopy)
-
-        if size>300:
-            size=300.0
+        title=r['Source_Name']
+        size=r['Size']
         if size<60:
-            size=60.0
-        size=(int(0.5+size/10))*10
-        print 'final size is',size
-        print 'final RA DEC is',ra,dec
+            size=60
         
-        size/=3600.0
+        size=1.2*size/3600.0
 
         seps=separation(ra,dec,ot['RA'],ot['DEC'])
         ots=ot[seps<size*2]
@@ -258,12 +148,15 @@ if __name__=='__main__':
         #ots=ots[ots['Source_Name']!=""] # removes artefacts
         #ots.write(sourcename+'-ellipses.fits',overwrite=True)
         ls=[]
+        cols=[]
         for nr in ots:
-            print nr[cname],sourcename
-            if nr[cname].rstrip()==sourcename:
+            print nr[pname],sourcename
+            if nr[pname].rstrip()==sourcename:
                 ls.append('solid')
+                cols.append('green')
             else:
                 ls.append('dashed')
+                cols.append('red')
         print ls
 
         if 'Isl_rms' in r.colnames:
@@ -289,12 +182,8 @@ if __name__=='__main__':
         except:
             peak=None
 
-        show_overlay(lhdu,lhdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=csimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5,show_lofar=False,cmap='inferno',lofar_colorscale=True)
-
-        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5)
+        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color=colors,noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5)
         
-        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,vmax_cap=0.5)
-
         #wiseimage=sourcename+'_W.png'
         #firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
         #whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)

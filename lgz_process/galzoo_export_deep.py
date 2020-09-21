@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # -------------------------------------------------------------
 # Panoptes Marking Export Script
 #
@@ -27,9 +29,9 @@ from collections import defaultdict
 
 def flatten_subject_info(subject_data):
 
-  result = subject_data.values()[0]
-  result.update({'id': subject_data.keys()[0]})
-  return result
+    result = subject_data.values()[0]
+    result.update({'id': subject_data.keys()[0]})
+    return result
 
 try:
     classfile_in = sys.argv[1]
@@ -66,11 +68,6 @@ classifications['n_problems']=[ len(q[2]['value']) if len(q)>2 else 0 for q in c
 # Note: index of annotations_json ("q" here) corresponds to task number (i.e., 0)
 classifications['n_markings'] = [ len(q[0]['value']) for q in classifications.annotations_json ]
 
-# Select only classifications from most recent workflow version
-# iclass = classifications[classifications.workflow_version >23.62]
-
-iclass = classifications
-
 # Output markings from classifications in iclass to new list of dictionaries (prep for pandas dataframe)
 # Applicable for workflows with marking task as first task, and outputs data for circular markers (x,y,r)
 clist=[]
@@ -83,9 +80,9 @@ classifications['na_markings'] = [ len(q[0]['value']) for q in classifications.a
 classifications['ni_markings'] = [ len(q[1]['value']) if len(q)>1 else 0 for q in classifications.annotations_json ]
 
 # Select only classifications from most recent workflow version
-#iclass = classifications[classifications.workflow_version == classifications['workflow_version'].max()]
+# iclass = classifications[classifications.workflow_version >23.62]
 
-iclass=classifications
+iclass = classifications
 
 # Output markings from classifications in iclass to new list of dictionaries (prep for pandas dataframe)
 # Applicable for workflows with marking task as first task, and outputs data for circular markers (x,y,r)
@@ -97,20 +94,11 @@ nlist=[]
 subjdict=defaultdict(list)
 
 for index,c in iclass.iterrows():
-
-    if('ra' in c.subject_data.keys()):
-        subj=c.subject_data['source_name']
-        user=c.user_name
-        ra=c.subject_data['ra']
-        dec=c.subject_data['dec']
-        size=c.subject_data['#size']
-    else:
-        subj=c.subject_data['ILTJ111944.82+504935.6']
-        user=c.user_name
-        ra=c.subject_data['169.934322']
-        dec=c.subject_data['50.828407']
-        size=c.subject_data['110.000000']
-
+    subj=c.subject_data['source_name']
+    user=c.user_name
+    ra=c.subject_data['ra']
+    dec=c.subject_data['dec']
+    size=c.subject_data['#size']
     lusers=subjdict.get(subj,[])
     if user in lusers:
         continue
@@ -127,7 +115,6 @@ for index,c in iclass.iterrows():
             for q in c.annotations_json[0]['value']:
                 c2list.append({'classification_id':c.classification_id, 'user_name':c.user_name, 'user_id':c.user_id,'created_at':c.created_at, 'subject_ids':c.subject_ids, 'source_name':subj,'x':q['x'], 'y':q['y'], 'frame':q['frame']})
  
-    
         for q in c.annotations_json[2]['value']:
             plist.append({'classification_id':c.classification_id, 'user_name':c.user_name,'subject_ids':c.subject_ids,'source_name':subj,'problem':q})
 

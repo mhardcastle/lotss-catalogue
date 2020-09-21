@@ -18,8 +18,11 @@ def download_file(url,filename):
         while not connected:
             try:
                 response = requests.get(url, stream=True,verify=False,timeout=60)
+                if response.status_code>=502 and response.status_code<=504:
+                    print 'Code %i -- retrying in 10 seconds!' % response.status_code
+                    sleep(10)
+                    continue
                 if response.status_code!=200:
-                    print response.headers
                     raise RuntimeError('Code was %i' % response.status_code)
                 esize=long(response.headers['Content-Length'])
             except (requests.exceptions.ConnectionError,requests.exceptions.Timeout,requests.exceptions.ReadTimeout):

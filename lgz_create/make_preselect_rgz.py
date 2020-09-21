@@ -14,6 +14,7 @@ from subim import extract_subim
 from image_utils import find_bbox,get_mosaic_name
 from overlay import show_overlay
 from shapely.geometry import Polygon
+import subprocess
 
 def ellipse_poly(x0,y0,a,b,pa,n=200):
     theta=np.linspace(0,2*np.pi,n,endpoint=False)
@@ -33,6 +34,11 @@ def ellipse(r,ra,dec):
 def intersects(r1,r2):
     return r1['ellipse'].intersects(r2['ellipse'])
 
+def mogrify(filename):
+    command='mogrify -quality 90 -trim '+filename
+    p = subprocess.Popen(command,shell=True)
+    return p
+
 
 scale=3600.0 # scaling factor for region sizes
 
@@ -44,7 +50,8 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # Annotated PyBDSF table
-    ot=Table.read(os.environ['LOTSS_COMPONENT_CATALOGUE'])
+    ot=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v100.srl_13h.lr-full.fits')
+    gt=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v100.gaus_13h.lr-full.fits')
     if 'Component_Name' in ot.colnames:
         cname='Component_Name'
     else:
@@ -56,6 +63,11 @@ if __name__=='__main__':
     filt&=ot['Total_flux']>1
     filt&=ot['Peak_flux']>2*ot['Isl_rms']
     lt=ot[filt]
+
+    gals=Table.read('/beegfs/lofar/mjh/dr2/dr2_13h_north_withid.fits')
+    gals['RA'].name='ra'
+    gals['DEC'].name='dec'
+    
     
     #print lt
     # read lists
@@ -86,7 +98,7 @@ if __name__=='__main__':
         csimage=sourcename+'_CS.png'
         psimage=sourcename+'_PS.png'
         pspimage=sourcename+'_PSp.png'
-        manifestname=sourcename+'-manifest.txt'
+        joinedname=sourcename+'_j.png'
         #print lofarmaps[i],psmaps[i]
 
         try:
@@ -113,20 +125,12 @@ if __name__=='__main__':
             #print 'Could not find mosaic fits file, skipping {}'.format(r['Source_Name'])
             #continue 
 
-        if os.path.isfile(manifestname):
+        if os.path.isfile(joinedname):
             print 'Selected output file exists already'
             continue
 
         ra,dec=r['RA'],r['DEC']
         print 'Original RA DEC is',ra,dec
-        
-        #try:
-        #    marker_ra=r['ra']
-        #    marker_dec=r['dec']
-        #except:
-        marker_ra=None
-        marker_dec=None
-
         title=None
 
         # new part of the algorithm: first look for any ellipses that
@@ -282,34 +286,37 @@ if __name__=='__main__':
         pshdu[0].data=np.where(pshdu[0].data>8,np.nan,pshdu[0].data)
         
         lhdu=extract_subim(lofarfile,ra,dec,size/1.5)
-        lhdu.writeto('lofar.fits',clobber=True)
+        #lhdu.writeto('lofar.fits',overwrite=True)
+
+        pg=gals[(np.abs(gals['ra']-ra)<(size/np.cos(dec*np.pi/180.0))) & (np.abs(gals['dec']-dec)<size)]
+
+        print('********** prepare overlay **************')
+        tt=ot[ot['Source_Name']==r['Source_Name']]
+
+        print 'LR ra is',tt[0]['ra'],'and dec is',tt[0]['dec']
+        
+        gaussians=gt[gt['Source_Name']==r['Source_Name']]
+        print 'Gaussian table has',len(gaussians),'elements'
+        print gaussians['ra','dec']
+
+        print 'pg table has',len(pg),'elements'
+        
+        plotpos=[(pg,'x','white'),(tt,'x','cyan'),(gaussians,'+','cyan')]
+
         #firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
         try:
             peak==r['Peak_flux']/1000.0
         except:
             peak=None
 
-        show_overlay(lhdu,lhdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=csimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5,show_lofar=False,cmap='inferno',lofar_colorscale=True)
-
-        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5)
+        plist=[]
+        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,plotpos=plotpos,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5)
+        plist.append(mogrify(psimage))
         
-        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,vmax_cap=0.5)
+        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,plotpos=None,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,vmax_cap=0.5)
+        plist.append(mogrify(pspimage))
+        for p in plist:
+            p.wait()
 
-        #wiseimage=sourcename+'_W.png'
-        #firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
-        #whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
-        #show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,
-        #             overlay_cat=ots,overlay_scale=scale,coords_color='red',
-        #             coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,
-        #             save_name=wiseimage,no_labels=True,marker_ra=marker_ra,
-        #             marker_dec=marker_dec,marker_lw=3,marker_color='cyan',
-        #             title=title,peak=peak,lw_ellipse=3,ellipse_style=ls,
-        #             ellipse_color='cyan',drlimit=1000,rms_use=rms,
-        #             lofarlevel=2.5,noisethresh=0)
-
-        
-        with open(manifestname,'w') as manifest:
-            manifest.write('%i,%s,%s,%s,%s,%f,%f,%f\n' % (i,psimage,csimage,pspimage,sourcename,ra,dec,size*3600.0))
-
-        os.system('mogrify -quality 90 -trim '+sourcename+'*.png')
+        os.system('montage '+psimage+' '+pspimage+' -tile 2x1 -geometry 640x640+5+0 -background "#000000" '+joinedname)
 

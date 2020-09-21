@@ -12,24 +12,36 @@ from astropy.table import Table, join, Column
 import astropy.coordinates as ac
 import astropy.units as u
 import os
+import sys
 
-
+if len(sys.argv) == 1:
+    print("Usage is : python match_2masx.py field_code ")
+    print('E.g.: python match_2masx.py 0 ')
+    sys.exit(1)
+    
+h = str(sys.argv[1])
+if 'h' not in h:
+    h+='h'
+if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
+    print('unknown field code (should be 0h or 13h)',h)
+    sys.exit(1)
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_file = path+'LoTSS_DR2_rolling.srl_0h.lr.fits'
-lofarcat_file_psrt = path+'LoTSS_DR2_rolling.srl_0h.lr.presort.fits'
+lofarcat_file = path+'lr/LoTSS_DR2_v100.srl_{h}.lr-full.fits'.format(h=h)
+lofarcat_file_psrt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
 
 lofarcat = Table.read(lofarcat_file)
 
 
 #### get 2MASX information (from 'fixed' catalgoue) - DR2 not yet fixed
-xsc_file = path+'2MASX_dr2_0hr.fits'
+## 2MASX table downloaded from https://vizier.u-strasbg.fr/viz-bin/VizieR?-source=%202MASX taking only relevant columns
+xsc_file = path+'2MASX_dr2.fits'
 xsc = Table.read(xsc_file)
 
 
 Nxsc = len(xsc)
 
 c = ac.SkyCoord(lofarcat['RA'], lofarcat['DEC'], unit="deg")
-cxsc = ac.SkyCoord(xsc['ra'], xsc['dec'], unit="deg")
+cxsc = ac.SkyCoord(xsc['RAJ2000'], xsc['DEJ2000'], unit="deg")
 f_nn_idx,f_nn_sep2d,f_nn_dist3d = ac.match_coordinates_sky(c,cxsc,nthneighbor=1)
 
 xsc_nn = xsc[f_nn_idx]
@@ -57,10 +69,10 @@ def accept_match_2mass(mask, lcat, xcat, plot=False, selname=None):
         lerr = np.max((tl['E_RA'],tl['E_DEC']))
             
         # assumning flat sky here...
-        g_ell_center = (tx['ra'], tx['dec'])
+        g_ell_center = (tx['RAJ2000'], tx['DEJ2000'])
         r_a = (tx['r_ext']+ lerr )  / 3600. #to deg
-        r_b = r_a*tx['k_ba']
-        angle = 90.-tx['k_phi']  #(anticlockwise from x-axis)
+        r_b = r_a*tx['Sb_a']
+        angle = 90.-tx['Spa']  #(anticlockwise from x-axis)
         rangle = angle *np.pi/180.
 
         cos_angle = np.cos(np.radians(180.-angle))
@@ -125,9 +137,9 @@ if '2MASX' not in lofarcat.colnames:
     
 for m in [Xhuge, Xsmall]:
     lofarcat['2MASX'][m]  = m[m]
-    lofarcat['2MASX_name'][m]  = xsc_nn['designation'][m]
-    lofarcat['2MASX_ra'][m]  = xsc_nn['ra'][m]
-    lofarcat['2MASX_dec'][m]  = xsc_nn['dec'][m]
+    lofarcat['2MASX_name'][m]  = xsc_nn['_2MASX'][m]
+    lofarcat['2MASX_ra'][m]  = xsc_nn['RAJ2000'][m]
+    lofarcat['2MASX_dec'][m]  = xsc_nn['DEJ2000'][m]
     lofarcat['2MASX_size'][m]  = xsc_nn['r_ext'][m]
     
     
@@ -144,4 +156,4 @@ print('{n:n} 2MASX sources out of {nall:n} have a possible LOFAR match'.format(n
 
 if os.path.exists(lofarcat_file_psrt):
     os.remove(lofarcat_file_psrt)
-lofarcat.write(lofarcat_file_psrt)
+lofarcat.write(lofarcat_file_psrt, overwrite=True, serialize_meta=True)
