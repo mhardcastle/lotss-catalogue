@@ -7,10 +7,10 @@ from time import sleep,time
 
 def download_file(url,filename):
     if os.path.isfile(filename):
-        print 'File',filename,'already exists, skipping'
+        print('File',filename,'already exists, skipping')
         return
     else:
-        print 'Downloading',filename
+        print('Downloading',filename)
 
     downloaded=False
     while not downloaded:
@@ -19,19 +19,19 @@ def download_file(url,filename):
             try:
                 response = requests.get(url, stream=True,verify=False,timeout=60)
                 if response.status_code>=502 and response.status_code<=504:
-                    print 'Code %i -- retrying in 10 seconds!' % response.status_code
+                    print('Code %i -- retrying in 10 seconds!' % response.status_code)
                     sleep(10)
                     continue
                 if response.status_code!=200:
                     raise RuntimeError('Code was %i' % response.status_code)
-                esize=long(response.headers['Content-Length'])
+                esize=int(response.headers['Content-Length'])
             except (requests.exceptions.ConnectionError,requests.exceptions.Timeout,requests.exceptions.ReadTimeout):
-                print 'Connection error! sleeping 30 seconds before retry...'
+                print('Connection error! sleeping 30 seconds before retry...')
                 sleep(30)
             else:
                 connected=True
         try:
-            print 'Downloading %i bytes' % esize
+            print('Downloading %i bytes' % esize)
             starttime=time()
             with open(filename, 'wb') as fd:
                 for chunk in response.iter_content(chunk_size=8192):
@@ -39,15 +39,15 @@ def download_file(url,filename):
                         fd.write(chunk)
             fsize=os.path.getsize(filename)
             if esize!=fsize:
-                print 'Download incomplete (expected %i, got %i)! Retrying' % (esize, fsize)
+                print('Download incomplete (expected %i, got %i)! Retrying' % (esize, fsize))
             else:
                 endtime=time()
                 dt=endtime-starttime
-                print 'Download successful, %i of %i bytes received in %.2f seconds (%.2f MB/s)' % (fsize, esize, dt, fsize/(dt*1024*1024))
+                print('Download successful, %i of %i bytes received in %.2f seconds (%.2f MB/s)' % (fsize, esize, dt, fsize/(dt*1024*1024)))
                 downloaded=True
 
-        except requests.exceptions.ConnectionError,requests.exceptions.Timeout:
-            print 'Connection error! sleeping 30 seconds before retry...'
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            print('Connection error! sleeping 30 seconds before retry...')
             sleep(30) # back to the connection
 
 
