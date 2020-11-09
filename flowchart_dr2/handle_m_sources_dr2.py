@@ -97,7 +97,7 @@ if __name__=='__main__':
     size_huge = 25.            # in arcsec
     
     #fluxcut2 = 4.0               # in mJy
-    fluxcut2 = float(sys.argv[4])
+    fluxcut2 = 4.  #float(sys.argv[4])
     #fluxcut2 = 3.0               # in mJy
     #fluxcut2 = 5.0               # in mJy
     #separation2 = 30.          # in arcsec

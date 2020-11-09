@@ -26,7 +26,16 @@ if __name__=='__main__':
     ### Required INPUTS
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
-    lLR_thresh = 0.404            # LR threshold
+    
+    
+    if h == '13h':
+        #lLR_thresh = 0.404            # LR threshold
+        lLR_thresh = 0.309            # LR threshold  - NOTE - this was a bug, leave it for now and we'll check later what it changes
+    elif h == '0h':
+        lLR_thresh = 0.394            # LR threshold
+    else:
+        print('LR threshold not implemented for field',h)
+        sys.exit(1)
     
     redo = True
 
@@ -34,7 +43,10 @@ if __name__=='__main__':
     lofargcat_file = path+'lr/LoTSS_DR2_v100.gaus_{h}.lr-full.fits'.format(h=h)
     lofarcat_file = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
 
-    gaus_cols = ['Ng', 'G_max_sep', 'G_LR_max', 'Ng_LR_good','Ng_LR_good_unique','N_G_LR_matchsource','Flag_G_LR_problem']
+    gaus_cols = ['Ng', 'G_max_sep', 'G_LR_max', 'Ng_LR_good','Ng_LR_good_unique','N_G_LR_matchsource','Flag_G_LR_problem', 
+                 'G_LR_case1','G_LR_case2','G_LR_case3',
+                 'cLR','LR','LR_name_wise','LR_name_l','LR_ra','LR_dec',
+                 'cgLR','gLR','gLR_name_wise','gLR_name_l','gLR_ra','gLR_dec']
 
     # Gaus catalogue
     lofargcat = Table.read(lofargcat_file)
@@ -81,6 +93,7 @@ if __name__=='__main__':
     lofargcat['lr'][fixlr] = np.nan
     lofargcat['ra'][fixlr] = np.nan
     lofargcat['dec'][fixlr] = np.nan
+    
     
     ## renaming/fixing ML information
     lrcol = lofarcat['lr']
@@ -145,9 +158,9 @@ if __name__=='__main__':
         ig = np.where(lofargcat['Source_Name']==sid)[0]
         Ng = len(ig)
         lofarcat['Ng'][i]= Ng
-        if Ng == 0: ## this should not happen! but apparently does?
+        if Ng == 0: ## this should not happen! but apparently does? it happens for S_Code=C
             print(sid, Ng)
-            lofarcat['G_max_sep'][i] = np.nan
+            lofarcat['G_max_sep'][i] = 0.
         else:
         
         
@@ -159,8 +172,8 @@ if __name__=='__main__':
         
     print('calculating LR stuff for m sources - this can be slow')
     m_S = lofarcat['S_Code'] =='S'
-    #minds = np.where(~m_S)[0]
-    minds = np.where(lofarcat['Ng']>1)[0]
+    minds = np.where(~m_S)[0]
+    #minds = np.where(lofarcat['Ng']>1)[0]
     for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
         ig = np.where(lofargcat['Source_Name']==sid)[0]
         lofarcat['G_LR_max'][i]= np.nanmax(lofargcat['lr'][ig])

@@ -18,7 +18,9 @@ from lofar_source_sorter_dr2 import Mask, Masks_disjoint_complete
 #################################################################################
 
 
-priority = '2'
+priority = '1a'
+priority = '1b'
+#priority = '2'
 
 
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
@@ -29,9 +31,10 @@ sel_file = path+'LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_sel
 
 lofarcat = Table.read(lofarcat_file_srt)
 
-
-sel_pri = (lofarcat['WEAVE_priority{i}'.format(i=priority)] == True)
-#sel = (lofarcat['WEAVE_priority1'] == True) & (lofarcat['WEAVE_priority1a'] == False)  # special case of 1 and not 1a  make up 1b
+if priority == '1' or priority == '2' or priority == '1a':
+    sel_pri = (lofarcat['WEAVE_priority{i}'.format(i=priority)] == True)
+elif priority == '1b':
+    sel_pri = (lofarcat['WEAVE_priority1'] == True) & (lofarcat['WEAVE_priority1a'] == False)  # special case of 1 and not 1a  make up 1b
 
 sel =  sel_pri & (
         (lofarcat['FC_flag2'] == 5) | \

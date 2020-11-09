@@ -88,5 +88,5 @@ for dup in dup_names:
 
 
 #scat.write (path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h),overwrite=True)
-scat.write (path+'LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='srl'),overwrite=True)
-gcat.write (path+'LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='gaus'),overwrite=True)
+scat.write (path+'lr/LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='srl'),overwrite=True)
+gcat.write (path+'lr/LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='gaus'),overwrite=True)
