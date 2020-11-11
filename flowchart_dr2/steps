@@ -29,6 +29,9 @@ python flow_python/get_ml_flags.py 0
 python flow_python/lofar_source_sorter_dr2.py 0 1
 python flow_python/handle_m_sources_dr2.py 0 1 all
 python flow_python/lofar_source_sorter_dr2.py 0 2 1
+# on lofar: python flow_python/extract_prefilter_out.py 0, and copy over output...
+scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_0h.prefilter_outputs.fits .
+python flow_python/get_prefilter_flags.py 0
 
 
 
@@ -43,8 +46,9 @@ python flow_python/handle_m_sources_dr2.py 13 1 all
 python flow_python/lofar_source_sorter_dr2.py 13 2 1
 python flow_python/lofar_source_sorter_dr2.py 13 2 2
 python flow_python/lofar_source_sorter_dr2.py 13 2 12
-# on lofar: flow_python/extract_prefilter_out.py, and copy over output...
+# on lofar: python flow_python/extract_prefilter_out.py 13, and copy over output...
 scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_13h.prefilter_outputs.fits .
+python flow_python/get_prefilter_flags.py 13
 python flow_python/lofar_source_sorter_dr2.py 13 3 1
 python flow_python/lofar_source_sorter_dr2.py 13 3 2
 python flow_python/lofar_source_sorter_dr2.py 13 3 12

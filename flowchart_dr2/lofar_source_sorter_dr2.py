@@ -322,6 +322,10 @@ if __name__=='__main__':
         #for s in fixlist:
             #lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 2
     elif step == 3:
+        prefilter_outs = ('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend')
+        prefilter_cols = ('green', 'blue', 'red', 'green','gray','blue','green')
+        prefilter_ids = (3, 1, 0, 3,-99,77,3)
+        
         print('need Prefilter outputs')  
         print('prefilter has been run, now to give them the right ID flags')
         if 'Prefilter' not in lofarcat.colnames:
@@ -694,9 +698,7 @@ if __name__=='__main__':
                             masterlist=masterlist)
         
         
-        prefilter_outs = ('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend')
-        prefilter_cols = ('green', 'blue', 'red', 'green','gray','blue','green')
-        prefilter_ids = (3, 1, 0, 3,-99,77,3)
+
         for pf_i in range(len(prefilter_outs)):
             spfi = '{i}'.format(i=pf_i+1)
             M_large_mid_faint_nmllgz_pfi = M_large_mid_faint_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
@@ -914,16 +916,40 @@ if __name__=='__main__':
                             masterlist=masterlist)
         lofarcat['ID_flag'][M_small_isol_nS_bright_lgz.mask] = 3
         
-        M_small_isol_nS_bright_prefilt = M_small_isol_nS_bright.submask((lofarcat['msource_flag1'] == 6),
-                            'prefilt',
-                            'prefilt',
-                            edgelabel='4',
-                            color='cyan',
-                            qlabel='prefilt',
-                            masterlist=masterlist)
-        lofarcat['ID_flag'][M_small_isol_nS_bright_prefilt.mask] = 4
+        
+        if step < 3:
+            M_small_isol_nS_bright_prefilt = M_small_isol_nS_bright.submask((lofarcat['msource_flag1'] == 6),
+                                'prefilt',
+                                'prefilt',
+                                edgelabel='4',
+                                color='cyan',
+                                qlabel='prefilt',
+                                masterlist=masterlist)
+            lofarcat['ID_flag'][M_small_isol_nS_bright_prefilt.mask] = 4
         
         
+        elif step ==3:
+            
+            M_small_isol_nS_bright_prefilt = M_small_isol_nS_bright.submask((lofarcat['msource_flag1'] == 6),
+                                'prefilt',
+                                'prefilt',
+                                edgelabel='4',
+                                #color='cyan',
+                                qlabel='prefilt',
+                                masterlist=masterlist)
+        
+            for pf_i in range(len(prefilter_outs)):
+                spfi = '{i}'.format(i=pf_i+1)
+                M_small_isol_nS_bright_prefilt_pfi = M_small_isol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                                'pf {i}'.format(i=pf_i+1),
+                                'no ml lgz',
+                                edgelabel=spfi,
+                                qlabel=prefilter_outs[pf_i],
+                                color=prefilter_cols[pf_i],
+                                masterlist=masterlist)
+            
+                lofarcat['ID_flag'][M_small_isol_nS_bright_prefilt_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+    
 
 
     # compact not isolated
@@ -1008,15 +1034,19 @@ if __name__=='__main__':
                                 masterlist=masterlist)
             
             
-            M_small_nisol_S_clustered_brightish_nmllgz_pf1 = M_small_nisol_S_clustered_brightish_nmllgz.submask((lofarcat['Prefilter'] ==1),
-                                'pf_1',
-                                edgelabel='1',
-                                qlabel='PF 1',
-                                color='cyan',
+
+            for pf_i in range(len(prefilter_outs)):
+                spfi = '{i}'.format(i=pf_i+1)
+                M_small_nisol_S_clustered_brightish_nmllgz_pfi = M_small_nisol_S_clustered_brightish_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                                'pf {i}'.format(i=pf_i+1),
+                                'pf {i}'.format(i=pf_i+1),
+                                edgelabel=spfi,
+                                qlabel=prefilter_outs[pf_i],
+                                color=prefilter_cols[pf_i],
                                 masterlist=masterlist)
             
-            lofarcat['ID_flag'][M_small_nisol_S_clustered_brightish_nmllgz_pf1.mask] = 2344
-            
+                lofarcat['ID_flag'][M_small_nisol_S_clustered_brightish_nmllgz_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+    
             ## expand the M_small_nisol_S_clustered_brightish_nmllgz based on visual flags
         else:
             print ('not implemented')
@@ -1128,18 +1158,35 @@ if __name__=='__main__':
                             masterlist=masterlist)
         lofarcat['ID_flag'][M_small_nisol_nS_bright_lgz.mask ] = 3
         
-        M_small_nisol_nS_bright_prefilt = M_small_nisol_nS_bright.submask((lofarcat['msource_flag1'] == 6), 
-                            'prefilt',
-                            edgelabel='prefilt',
-                            qlabel='prefilt',
-                            color='cyan',
-                            masterlist=masterlist)
-        lofarcat['ID_flag'][M_small_nisol_nS_bright_prefilt.mask ] = 4
+        if step < 3:
+            M_small_nisol_nS_bright_prefilt = M_small_nisol_nS_bright.submask((lofarcat['msource_flag1'] == 6), 
+                                'prefilt',
+                                edgelabel='prefilt',
+                                qlabel='prefilt',
+                                color='cyan',
+                                masterlist=masterlist)
+            lofarcat['ID_flag'][M_small_nisol_nS_bright_prefilt.mask ] = 4
         
-
-    
-    
-    
+        elif step ==3 :
+            
+            M_small_nisol_nS_bright_prefilt = M_small_nisol_nS_bright.submask((lofarcat['msource_flag1'] == 6), 
+                                'prefilt',
+                                edgelabel='prefilt',
+                                qlabel='prefilt',
+                                #color='cyan',
+                                masterlist=masterlist)
+            
+            for pf_i in range(len(prefilter_outs)):
+                spfi = '{i}'.format(i=pf_i+1)
+                M_small_nisol_nS_bright_prefilt_pfi = M_small_nisol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                                'pf {i}'.format(i=pf_i+1),
+                                'no ml lgz',
+                                edgelabel=spfi,
+                                qlabel=prefilter_outs[pf_i],
+                                color=prefilter_cols[pf_i],
+                                masterlist=masterlist)
+            
+                lofarcat['ID_flag'][M_small_nisol_nS_bright_prefilt_pfi.mask] = prefilter_ids[pf_i]  #prefilter
 
     # compact not isolated, nnsmall, nlr
     M_small_nisol_S_nclustered_nlr = M_small_nisol_S_nclustered.submask(lofarcat['LR'] < lLR_thresh,
@@ -1245,15 +1292,36 @@ if __name__=='__main__':
     lofarcat['ID_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_mllgz.mask] = 3
     
     
-    M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz = M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright.submask(lofarcat['ML_flag'] == True,
-                        'nmllgz',
-                        'not  ml lgz',
-                        edgelabel='N',
-                        qlabel='Visual sorting',
-                        color='cyan',
-                        masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz.mask] = 4
-    
+    if step < 3:
+        M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz = M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright.submask(lofarcat['ML_flag'] == True,
+                            'nmllgz',
+                            'not  ml lgz',
+                            edgelabel='N',
+                            qlabel='Visual sorting',
+                            color='cyan',
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz.mask] = 4
+    elif step == 3:
+        
+        M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz = M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright.submask(lofarcat['ML_flag'] == True,
+                            'nmllgz',
+                            'not  ml lgz',
+                            edgelabel='N',
+                            qlabel='Visual sorting',
+                            #color='cyan',
+                            masterlist=masterlist)
+        
+        for pf_i in range(len(prefilter_outs)):
+            spfi = '{i}'.format(i=pf_i+1)
+            M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi = M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                            'pf {i}'.format(i=pf_i+1),
+                            'pf {i}'.format(i=pf_i+1),
+                            edgelabel=spfi,
+                            qlabel=prefilter_outs[pf_i],
+                            color=prefilter_cols[pf_i],
+                            masterlist=masterlist)
+        
+            lofarcat['ID_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi.mask] = prefilter_ids[pf_i]  #prefilter
     
     
     
@@ -1438,7 +1506,7 @@ if __name__=='__main__':
             
             # add edge to parent
             if t.has_parent:
-                A.add_edge(t.parent.name, t.name, label=t.edgelabel, penwidth=t.f*PW)
+                A.add_edge(t.parent.name, t.name, label=t.edgelabel, penwidth=max(1,t.f*PW))
 
         if plot_verbose:
             print((A.string())) # print dot file to standard output
