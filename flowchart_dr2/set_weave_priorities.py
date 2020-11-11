@@ -4,6 +4,7 @@ from astropy.table import Table, Column
 import astropy.units as u    
 import astropy.coordinates as ac
 from shapely.geometry import Polygon, Point
+import mocpy
 
 
 

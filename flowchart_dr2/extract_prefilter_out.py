@@ -1,3 +1,4 @@
+import sys
 from astropy.table import Table, Column
 import numpy as np
 import MySQLdb as mdb
@@ -7,7 +8,7 @@ import MySQLdb.cursors as mdbcursors
 h = str(sys.argv[1])
 if 'h' not in h:
     h+='h'
-if h not in  ['0h','13']:
+if h not in  ['0h','13h']:
     print('unknown field code (should be 0h or 13h)',h)
     sys.exit(1)
     
