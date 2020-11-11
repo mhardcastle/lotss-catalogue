@@ -194,7 +194,7 @@ def Masks_disjoint_complete(masklist):
 if __name__=='__main__':
 
     if len(sys.argv) == 1:
-        print("Usage is : python lofar_source_sorter_dr2.py field_code step_no ")
+        print("Usage is : python lofar_source_sorter_dr2.py field_code step_no weave_pri ")
         print('E.g.: python lofar_source_sorter_dr2.py 0 1 ')
         sys.exit(1)
 
@@ -206,7 +206,7 @@ if __name__=='__main__':
         sys.exit(1)
         
     step = int(sys.argv[2])
-    if step not in  [1,2,3,4]:
+    if step not in  [1,2,3]:
         print('unknown step',step)
         sys.exit(1)
         
@@ -217,10 +217,9 @@ if __name__=='__main__':
         if not weave_pri in ['1','2','12']:
             print('unknown weave priority', weave_pri)
             sys.exit()
-    # step 1 is first assign FC_flag1
+    # step 1 is first assign FC_flag1 and inputs from ML
     # step 2 is after running msource stuff
-    # step 3 is after running msource stuff and inputs from ML
-    # step 4 is after visual classification if we do that this time
+    # step 3 is after visual classification if we do that this time
     
         
     size_large = 15.           # in arcsec
@@ -258,12 +257,18 @@ if __name__=='__main__':
         #lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(h=h,version=version)
     elif step >= 2:
         lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1_flux{ff:.0f}.hdf5'.format(h=h,version=version,ff=fluxcut2)
+        
+    #elif step >= 3:
+        #lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux{ff:.0f}.hdf5'.format(h=h,version=version,ff=fluxcut2)
         #lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(h=h,version=version)
         
 
 
     # output file - with updated columns
-    lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step{st}_flux{ff:.0f}_weavepri{w:s}.hdf5'.format(h=h,version=version,st=step,ff=fluxcut2,w=weave_pri)
+    if step == 1:
+        lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step{st}_flux{ff:.0f}.hdf5'.format(h=h,version=version,st=step,ff=fluxcut2)
+    else:
+        lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step{st}_flux{ff:.0f}_weavepri{w:s}.hdf5'.format(h=h,version=version,st=step,ff=fluxcut2,w=weave_pri)
 
 
 
@@ -317,10 +322,10 @@ if __name__=='__main__':
         #for s in fixlist:
             #lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 2
     elif step == 3:
-        print('need ML outputs')  ### actually, these are now there from the start
-        print('machine learning has been run, now to give them the right ID flags')
-        if 'ML_flag' not in lofarcat.colnames:
-            raise  RuntimeError('need the ML_flag -- run get_ml_flags.py')  ## 1 for LR, 0 for LGZ
+        print('need Prefilter outputs')  
+        print('prefilter has been run, now to give them the right ID flags')
+        if 'Prefilter' not in lofarcat.colnames:
+            raise  RuntimeError('need the Prefilter outputs -- run get_prefilter_flags.py')  
     else:
         print('step {s} not defined, quitting'.format(s=step))
         sys.exit(1)
@@ -666,17 +671,46 @@ if __name__=='__main__':
     
     # large faint
     # 10000111
-    M_large_mid_faint_nmllgz = M_large_mid_faint.submask((lofarcat['ML_flag'] ==True),
-                        'nmllgz',
-                        'no ml lgz',
-                        edgelabel='N',
-                        qlabel='Visual sorting',
-                        color='cyan',
-                        masterlist=masterlist)
+    if step < 3:
+        M_large_mid_faint_nmllgz = M_large_mid_faint.submask((lofarcat['ML_flag'] ==True),
+                            'nmllgz',
+                            'no ml lgz',
+                            edgelabel='N',
+                            qlabel='Visual sorting',
+                            color='cyan',
+                            masterlist=masterlist)
+        
+        lofarcat['ID_flag'][M_large_mid_faint_nmllgz.mask] = 4  #prefilter
+
+
+    # expand prefilter results
+    elif step == 3:
+        M_large_mid_faint_nmllgz = M_large_mid_faint.submask((lofarcat['ML_flag'] ==True),
+                            'nmllgz',
+                            'no ml lgz',
+                            edgelabel='N',
+                            qlabel='Visual sorting',
+                            #color='cyan',
+                            masterlist=masterlist)
+        
+        
+        prefilter_outs = ('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend')
+        prefilter_cols = ('green', 'blue', 'red', 'green','gray','blue','green')
+        prefilter_ids = (3, 1, 0, 3,-99,77,3)
+        for pf_i in range(len(prefilter_outs)):
+            spfi = '{i}'.format(i=pf_i+1)
+            M_large_mid_faint_nmllgz_pfi = M_large_mid_faint_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                            'pf {i}'.format(i=pf_i+1),
+                            'no ml lgz',
+                            edgelabel=spfi,
+                            qlabel=prefilter_outs[pf_i],
+                            color=prefilter_cols[pf_i],
+                            masterlist=masterlist)
+        
+            lofarcat['ID_flag'][M_large_mid_faint_nmllgz_pfi.mask] = prefilter_ids[pf_i]  #prefilter
     
-    lofarcat['ID_flag'][M_large_mid_faint_nmllgz.mask] = 4  #prefilter
-
-
+    else:
+        print ('step',step,'not imlpemented')
 
 
     # huge faint 
@@ -708,69 +742,6 @@ if __name__=='__main__':
     # good lr
     lf_match =   (nhuge_faint_flag == 2)
     
-    ## we have outputs from machine learning ... can go here
-    #if step == 3:
-        #M_large_faint_lgz = M_large_faint.submask(lf_artefacts,
-                            #'artefact',
-                            #edgelabel='N(r)',
-                            #qlabel='artefact\n(visually confirmed)',
-                            #color='gray',
-                            #masterlist=masterlist)
-        #lofarcat['ID_flag'][M_large_faint_artefact.mask] = -1
-        
-    # if we have outputs from visual sorting we can go here
-    if step == 3:
-        M_large_faint_artefact = M_large_mid_faint_nmllgz.submask(lf_artefacts,
-                            'artefact',
-                            edgelabel='N(r)',
-                            qlabel='artefact\n(visually confirmed)',
-                            color='gray',
-                            masterlist=masterlist)
-        lofarcat['ID_flag'][M_large_faint_artefact.mask] = -1
-        
-        M_large_faint_complex = M_large_mid_faint_nmllgz.submask(lf_complex,
-                            'complex',
-                            edgelabel='Y(*)',
-                            qlabel='complex\n(LGZ)',
-                            color='green',
-                            masterlist=masterlist)
-        lofarcat['ID_flag'][M_large_faint_complex.mask] = 3
-        lofarcat['LGZ_flag'][M_large_faint_complex.mask] = 2
-        
-        M_large_faint_complex_zoom = M_large_mid_faint_nmllgz.submask(lf_complex_zoom,
-                            'lgzz',
-                            edgelabel='complex-zoom',
-                            qlabel='LGZ-zoom',
-                            color='green',
-                            masterlist=masterlist)
-        lofarcat['ID_flag'][M_large_faint_complex_zoom.mask] = 3
-        lofarcat['LGZ_flag'][M_large_faint_complex_zoom.mask] = 20
-        
-        
-        M_large_faint_match = M_large_mid_faint_nmllgz.submask(lf_match,
-                            'match',
-                            edgelabel='Y(m)',
-                            qlabel='Accept ML\n(visually confirmed)',
-                            color='blue',
-                            masterlist=masterlist)
-        lofarcat['ID_flag'][M_large_faint_match.mask] = 1
-        
-        M_large_faint_nomatch = M_large_mid_faint_nmllgz.submask(lf_nomatch,
-                            'nomatch',
-                            edgelabel='Y(nm)',
-                            qlabel='No match possible\n(visually confirmed)',
-                            color='blue',
-                            masterlist=masterlist)
-        lofarcat['ID_flag'][M_large_faint_nomatch.mask] = 4
-            
-        M_large_faint_2masx = M_large_mid_faint_nmllgz.submask(lf_bright,
-                            '2masx',
-                            edgelabel='Y',
-                            qlabel='bright galaxy\n(visually confirmed)',
-                            color='blue',
-                            masterlist=masterlist)
-        lofarcat['ID_flag'][M_large_faint_2masx.mask] = 2
-        
 
     #####
 
@@ -820,35 +791,86 @@ if __name__=='__main__':
     lofarcat['ID_flag'][M_small_isol_S_nlr.mask] = 1
 
 
+    ## 0hr fields was processed a bit differently here:
+    if h == '13h':
+        # compact isolated nS
+        M_small_isol_nS = M_small_isol.submask(lofarcat['S_Code'] != 'S',
+                            'nS',
+                            'compact isolated (s<{s:.0f}", NN>{nn:.0f}") !S'.format(s=size_large, nn=separation1),
+                            edgelabel='N',
+                            qlabel='Bright?\n(S>{f:.0f} mJy)'.format(f=fluxcut, s=size_large),
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_isol_nS.mask] = -1  # - these should all be overwritten below, but leave it here to doublecheck (there should be no 5's in the end)
+
+
     # compact isolated nS
-    M_small_isol_nS = M_small_isol.submask(lofarcat['S_Code'] != 'S',
-                        'nS',
-                        'compact isolated (s<{s:.0f}", NN>{nn:.0f}") !S'.format(s=size_large, nn=separation1),
-                        edgelabel='N',
-                        qlabel='Bright?\n(S>{f:.0f} mJy)'.format(f=fluxcut, s=size_large),
-                        masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_isol_nS.mask] = -1  # - these should all be overwritten below, but leave it here to doublecheck (there should be no 5's in the end)
+        M_small_isol_nS_faint = M_small_isol_nS.submask(lofarcat['Total_flux'] < fluxcut,
+                            'nS_faint',
+                            'compact isolated faint (s<{s:.0f}", NN>{nn:.0f}", S < {f:.0f}) !S'.format(s=size_large, nn=separation1,f=fluxcut),
+                            edgelabel='N',
+                            color='orange',
+                            qlabel='msource TBD',
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_isol_nS_faint.mask] = 5
+        
+        
+        M_small_isol_nS_bright = M_small_isol_nS.submask(lofarcat['Total_flux'] >= fluxcut,
+                            'nS_bright',
+                            'compact isolated bright (s<{s:.0f}", NN>{nn:.0f}", S> {f:.0f}) !S'.format(s=size_large, nn=separation1,f=fluxcut),
+                            edgelabel='Y',
+                            color='gray',
+                            qlabel='msource',
+                            masterlist=masterlist)
+
+    if h == '0h':
+        # compact isolated nS
+        M_small_isol_nS = M_small_isol.submask(lofarcat['S_Code'] != 'S',
+                            'nS',
+                            'compact isolated (s<{s:.0f}", NN>{nn:.0f}") !S'.format(s=size_large, nn=separation1),
+                            edgelabel='N',
+                            qlabel='ML output LGZ?',
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_isol_nS.mask] = -1  # - these should all be overwritten below, but leave it here to doublecheck (there should be no 5's in the end)
 
 
+        M_small_isol_nS_mllgz = M_small_isol_nS.submask((lofarcat['ML_flag'] ==False),
+                            'ml_lgz',
+                            edgelabel='Y',
+                            qlabel='LGZ',
+                            color='green',
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_isol_nS_mllgz.mask] = 3
+        M_small_isol_nS_nmllgz = M_small_isol_nS.submask((lofarcat['ML_flag'] ==True),
+                            'not_ml_lgz',
+                            edgelabel='N',
+                            #color='orange',
+                            qlabel='Bright?\n(S>{f:.0f} mJy)'.format(f=fluxcut, s=size_large),
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_isol_nS_nmllgz.mask] = 5
 
-    # compact isolated nS
-    M_small_isol_nS_bright = M_small_isol_nS.submask(lofarcat['Total_flux'] >= fluxcut,
-                        'nS_bright',
-                        'compact isolated bright (s<{s:.0f}", NN>{nn:.0f}", S> {f:.0f}) !S'.format(s=size_large, nn=separation1,f=fluxcut),
-                        edgelabel='Y',
-                        color='gray',
-                        qlabel='msource',
-                        masterlist=masterlist)
-    M_small_isol_nS_faint = M_small_isol_nS.submask(lofarcat['Total_flux'] < fluxcut,
-                        'nS_faint',
-                        'compact isolated faint (s<{s:.0f}", NN>{nn:.0f}", S < {f:.0f}) !S'.format(s=size_large, nn=separation1,f=fluxcut),
-                        edgelabel='N',
-                        color='orange',
-                        qlabel='msource TBD',
-                        masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_isol_nS_faint.mask] = 5
+        M_small_isol_nS_nmllgz_faint = M_small_isol_nS_nmllgz.submask(lofarcat['Total_flux'] < fluxcut,
+                            'nS_faint',
+                            'compact isolated faint (s<{s:.0f}", NN>{nn:.0f}", S < {f:.0f}) !S'.format(s=size_large, nn=separation1,f=fluxcut),
+                            edgelabel='N',
+                            color='orange',
+                            qlabel='msource TBD',
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_isol_nS_nmllgz_faint.mask] = 5
     
+    
+        M_small_isol_nS_nmllgz_bright = M_small_isol_nS_nmllgz.submask(lofarcat['Total_flux'] >= fluxcut,
+                            'nS_bright',
+                            'compact isolated bright (s<{s:.0f}", NN>{nn:.0f}", S < {f:.0f}) !S'.format(s=size_large, nn=separation1,f=fluxcut),
+                            edgelabel='Y',
+                            #color='orange',
+                            qlabel='msource',
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_isol_nS_nmllgz_bright.mask] = 5
+    
+    
+        M_small_isol_nS_bright = M_small_isol_nS_nmllgz_bright
 
+    
 
     # we have msource outcomes
     if step >= 2:
@@ -923,22 +945,93 @@ if __name__=='__main__':
                         qlabel='Clustered?\n(NN5<{nn:.0f}")'.format(s=size_large, nn=separation1),
                         masterlist=masterlist)
 
-    # compact not isolated, not S
-    # 1000111
-    M_small_nisol_nS = M_small_nisol.submask(lofarcat['S_Code'] != 'S',
-                        'nS',
-                        edgelabel='N',
-                        qlabel='Brightish?\n(S>{f2:.0f} mJy)'.format(f2=fluxcut2),
-                        masterlist=masterlist)
 
-    
-    # compact not isolated, S, clustered
-    M_small_nisol_S_clustered = M_small_nisol_S.submask((lofarcat['NN5_sep'] <= separation1),
-                        'clustered',
-                        'compact not isolated S clustered (s<{s:.0f}", NN5>{nn:.0f}")'.format(s=size_large, nn=separation1),
-                        edgelabel='Y',
-                        qlabel='Brightish?\n(S>{f2:.0f} mJy)'.format(f2=fluxcut2),
-                        masterlist=masterlist)
+    # ohr original LGZ decissions differ from 13h
+    if h == '13h':
+        # compact not isolated, S, clustered
+        M_small_nisol_S_clustered = M_small_nisol_S.submask((lofarcat['NN5_sep'] <= separation1),
+                            'clustered',
+                            'compact not isolated S clustered (s<{s:.0f}", NN5>{nn:.0f}")'.format(s=size_large, nn=separation1),
+                            edgelabel='Y',
+                            qlabel='Brightish?\n(S>{f2:.0f} mJy)'.format(f2=fluxcut2),
+                            masterlist=masterlist)
+        
+        # brightish
+        M_small_nisol_S_clustered_faint = M_small_nisol_S_clustered.submask((lofarcat['Total_flux'] <= fluxcut2),
+                            'tbc_faint',
+                            edgelabel='N',
+                            qlabel='TBD',
+                            color='orange',
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_nisol_S_clustered_faint.mask] = 5
+        
+        
+        # faint
+        M_small_nisol_S_clustered_brightish = M_small_nisol_S_clustered.submask((lofarcat['Total_flux'] >  fluxcut2),
+                            'tbc_brightish',
+                            edgelabel='Y',
+                            qlabel='ML output LGZ?',
+                            #qlabel='TBC',
+                            #color='cyan',
+                            masterlist=masterlist)
+        
+        
+        
+        # faint -ML LGZ
+        M_small_nisol_S_clustered_brightish_mllgz = M_small_nisol_S_clustered_brightish.submask((lofarcat['ML_flag'] ==False),
+                            'ml_lgz',
+                            edgelabel='Y',
+                            qlabel='LGZ',
+                            color='green',
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_nisol_S_clustered_brightish_mllgz.mask] = 3
+        
+        if step <= 2:
+            # faint - ML not LGZ
+            M_small_nisol_S_clustered_brightish_nmllgz = M_small_nisol_S_clustered_brightish.submask((lofarcat['ML_flag'] ==True),
+                                'not_ml_lgz',
+                                edgelabel='N',
+                                qlabel='Visual sorting',
+                                color='cyan',
+                                masterlist=masterlist)
+            lofarcat['ID_flag'][M_small_nisol_S_clustered_brightish_nmllgz.mask] = 4
+                
+            
+            
+        elif step == 3:
+            # faint - ML not LGZ
+            M_small_nisol_S_clustered_brightish_nmllgz = M_small_nisol_S_clustered_brightish.submask((lofarcat['ML_flag'] ==True),
+                                'not_ml_lgz',
+                                edgelabel='N',
+                                qlabel='Visual sorting',
+                                color='cyan',
+                                masterlist=masterlist)
+            
+            
+            M_small_nisol_S_clustered_brightish_nmllgz_pf1 = M_small_nisol_S_clustered_brightish_nmllgz.submask((lofarcat['Prefilter'] ==1),
+                                'pf_1',
+                                edgelabel='1',
+                                qlabel='PF 1',
+                                color='cyan',
+                                masterlist=masterlist)
+            
+            lofarcat['ID_flag'][M_small_nisol_S_clustered_brightish_nmllgz_pf1.mask] = 2344
+            
+            ## expand the M_small_nisol_S_clustered_brightish_nmllgz based on visual flags
+        else:
+            print ('not implemented')
+            pass
+        
+        
+    elif h == '0h':
+        # compact not isolated, S, clustered
+        M_small_nisol_S_clustered = M_small_nisol_S.submask((lofarcat['NN5_sep'] <= separation1),
+                            'clustered',
+                            'compact not isolated S clustered (s<{s:.0f}", NN5>{nn:.0f}")'.format(s=size_large, nn=separation1),
+                            edgelabel='Y',
+                            color='green',
+                            qlabel='LGZ',
+                            masterlist=masterlist)
     
     
     # compact not isolated, S, not clustered
@@ -951,51 +1044,42 @@ if __name__=='__main__':
     
     
 
-    # brightish
-    M_small_nisol_S_clustered_faint = M_small_nisol_S_clustered.submask((lofarcat['Total_flux'] <= fluxcut2),
-                        'tbc_faint',
-                        edgelabel='N',
-                        qlabel='TBD',
-                        color='orange',
-                        masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_S_clustered_faint.mask] = 5
-    
-    
-    # faint
-    M_small_nisol_S_clustered_brightish = M_small_nisol_S_clustered.submask((lofarcat['Total_flux'] >  fluxcut2),
-                        'tbc_brightish',
-                        edgelabel='Y',
-                        qlabel='ML output LGZ?',
-                        #qlabel='TBC',
-                        #color='cyan',
-                        masterlist=masterlist)
-    
-    
-    # faint -ML LGZ
-    M_small_nisol_S_clustered_brightish_mllgz = M_small_nisol_S_clustered_brightish.submask((lofarcat['ML_flag'] ==False),
-                        'ml_lgz',
-                        edgelabel='Y',
-                        qlabel='LGZ',
-                        color='green',
-                        masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_S_clustered_brightish_mllgz.mask] = 3
-    
-    
-    # faint - ML not LGZ
-    M_small_nisol_S_clustered_brightish_nmllgz = M_small_nisol_S_clustered_brightish.submask((lofarcat['ML_flag'] ==True),
-                        'not_ml_lgz',
-                        edgelabel='N',
-                        qlabel='Visual sorting',
-                        color='cyan',
-                        masterlist=masterlist)
-    lofarcat['ID_flag'][M_small_nisol_S_clustered_brightish_nmllgz.mask] = 4
+    if h == '0h':
+        # compact not isolated, not S
+        # 1000111
+        M_small_nisol_nS = M_small_nisol.submask(lofarcat['S_Code'] != 'S',
+                            'nS',
+                            edgelabel='N',
+                            qlabel='ML output LGZ?',
+                            masterlist=masterlist)
         
         
+        M_small_nisol_nS_mllgz = M_small_nisol_nS.submask((lofarcat['ML_flag'] ==False),
+                            'ml_lgz',
+                            edgelabel='Y',
+                            qlabel='LGZ',
+                            color='green',
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_nisol_nS_mllgz.mask] = 3
+        M_small_nisol_nS_nmllgz = M_small_nisol_nS.submask((lofarcat['ML_flag'] ==True),
+                            'not_ml_lgz',
+                            edgelabel='N',
+                            #color='orange',
+                            qlabel='Bright?\n(S>{f:.0f} mJy)'.format(f=fluxcut, s=size_large),
+                            masterlist=masterlist)
+        lofarcat['ID_flag'][M_small_nisol_nS_nmllgz.mask] = 5
         
-    if step == 3:
+        M_small_nisol_nS = M_small_nisol_nS_nmllgz
         
-        ## expand the M_small_nisol_S_clustered_brightish_nmllgz based on visual flags
-        pass
+    elif h == '13h':
+        # compact not isolated, not S
+        # 1000111
+        M_small_nisol_nS = M_small_nisol.submask(lofarcat['S_Code'] != 'S',
+                            'nS',
+                            edgelabel='N',
+                            qlabel='Brightish?\n(S>{f2:.0f} mJy)'.format(f2=fluxcut2),
+                            masterlist=masterlist)
+    
 
     # compact not isolated, nnlarge
     M_small_nisol_nS_bright = M_small_nisol_nS.submask(lofarcat['Total_flux'] >= fluxcut2,
@@ -1182,9 +1266,9 @@ if __name__=='__main__':
                         masterlist=masterlist)
     lofarcat['ID_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_faint.mask] = 5
     
-    if step == 3:
-        print ('not fully implemented')
-        sys.exit(1)
+    #if step == 3:
+        #print ('not fully implemented')
+        #sys.exit(1)
         
 
     M_small_nisol_S_nclustered_nlr_NNnlr_simflux_nsep = M_small_nisol_S_nclustered_nlr_NNnlr_simflux.submask(~C2_dist,
