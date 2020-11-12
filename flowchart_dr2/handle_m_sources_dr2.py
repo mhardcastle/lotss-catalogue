@@ -144,9 +144,13 @@ if __name__=='__main__':
     if version == 'v100':
         
         if h == '13h':
-            lLR_thresh = 0.309            # LR threshold
+            lLR_thresh_n = 0.309            # LR threshold
+            lLR_thresh_s = 0.328            # LR threshold
+            LR_thresh_dec = 32.375
         elif h == '0h':
-            lLR_thresh = 0.394            # LR threshold
+            lLR_thresh_n = 0.394            # LR threshold
+            lLR_thresh_s = 0.394            # LR threshold
+            LR_thresh_dec = -90
         else:
             print('LR threshold not implemented for field',h)
             sys.exit(1)
@@ -192,9 +196,16 @@ if __name__=='__main__':
         if msourceflg not in lofarcat.colnames:
             lofarcat.add_column(Column(99*np.ones(len(lofarcat),dtype=int), msourceflg))
 
-        source_nlr = lofarcat['LR'] < lLR_thresh
-        source_lr = lofarcat['LR'] >= lLR_thresh
-        source_lr2 = lofarcat['LR'] >= 10*lLR_thresh
+        source_lr = np.zeros(len(lofarcat),dtype=bool)
+        source_lr[(lofarcat['DEC']>=LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_n)] = True
+        source_lr[(lofarcat['DEC']<LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_s)] = True
+        
+        source_nlr = ~source_lr
+        
+        source_lr2 = np.zeros(len(lofarcat),dtype=bool)
+        source_lr2[(lofarcat['DEC']>=LR_thresh_dec)&(lofarcat['LR'] >=10*lLR_thresh_n)] = True
+        source_lr2[(lofarcat['DEC']<LR_thresh_dec)&(lofarcat['LR'] >=10*lLR_thresh_s)] = True
+
         
         source_nglr = lofarcat['Ng_LR_good'] == 0
         source_glr = lofarcat['Ng_LR_good'] > 0

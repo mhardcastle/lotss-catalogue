@@ -29,10 +29,13 @@ if __name__=='__main__':
     
     
     if h == '13h':
-        #lLR_thresh = 0.404            # LR threshold
-        lLR_thresh = 0.309            # LR threshold  - NOTE - this was a bug, leave it for now and we'll check later what it changes
+        lLR_thresh_n = 0.309            # LR threshold
+        lLR_thresh_s = 0.328            # LR threshold
+        LR_thresh_dec = 32.375
     elif h == '0h':
-        lLR_thresh = 0.394            # LR threshold
+        lLR_thresh_n = 0.394            # LR threshold
+        lLR_thresh_s = 0.394            # LR threshold
+        LR_thresh_dec = -90
     else:
         print('LR threshold not implemented for field',h)
         sys.exit(1)
@@ -55,41 +58,56 @@ if __name__=='__main__':
 
     # Source catalogue
     lofarcat = Table.read(lofarcat_file)
+    Nlofarcat = len(lofarcat)
+    Nlofargcat = len(lofargcat)
 
     if redo:
         for gaus_col in gaus_cols:
             if gaus_col in lofarcat.colnames:
                 lofarcat.remove_column(gaus_col)
 
-    lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=int), 'Ng'))
-    lofarcat.add_column(Column(np.ones(len(lofarcat),dtype=float), 'G_max_sep'))
+    lofarcat.add_column(Column(np.ones(Nlofarcat,dtype=int), 'Ng'))
+    lofarcat.add_column(Column(np.ones(Nlofarcat,dtype=float), 'G_max_sep'))
 
     # gaus condensed LR info for msources
-    lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=float), 'G_LR_max'))
-    lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'Ng_LR_good'))
-    lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'Ng_LR_good_unique'))
-    lofarcat.add_column(Column(-1*np.ones(len(lofarcat),dtype=int), 'N_G_LR_matchsource'))
-    lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=bool), 'Flag_G_LR_problem'))
+    lofarcat.add_column(Column(-1*np.ones(Nlofarcat,dtype=float), 'G_LR_max'))
+    lofarcat.add_column(Column(-1*np.ones(Nlofarcat,dtype=int), 'Ng_LR_good'))
+    lofarcat.add_column(Column(-1*np.ones(Nlofarcat,dtype=int), 'Ng_LR_good_unique'))
+    lofarcat.add_column(Column(-1*np.ones(Nlofarcat,dtype=int), 'N_G_LR_matchsource'))
+    lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=bool), 'Flag_G_LR_problem'))
     
     # Philips cases
-    lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=int), 'G_LR_case1'))
-    lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=int), 'G_LR_case2'))
-    lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=int), 'G_LR_case3'))
+    lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=int), 'G_LR_case1'))
+    lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=int), 'G_LR_case2'))
+    lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=int), 'G_LR_case3'))
     
+    if 'LR_threshold' not in lofarcat.colnames:
+        lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=bool), 'LR_threshold'))
+    lofarcat['LR_threshold'][(lofarcat['DEC']>=LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_n)] = True
+    lofarcat['LR_threshold'][(lofarcat['DEC']<LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_s)] = True
     
+    if 'LR_threshold' not in lofargcat.colnames:
+        lofargcat.add_column(Column(np.zeros(Nlofargcat,dtype=bool), 'LR_threshold'))
+    lofargcat['LR_threshold'][(lofargcat['DEC']>=LR_thresh_dec)&(lofargcat['LR'] >=lLR_thresh_n)] = True
+    lofargcat['LR_threshold'][(lofargcat['DEC']<LR_thresh_dec)&(lofargcat['LR'] >=lLR_thresh_s)] = True
+    
+    if 'LR_threshold2' not in lofargcat.colnames:
+        lofargcat.add_column(Column(np.zeros(Nlofargcat,dtype=bool), 'LR_threshold2'))
+    lofargcat['LR_threshold'][(lofargcat['DEC']>=LR_thresh_dec)&(lofargcat['LR'] >=10*lLR_thresh_n)] = True
+    lofargcat['LR_threshold'][(lofargcat['DEC']<LR_thresh_dec)&(lofargcat['LR'] >=10*lLR_thresh_s)] = True
     
     ## PS ML - matches for sources and gaussians
     #lofarcat = Table.read(lofarcat_file)
     #lofargcat = Table.read(lofargcat_file)
     
     # update to lr threshold but not yet catalogue
-    fixlr = (lofarcat['lr'] < lLR_thresh)
+    fixlr = (~lofarcat['LR_threshold'])
     lofarcat['lr'][fixlr] = np.nan
     lofarcat['ra'][fixlr] = np.nan
     lofarcat['dec'][fixlr] = np.nan
     
     
-    fixlr = (lofargcat['lr'] < lLR_thresh)
+    fixlr = (~lofargcat['LR_threshold'])
     lofargcat['lr'][fixlr] = np.nan
     lofargcat['ra'][fixlr] = np.nan
     lofargcat['dec'][fixlr] = np.nan
@@ -100,32 +118,32 @@ if __name__=='__main__':
     lofarcat.add_column(Column(lrcol, 'cLR'))
     lrcol[np.isnan(lrcol)] = 0
     lofarcat.add_column(Column(lrcol, 'LR'))
-    lrcol = np.zeros(len(lofarcat),dtype='S19')
+    lrcol = np.zeros(Nlofarcat,dtype='S19')
     lrcol = lofarcat['UNWISE_OBJID']
     lofarcat.add_column(Column(lrcol, 'LR_name_wise'))
-    lrcol = np.zeros(len(lofarcat),dtype='S19')
+    lrcol = np.zeros(Nlofarcat,dtype='S19')
     lrcol = lofarcat['UID_L']
     lofarcat.add_column(Column(lrcol, 'LR_name_l'))
-    lrcol = np.zeros(len(lofarcat),dtype=float)
+    lrcol = np.zeros(Nlofarcat,dtype=float)
     lrcol = lofarcat['ra']
     lofarcat.add_column(Column(lrcol, 'LR_ra'))
-    lrcol = np.zeros(len(lofarcat),dtype=float)
+    lrcol = np.zeros(Nlofarcat,dtype=float)
     lrcol = lofarcat['dec']
     lofarcat.add_column(Column(lrcol, 'LR_dec'))
 
 
     lrgcol = lofargcat['lr']
     lofargcat.add_column(Column(lrgcol, 'LR'))
-    lrgcol = np.zeros(len(lofargcat),dtype=float)
+    lrgcol = np.zeros(Nlofargcat,dtype=float)
     lrgcol = lofargcat['ra']
     lofargcat.add_column(Column(lrgcol, 'LR_ra'))
-    lrgcol = np.zeros(len(lofargcat),dtype=float)
+    lrgcol = np.zeros(Nlofargcat,dtype=float)
     lrgcol = lofargcat['dec']
     lofargcat.add_column(Column(lrgcol, 'LR_dec'))
-    lrgcol = np.zeros(len(lofargcat),dtype='S19')
+    lrgcol = np.zeros(Nlofargcat,dtype='S19')
     lrgcol = lofargcat['UNWISE_OBJID']
     lofargcat.add_column(Column(lrgcol, 'LR_name_wise'))
-    lrgcol = np.zeros(len(lofargcat),dtype='S19')
+    lrgcol = np.zeros(Nlofargcat,dtype='S19')
     lrgcol = lofargcat['UID_L']
     lofargcat.add_column(Column(lrgcol, 'LR_name_l'))
 
@@ -136,16 +154,16 @@ if __name__=='__main__':
     lofarcat.add_column(Column(lrcol, 'cgLR'))
     lrcol[np.isnan(lrcol)] = 0
     lofarcat.add_column(Column(lrcol, 'gLR'))
-    lrcol = np.zeros(len(lofarcat),dtype='S19')
+    lrcol = np.zeros(Nlofarcat,dtype='S19')
     lrcol = lofarcat['UNWISE_OBJID']
     lofarcat.add_column(Column(lrcol, 'gLR_name_wise'))
-    lrcol = np.zeros(len(lofarcat),dtype='S19')
+    lrcol = np.zeros(Nlofarcat,dtype='S19')
     lrcol = lofarcat['UID_L']
     lofarcat.add_column(Column(lrcol, 'gLR_name_l'))
-    lrcol = np.zeros(len(lofarcat),dtype=float)
+    lrcol = np.zeros(Nlofarcat,dtype=float)
     lrcol = lofarcat['ra']
     lofarcat.add_column(Column(lrcol, 'gLR_ra'))
-    lrcol = np.zeros(len(lofarcat),dtype=float)
+    lrcol = np.zeros(Nlofarcat,dtype=float)
     lrcol = lofarcat['dec']
     lofarcat.add_column(Column(lrcol, 'gLR_dec'))
 
@@ -189,7 +207,7 @@ if __name__=='__main__':
             lofarcat['gLR_dec'][i] = lofargcat['dec'][ig[igi]]
             #pass
         # how many unique acceptable matches are there for the gaussian components
-        matches_ra = np.unique(lofargcat['ra'][ig][lofargcat['lr'][ig] >= lLR_thresh])
+        matches_ra = np.unique(lofargcat['ra'][ig][lofargcat['LR_threshold'][ig]])
         matches_src_ra = (lofargcat['ra'][ig] == lofarcat['ra'][i]) & (lofargcat['dec'][ig] == lofarcat['dec'][i])
         lofarcat['N_G_LR_matchsource'][i] =  1*np.sum(matches_src_ra)
         n_matches_ra = len(matches_ra)
@@ -198,17 +216,17 @@ if __name__=='__main__':
         # any different to source match
         if np.sum(matches_ra != lofarcat['ra'][i]):
             lofarcat['Flag_G_LR_problem'][i] = True
-        lofarcat['Ng_LR_good'][i]= np.nansum(lofargcat['lr'][ig] >= lLR_thresh)
+        lofarcat['Ng_LR_good'][i]= np.nansum(lofargcat['LR_threshold'][ig])
         lofarcat['Ng_LR_good_unique'][i]= n_matches_ra
         
         
         # special case 1:
         # source with lr, 1 gaus with lr diff to source
         
-        if (lofarcat['lr'][i] >= lLR_thresh) and (lofarcat['Ng_LR_good'][i] == 1) and (lofarcat['N_G_LR_matchsource'][i] == 0):
+        if (lofarcat['LR_threshold'][i]) and (lofarcat['Ng_LR_good'][i] == 1) and (lofarcat['N_G_LR_matchsource'][i] == 0):
             #compare LRsource and LRgaus
             
-            igi = ig[(lofargcat['lr'][ig] )>= lLR_thresh]
+            igi = ig[lofargcat['LR_threshold'][ig]]
             if ((lofarcat['lr'][i] > 10 ) & (lofargcat['lr'][igi] < 10 ) & (lofarcat['lr'][i] > 10 * lofargcat['lr'][igi]))[0]:
                 lofarcat['G_LR_case1'][i] = 1 # accept ML source
                 #print '1'
@@ -222,9 +240,9 @@ if __name__=='__main__':
         # special case 2:
         # source with lr, 2 gaus with lr, 1 diff to source
         
-        elif (lofarcat['lr'][i] >= lLR_thresh) and (lofarcat['Ng_LR_good'][i] == 2) and (lofarcat['N_G_LR_matchsource'][i] == 1):
+        elif (lofarcat['LR_threshold'][i]) and (lofarcat['Ng_LR_good'][i] == 2) and (lofarcat['N_G_LR_matchsource'][i] == 1):
             # compare LRsource and LRgaus's
-            igi = ig[(lofargcat['lr'][ig] )>= lLR_thresh]
+            igi = ig[lofargcat['LR_threshold'][ig]]
             igs = igi[lofargcat['ra'][igi] == lofarcat['ra'][i]]
             ign = igi[lofargcat['ra'][igi] != lofarcat['ra'][i]]
             
@@ -238,9 +256,9 @@ if __name__=='__main__':
                 lofarcat['G_LR_case2'][i] = 3  # lgz
         
         # special case 3:
-        elif (lofarcat['lr'][i] < lLR_thresh) and (lofarcat['Ng_LR_good'][i] == 1):
-            igi = ig[(lofargcat['lr'][ig] )>= lLR_thresh]
-            if (lofargcat['lr'][igi] >  10*lLR_thresh) and (lofargcat['Maj'][igi] < 10):
+        elif (~lofarcat['LR_threshold'][i]) and (lofarcat['Ng_LR_good'][i] == 1):
+            igi = ig[lofargcat['LR_threshold'][ig] ]
+            if (lofargcat['LR_threshold2'][igi] ) and (lofargcat['Maj'][igi] < 10):
                 lofarcat['G_LR_case3'][i] = 1  # accept match
             else:
                 lofarcat['G_LR_case3'][i] = 2  # lgz

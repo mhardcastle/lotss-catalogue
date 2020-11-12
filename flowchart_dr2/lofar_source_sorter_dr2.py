@@ -227,16 +227,17 @@ if __name__=='__main__':
     size_huge = 25.            # in arcsec
     #separation2 = 30.          # in arcsec
     if h == '13h':
-        lLR_thresh = 0.309            # LR threshold
+        lLR_thresh_n = 0.309            # LR threshold
+        lLR_thresh_s = 0.328            # LR threshold
+        LR_thresh_dec = 32.375
     elif h == '0h':
-        lLR_thresh = 0.394            # LR threshold
+        lLR_thresh_n = 0.394            # LR threshold
+        lLR_thresh_s = 0.394            # LR threshold
+        LR_thresh_dec = -90
     else:
         print('LR threshold not implemented for field',h)
         sys.exit(1)
     fluxcut = 8.               # in mJy
-    #fluxcut2 = 4.0               # in mJy
-    #fluxcut2 = 3.0               # in mJy
-    #fluxcut2 = 5.0               # in mJy
     fluxcut2 = 4.   #float(sys.argv[3])
     
     ##LR threshold
@@ -308,7 +309,7 @@ if __name__=='__main__':
         print('msources have not yet been handled, but we need to give them FC_flags')
         if 'ML_flag' not in lofarcat.colnames:
             # add a temporary ML_flag - set all to 0 for LGZ
-            lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='ML_flag'))
+            lofarcat.add_column(Column(data=np.zeros(Nlofarcat,dtype=bool), name='ML_flag'))
             print('added ML flag to send everything to LGZ temporarily')
     elif step == 2:
         print('msources have been handled, now to give them the right ID flags')
@@ -376,7 +377,7 @@ if __name__=='__main__':
     if step in [1,2,3]:
         # we start with no flagging - visual, other
         cleanflag = np.ones(Nlofarcat,dtype=bool)
-        flag0 = np.zeros(len(lofarcat),dtype=bool)
+        flag0 = np.zeros(Nlofarcat,dtype=bool)
         
         clustered_flag = flag0
         Lclustered_flag = flag0
@@ -479,16 +480,22 @@ if __name__=='__main__':
     '''
 
     if 'ID_flag' not in lofarcat.colnames:
-        lofarcat.add_column(Column(-99*np.ones(len(lofarcat),dtype=int),'ID_flag'))
+        lofarcat.add_column(Column(-99*np.ones(Nlofarcat,dtype=int),'ID_flag'))
     if 'LR_flag' not in lofarcat.colnames:
-        lofarcat.add_column(Column(-99*np.ones(len(lofarcat),dtype=int),'LR_flag'))
+        lofarcat.add_column(Column(-99*np.ones(Nlofarcat,dtype=int),'LR_flag'))
     if 'LGZ_flag' not in lofarcat.colnames:
-        lofarcat.add_column(Column(np.zeros(len(lofarcat),dtype=int),'LGZ_flag'))
-    lofarcat['ID_flag'] = -99*np.ones(len(lofarcat),dtype=int)
-    lofarcat['LR_flag'] = -99*np.ones(len(lofarcat),dtype=int)
-    lofarcat['LGZ_flag'] = -99*np.ones(len(lofarcat),dtype=int)
+        lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=int),'LGZ_flag'))
+    lofarcat['ID_flag'] = -99*np.ones(Nlofarcat,dtype=int)
+    lofarcat['LR_flag'] = -99*np.ones(Nlofarcat,dtype=int)
+    lofarcat['LGZ_flag'] = -99*np.ones(Nlofarcat,dtype=int)
         
     
+    if 'LR_threshold' not in lofarcat.colnames:
+        lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=bool),'LR_threshold'))
+    
+    lofarcat['LR_threshold'][(lofarcat['DEC']>=LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_n)] = True
+    lofarcat['LR_threshold'][(lofarcat['DEC']<LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_s)] = True
+
 
     #############################################################################
 
@@ -515,6 +522,12 @@ if __name__=='__main__':
         lofarcat.add_column(Column(lofarcat['Total_flux']/lofarcat['NN_Total_flux'], 'NN_Frat'))
         lofarcat.add_column(Column(lofarcat['Maj'][f_nn_idx], 'NN_Maj'))
         
+    if 'NN_LR_threshold' not in lofarcat.colnames:
+        lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=bool), 'NN_LR_threshold'))
+    lofarcat['NN_LR_threshold'][(lofarcat['DEC'][f_nn_idx]>=LR_thresh_dec)&(lofarcat['LR'] [f_nn_idx]>=lLR_thresh_n)] = True
+    lofarcat['NN_LR_threshold'][(lofarcat['DEC'][f_nn_idx]<LR_thresh_dec)&(lofarcat['LR'][f_nn_idx] >=lLR_thresh_s)] = True
+
+        
     # now exclude artefacts - just put them far away always at the south pole
     dec = lofarcat['DEC'].copy()
     dec[Artefact_flag] = -90
@@ -540,7 +553,6 @@ if __name__=='__main__':
 
     ########################################################
 
-    Ncat = len(lofarcat)
 
     #m_all = lofarcat['RA'] > -1
 
@@ -785,12 +797,12 @@ if __name__=='__main__':
     M_small_isol_S = M_small_isol.submask(lofarcat['S_Code'] == 'S',
                         'S',
                         'compact isolated (s<{s:.0f}", NN>{nn:.0f}") S'.format(s=size_large, nn=separation1),
-                        qlabel='LR > {l:.2f}?'.format(l=lLR_thresh),
+                        qlabel='LR >= thresh',
                         masterlist=masterlist)
 
 
     # compact isolated good lr
-    M_small_isol_S_lr = M_small_isol_S.submask(lofarcat['LR'] >= lLR_thresh,
+    M_small_isol_S_lr = M_small_isol_S.submask(lofarcat['LR_threshold'] == True,
                         'lr',
                         'compact isolated good LR (s<{s:.0f}", NN>{nn:.0f}")'.format(s=size_large, nn=separation1),
                         color='blue',
@@ -801,7 +813,7 @@ if __name__=='__main__':
 
 
     # compact isolated badd lr
-    M_small_isol_S_nlr = M_small_isol_S.submask(lofarcat['LR'] < lLR_thresh,
+    M_small_isol_S_nlr = M_small_isol_S.submask(lofarcat['LR_threshold'] == False,
                         'nlr',
                         'compact isolated bad LR (s<{s:.0f}", NN>{nn:.0f}")'.format(s=size_large, nn=separation1),
                         edgelabel='N',
@@ -1093,7 +1105,7 @@ if __name__=='__main__':
                         'nclustered',
                         'compact not isolated S not clustered (s<{s:.0f}", NN5>{nn:.0f}")'.format(s=size_large, nn=separation1),
                         edgelabel='N',
-                        qlabel='LR > {l:.2f}?'.format(l=lLR_thresh),
+                        qlabel='LR >= thresh',
                         masterlist=masterlist)
     
     
@@ -1215,24 +1227,24 @@ if __name__=='__main__':
                 lofarcat['ID_flag'][M_small_nisol_nS_bright_prefilt_pfi.mask] = prefilter_ids[pf_i]  #prefilter
 
     # compact not isolated, nnsmall, nlr
-    M_small_nisol_S_nclustered_nlr = M_small_nisol_S_nclustered.submask(lofarcat['LR'] < lLR_thresh,
+    M_small_nisol_S_nclustered_nlr = M_small_nisol_S_nclustered.submask(lofarcat['LR_threshold'] == False,
                         'nlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR'.format(s=size_large, nn=separation1),
                         edgelabel='N',
-                        qlabel='NN LR > {l:.2f}?'.format(l=lLR_thresh),
+                        qlabel='NN LR >= thresh?',
                         masterlist=masterlist)
     
 
     # compact not isolated, nnsmall, lr
-    M_small_nisol_S_nclustered_lr = M_small_nisol_S_nclustered.submask(lofarcat['LR'] >= lLR_thresh,
+    M_small_nisol_S_nclustered_lr = M_small_nisol_S_nclustered.submask(lofarcat['LR_threshold'] == True,
                         'lr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), good LR'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
-                        qlabel='NN LR > {l:.2f}?'.format(l=lLR_thresh),
+                        qlabel='NN LR >= thresh?',
                         masterlist=masterlist)
 
     # compact not isolated, nnsmall, lr, NNlr
-    M_small_nisol_S_nclustered_lr_NNlr = M_small_nisol_S_nclustered_lr.submask(lofarcat['NN_LR'] >= lLR_thresh,
+    M_small_nisol_S_nclustered_lr_NNlr = M_small_nisol_S_nclustered_lr.submask(lofarcat['NN_LR_threshold'] == True,
                         'NNlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), good LR, NN good lr'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
@@ -1243,7 +1255,7 @@ if __name__=='__main__':
     lofarcat['LR_flag'][M_small_nisol_S_nclustered_lr_NNlr.mask] = 1
 
     # compact not isolated, nnsmall, lr, NNnlr
-    M_small_nisol_S_nclustered_lr_NNnlr = M_small_nisol_S_nclustered_lr.submask(lofarcat['NN_LR'] < lLR_thresh,
+    M_small_nisol_S_nclustered_lr_NNnlr = M_small_nisol_S_nclustered_lr.submask(lofarcat['NN_LR_threshold'] == False,
                         'NNnlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), good LR, NN bad lr'.format(s=size_large, nn=separation1),
                         edgelabel='N',
@@ -1256,7 +1268,7 @@ if __name__=='__main__':
 
 
     # compact not isolated, nnsmall, nlr, NNnlr - there are possible doubles here!!
-    M_small_nisol_S_nclustered_nlr_NNnlr = M_small_nisol_S_nclustered_nlr.submask(lofarcat['NN_LR'] < lLR_thresh,
+    M_small_nisol_S_nclustered_nlr_NNnlr = M_small_nisol_S_nclustered_nlr.submask(lofarcat['NN_LR_threshold'] == False,
                         'NNnlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN bad lr'.format(s=size_large, nn=separation1),
                         edgelabel='N',
@@ -1265,7 +1277,7 @@ if __name__=='__main__':
                         masterlist=masterlist)
 
     # compact not isolated, nnsmall, nlr, NNlr
-    M_small_nisol_S_nclustered_nlr_NNlr = M_small_nisol_S_nclustered_nlr.submask(lofarcat['NN_LR'] >= lLR_thresh,
+    M_small_nisol_S_nclustered_nlr_NNlr = M_small_nisol_S_nclustered_nlr.submask(lofarcat['NN_LR_threshold'] == True,
                         'NNlr',
                         'compact not isolated (s<{s:.0f}", NN<{nn:.0f}") NN small (s<={s:.0f}"), bad LR, NN good lr'.format(s=size_large, nn=separation1),
                         edgelabel='Y',
@@ -1423,8 +1435,8 @@ if __name__=='__main__':
                     'Clustered (5 sources within sep1)')
 
     M_bright = Mask(lofarcat['Total_flux'] > fluxcut, 'bright')
-    M_nlr = Mask(lofarcat['LR'] >= lLR_thresh, 'lr')
-    M_lr = Mask(lofarcat['LR'] < lLR_thresh,'nlr')
+    M_lr = Mask(lofarcat['LR_threshold'] == True, 'lr')
+    M_nlr = Mask(lofarcat['LR_threshold'] == False,'nlr')
 
         
     M_huge = Mask(lofarcat['Maj'] > 100., 'huge')
