@@ -141,24 +141,6 @@ if __name__=='__main__':
         print('{f} does not exist - first run lofar_source_sorter_dr2.py to produce this'.format(f=lofarcat_file_srt))
 
     
-    if version == 'v100':
-        
-        if h == '13h':
-            lLR_thresh_n = 0.309            # LR threshold
-            lLR_thresh_s = 0.328            # LR threshold
-            LR_thresh_dec = 32.375
-        elif h == '0h':
-            lLR_thresh_n = 0.394            # LR threshold
-            lLR_thresh_s = 0.394            # LR threshold
-            LR_thresh_dec = -90
-        else:
-            print('LR threshold not implemented for field',h)
-            sys.exit(1)
-        
-        #lofarcat_file_srt = path+'LOFAR_HBA_T1_DR1_catalog_v0.99.srl.gmasked.sorted.v1.fits'
-    else:
-        print('Unknown version, quitting')
-        sys.exit(1)
 
     for mode in modes:
 
@@ -196,15 +178,11 @@ if __name__=='__main__':
         if msourceflg not in lofarcat.colnames:
             lofarcat.add_column(Column(99*np.ones(len(lofarcat),dtype=int), msourceflg))
 
-        source_lr = np.zeros(len(lofarcat),dtype=bool)
-        source_lr[(lofarcat['DEC']>=LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_n)] = True
-        source_lr[(lofarcat['DEC']<LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_s)] = True
+        source_lr = lofarcat['LR_threshold']
         
         source_nlr = ~source_lr
         
-        source_lr2 = np.zeros(len(lofarcat),dtype=bool)
-        source_lr2[(lofarcat['DEC']>=LR_thresh_dec)&(lofarcat['LR'] >=10*lLR_thresh_n)] = True
-        source_lr2[(lofarcat['DEC']<LR_thresh_dec)&(lofarcat['LR'] >=10*lLR_thresh_s)] = True
+        source_lr2 = lofarcat['LR_threshold10']
 
         
         source_nglr = lofarcat['Ng_LR_good'] == 0

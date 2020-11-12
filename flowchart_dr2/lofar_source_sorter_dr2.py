@@ -226,24 +226,9 @@ if __name__=='__main__':
     separation1 = 45.          # in arcsec
     size_huge = 25.            # in arcsec
     #separation2 = 30.          # in arcsec
-    if h == '13h':
-        lLR_thresh_n = 0.309            # LR threshold
-        lLR_thresh_s = 0.328            # LR threshold
-        LR_thresh_dec = 32.375
-    elif h == '0h':
-        lLR_thresh_n = 0.394            # LR threshold
-        lLR_thresh_s = 0.394            # LR threshold
-        LR_thresh_dec = -90
-    else:
-        print('LR threshold not implemented for field',h)
-        sys.exit(1)
     fluxcut = 8.               # in mJy
     fluxcut2 = 4.   #float(sys.argv[3])
     
-    ##LR threshold
-    ##s0h -> 0.394
-    ##s13h -> 0.328
-    ##n13h -> 0.309  -- note, adopt this level for both N and S
 
     ### Required INPUTS
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
@@ -281,10 +266,10 @@ if __name__=='__main__':
     # Source catalogue
     lofarcat = Table.read(lofarcat_file)
     
-    if 'RA_1' in lofarcat.colnames:
-        lofarcat.rename_column('RA_1','RA')
-        lofarcat.rename_column('DEC_1','DEC')
-        lofarcat.rename_column('LR_1a','LR')
+    #if 'RA_1' in lofarcat.colnames:
+        #lofarcat.rename_column('RA_1','RA')
+        #lofarcat.rename_column('DEC_1','DEC')
+        #lofarcat.rename_column('LR_1a','LR')
     
     Nlofarcat = len(lofarcat)
     
@@ -295,7 +280,7 @@ if __name__=='__main__':
 
     # these two added with add_gaus_info.py
     needgaus = False
-    for gaus_col in ['Ng', 'G_max_sep', 'G_LR_max', 'Ng_LR_good','Ng_LR_good_unique','N_G_LR_matchsource','Flag_G_LR_problem']:
+    for gaus_col in ['Ng', 'LR_threshold', 'G_max_sep', 'G_LR_max', 'Ng_LR_good','Ng_LR_good_unique','N_G_LR_matchsource','Flag_G_LR_problem']:
         if gaus_col not in lofarcat.colnames:
             print('missing gaussian column: ',gaus_col)
             needgaus = True
@@ -490,12 +475,6 @@ if __name__=='__main__':
     lofarcat['LGZ_flag'] = -99*np.ones(Nlofarcat,dtype=int)
         
     
-    if 'LR_threshold' not in lofarcat.colnames:
-        lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=bool),'LR_threshold'))
-    
-    lofarcat['LR_threshold'][(lofarcat['DEC']>=LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_n)] = True
-    lofarcat['LR_threshold'][(lofarcat['DEC']<LR_thresh_dec)&(lofarcat['LR'] >=lLR_thresh_s)] = True
-
 
     #############################################################################
 
@@ -521,11 +500,8 @@ if __name__=='__main__':
         lofarcat.add_column(Column(lofarcat['Total_flux'][f_nn_idx], 'NN_Total_flux'))
         lofarcat.add_column(Column(lofarcat['Total_flux']/lofarcat['NN_Total_flux'], 'NN_Frat'))
         lofarcat.add_column(Column(lofarcat['Maj'][f_nn_idx], 'NN_Maj'))
+        lofarcat.add_column(Column(lofarcat['LR_threshold'][f_nn_idx], 'NN_LR_threshold'))
         
-    if 'NN_LR_threshold' not in lofarcat.colnames:
-        lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=bool), 'NN_LR_threshold'))
-    lofarcat['NN_LR_threshold'][(lofarcat['DEC'][f_nn_idx]>=LR_thresh_dec)&(lofarcat['LR'] [f_nn_idx]>=lLR_thresh_n)] = True
-    lofarcat['NN_LR_threshold'][(lofarcat['DEC'][f_nn_idx]<LR_thresh_dec)&(lofarcat['LR'][f_nn_idx] >=lLR_thresh_s)] = True
 
         
     # now exclude artefacts - just put them far away always at the south pole
