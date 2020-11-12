@@ -1,20 +1,5 @@
 
-match_2masx
-set_weave_priorities
-add_gaus_info
-get_nearest_neighbours
-get_ml_flags
-
-python flow_python/add_gaus_info.py 13  
-
-python flow_python/lofar_source_sorter_dr2.py 13 1 4
-python flow_python/handle_m_sources_dr2.py 13 1 all 4
-python flow_python/lofar_source_sorter_dr2.py 13 2 4
-
-TODO python flow_python/lofar_source_sorter_dr2.py 13 3 4
-
-
-
+# general
 python flow_python/append_cats.py 
 python flow_python/fix_dup_source_names.py 
 python flow_python/fix_dup_source_names_in_ml_cat.py 
@@ -32,6 +17,7 @@ python flow_python/lofar_source_sorter_dr2.py 0 2 1
 # on lofar: python flow_python/extract_prefilter_out.py 0, and copy over output...
 scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_0h.prefilter_outputs.fits .
 python flow_python/get_prefilter_flags.py 0
+python flow_python/lofar_source_sorter_dr2.py 13 3 1
 
 
 
@@ -60,4 +46,6 @@ python flow_python/conv_hdf5_fits.py LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_
 
 python flow_python/conv_hdf5_fits.py LoTSS_DR2_v100.srl_13h.lr-full.presort.hdf5
 topcat LoTSS_DR2_v100.srl_13h.lr-full.presort.fits 
+
+
 
