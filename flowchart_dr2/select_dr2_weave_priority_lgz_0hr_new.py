@@ -25,7 +25,7 @@ selno = '2'
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
 #lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step1.fits'.format(h=h)
 lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.hdf5'
-sel_file = path+'LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.lgz_selection_{i}.fits'.format(i=selno)
+sel_file = path+'lgz_selection_nov18/LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.lgz_selection_{i}.fits'.format(i=selno)
 
 
 lofarcat = Table.read(lofarcat_file_srt)
@@ -34,12 +34,23 @@ lofarcat = Table.read(lofarcat_file_srt)
 sel_pri = (lofarcat['WEAVE_priority{i}'.format(i=priority)] == True)
 #sel = (lofarcat['WEAVE_priority1'] == True) & (lofarcat['WEAVE_priority1a'] == False)  # special case of 1 and not 1a  make up 1b
 
+
+# flowchart now accounts for this
+#sel =  sel_pri & (
+        ##(lofarcat['FC_flag2'] == 5) |    # large  4<S<8 mJy, ML=LGZ  ## NB already done
+        #((lofarcat['FC_flag2'] == 12) & (lofarcat['ML_flag']==1)) |   # isol nS S>8mJy msource=LGZ  -## NB all ML=LGZ already done, so add the LR ones
+        ##(lofarcat['FC_flag2'] == 15) |   # n-isol, clustered, S>4mJy, ML=LGZ   ## NB clustered already done with LGZ
+        #(lofarcat['FC_flag2'] == 26)  |   # n-isol, nclustered, S, frat, sep, S>4mJy, ML=LGZ
+        #((lofarcat['FC_flag2'] == 20)& (lofarcat['ML_flag']==1)) )    # n-isol, nclustered, nS, S>4mJy, msource=LGZ  ## NB all ML=LGZ already done, so add the LR ones
+
 sel =  sel_pri & (
-        #(lofarcat['FC_flag2'] == 5) |    # large  4<S<8 mJy, ML=LGZ  ## NB already done
-        ((lofarcat['FC_flag2'] == 12) & (lofarcat['ML_flag']==1)) |   # isol nS S>8mJy msource=LGZ  -## NB all ML=LGZ already done, so add the LR ones
-        #(lofarcat['FC_flag2'] == 15) |   # n-isol, clustered, S>4mJy, ML=LGZ   ## NB clustered already done with LGZ
-        (lofarcat['FC_flag2'] == 26)  |   # n-isol, nclustered, S, frat, sep, S>4mJy, ML=LGZ
-        ((lofarcat['FC_flag2'] == 20)& (lofarcat['ML_flag']==1)) )    # n-isol, nclustered, nS, S>4mJy, msource=LGZ  ## NB all ML=LGZ already done, so add the LR ones
+        (lofarcat['FC_flag2'] == 5) | \
+        (lofarcat['FC_flag2'] == 9) | \
+        (lofarcat['FC_flag2'] == 13) | \
+        (lofarcat['FC_flag2'] == 15) | \
+        (lofarcat['FC_flag2'] == 16) | \
+        (lofarcat['FC_flag2'] == 16) )
+
 
 
 
@@ -47,14 +58,20 @@ lofarcat1 = lofarcat[sel]
 
 lofarcat1.write(sel_file, overwrite=True)
 
-sel_file = path+'LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.prefilter_lgz_selection_{i}.fits'.format(i=selno)
+sel_file = path+'lgz_selection_nov18/LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.prefilter_lgz_selection_{i}.fits'.format(i=selno)
 
-sel = sel_pri & (
-        (lofarcat['FC_flag2'] == 6) |    # large  4<S<8 mJy, ML=LR
-        ((lofarcat['FC_flag2'] == 13) & (lofarcat['ML_flag']==1)) |   # isolate S S>8mJy msource=prefilt   ## NB ML=LGZ already done in lgz
-        #(lofarcat['FC_flag2'] == 16) |   # n-isol, clustered, S>4mJy, ML=LR   ## NB clustered already done with LGZ
-        (lofarcat['FC_flag2'] == 27) |    # n-isol, nclustered, S, frat, sep, S>4mJy, ML=LR
-        ((lofarcat['FC_flag2'] == 21)  & (lofarcat['ML_flag']==1)) )   # n-isol, nclustered, nS, S>4mJy, msource=prefilt   ## NB ML=LGZ already done in lgz
+#sel = sel_pri & (
+        #(lofarcat['FC_flag2'] == 6) |    # large  4<S<8 mJy, ML=LR
+        #((lofarcat['FC_flag2'] == 13) & (lofarcat['ML_flag']==1)) |   # isolate S S>8mJy msource=prefilt   ## NB ML=LGZ already done in lgz
+        ##(lofarcat['FC_flag2'] == 16) |   # n-isol, clustered, S>4mJy, ML=LR   ## NB clustered already done with LGZ
+        #(lofarcat['FC_flag2'] == 27) |    # n-isol, nclustered, S, frat, sep, S>4mJy, ML=LR
+        #((lofarcat['FC_flag2'] == 21)  & (lofarcat['ML_flag']==1)) )   # n-isol, nclustered, nS, S>4mJy, msource=prefilt   ## NB ML=LGZ already done in lgz
+
+sel =  sel_pri & (
+        (lofarcat['FC_flag2'] == 6) | \
+        (lofarcat['FC_flag2'] == 14) | \
+        (lofarcat['FC_flag2'] == 21) | \
+        (lofarcat['FC_flag2'] == 27))
 
 
 
