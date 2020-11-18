@@ -34,7 +34,7 @@ if h not in  ['0h','13h']:
     sys.exit(1)
 
 path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step1_flux4.hdf5'.format(h=h)
+lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step2_flux4.hdf5'.format(h=h)
 #lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
 
 
