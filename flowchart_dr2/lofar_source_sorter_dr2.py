@@ -242,7 +242,7 @@ if __name__=='__main__':
         # lr infor is in the catalogue - this makes things easier
         lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.hdf5'.format(h=h,version=version)
         #lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(h=h,version=version)
-    elif step >= 2:
+    elif step == 2:
         lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1_flux{ff:.0f}.hdf5'.format(h=h,version=version,ff=fluxcut2)
         
     elif step >= 3:
@@ -255,7 +255,8 @@ if __name__=='__main__':
     if step == 1:
         lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step{st}_flux{ff:.0f}.hdf5'.format(h=h,version=version,st=step,ff=fluxcut2)
     else:
-        lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step{st}_flux{ff:.0f}_weavepri{w:s}.hdf5'.format(h=h,version=version,st=step,ff=fluxcut2,w=weave_pri)
+        lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step{st}_flux{ff:.0f}.hdf5'.format(h=h,version=version,st=step,ff=fluxcut2)
+        lofarcat_file_srt_wp = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step{st}_flux{ff:.0f}_weavepri{w:s}.hdf5'.format(h=h,version=version,st=step,ff=fluxcut2,w=weave_pri)
 
 
 
@@ -339,6 +340,9 @@ if __name__=='__main__':
         # for step 1 - we set the weave pririties, but use all of them so all the m-sources get selected to be handled
         weave_sel = np.isfinite(lofarcat['RA'])
     else:
+        if weave_pri == '': 
+            print('must have a weave priority set for step {s} not defined, quitting'.format(s=step))
+            sys.exit(1)
         # in later steps we consider only the weave priority sources so we can look at them separately
         if h =='13h':
             if weave_pri == '1':
@@ -470,10 +474,10 @@ if __name__=='__main__':
     if 'LR_flag' not in lofarcat.colnames:
         lofarcat.add_column(Column(-99*np.ones(Nlofarcat,dtype=int),'LR_flag'))
     if 'LGZ_flag' not in lofarcat.colnames:
-        lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=int),'LGZ_flag'))
-    lofarcat['ID_flag'][weave_sel] = -99*np.ones(Nlofarcat,dtype=int)
-    lofarcat['LR_flag'][weave_sel] = -99*np.ones(Nlofarcat,dtype=int)
-    lofarcat['LGZ_flag'][weave_sel] = -99*np.ones(Nlofarcat,dtype=int)
+        lofarcat.add_column(Column(-99*np.ones(Nlofarcat,dtype=int),'LGZ_flag'))
+    lofarcat['ID_flag'][weave_sel] = -99
+    lofarcat['LR_flag'][weave_sel] = -99
+    lofarcat['LGZ_flag'][weave_sel] = -99
         
     
 
@@ -1557,6 +1561,9 @@ if __name__=='__main__':
     ## write output file
     # as hdf5 need to seralise the metadata
     lofarcat.write(lofarcat_file_srt, overwrite=True, serialize_meta=True)
+    if step > 1:
+        lofarcat = lofarcat[weave_sel]
+        lofarcat.write(lofarcat_file_srt_wp, overwrite=True, serialize_meta=True)
 
 
     ## TESTING ##
