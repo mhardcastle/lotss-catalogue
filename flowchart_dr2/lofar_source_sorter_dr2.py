@@ -245,8 +245,8 @@ if __name__=='__main__':
     elif step >= 2:
         lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1_flux{ff:.0f}.hdf5'.format(h=h,version=version,ff=fluxcut2)
         
-    #elif step >= 3:
-        #lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux{ff:.0f}.hdf5'.format(h=h,version=version,ff=fluxcut2)
+    elif step >= 3:
+        lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux{ff:.0f}.hdf5'.format(h=h,version=version,ff=fluxcut2)
         #lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(h=h,version=version)
         
 
@@ -471,9 +471,9 @@ if __name__=='__main__':
         lofarcat.add_column(Column(-99*np.ones(Nlofarcat,dtype=int),'LR_flag'))
     if 'LGZ_flag' not in lofarcat.colnames:
         lofarcat.add_column(Column(np.zeros(Nlofarcat,dtype=int),'LGZ_flag'))
-    lofarcat['ID_flag'] = -99*np.ones(Nlofarcat,dtype=int)
-    lofarcat['LR_flag'] = -99*np.ones(Nlofarcat,dtype=int)
-    lofarcat['LGZ_flag'] = -99*np.ones(Nlofarcat,dtype=int)
+    lofarcat['ID_flag'][weave_sel] = -99*np.ones(Nlofarcat,dtype=int)
+    lofarcat['LR_flag'][weave_sel] = -99*np.ones(Nlofarcat,dtype=int)
+    lofarcat['LGZ_flag'][weave_sel] = -99*np.ones(Nlofarcat,dtype=int)
         
     
 
