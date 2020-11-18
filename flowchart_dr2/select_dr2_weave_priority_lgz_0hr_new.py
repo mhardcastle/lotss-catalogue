@@ -43,12 +43,15 @@ sel_pri = (lofarcat['WEAVE_priority{i}'.format(i=priority)] == True)
         #(lofarcat['FC_flag2'] == 26)  |   # n-isol, nclustered, S, frat, sep, S>4mJy, ML=LGZ
         #((lofarcat['FC_flag2'] == 20)& (lofarcat['ML_flag']==1)) )    # n-isol, nclustered, nS, S>4mJy, msource=LGZ  ## NB all ML=LGZ already done, so add the LR ones
 
-sel =  sel_pri & (
-        (lofarcat['FC_flag2'] == 6) | \
-        (lofarcat['FC_flag2'] == 14) | \
-        (lofarcat['FC_flag2'] == 21) | \
-        (lofarcat['FC_flag2'] == 27))
 
+sel =  sel_pri & (
+        #(lofarcat['FC_flag2'] == 5) | \
+        #(lofarcat['FC_flag2'] == 9) | \
+        (lofarcat['FC_flag2'] == 13) | \
+        #(lofarcat['FC_flag2'] == 15) | \
+        #(lofarcat['FC_flag2'] == 16) | \
+        (lofarcat['FC_flag2'] == 20)| \
+        (lofarcat['FC_flag2'] == 26) )
 
 lofarcat1 = lofarcat[sel]
 
@@ -64,14 +67,12 @@ sel_file = path+'lgz_selection_nov18/LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_
         #((lofarcat['FC_flag2'] == 21)  & (lofarcat['ML_flag']==1)) )   # n-isol, nclustered, nS, S>4mJy, msource=prefilt   ## NB ML=LGZ already done in lgz
 
 
-
 sel =  sel_pri & (
-        (lofarcat['FC_flag2'] == 5) | \
-        (lofarcat['FC_flag2'] == 9) | \
-        (lofarcat['FC_flag2'] == 13) | \
-        (lofarcat['FC_flag2'] == 15) | \
-        (lofarcat['FC_flag2'] == 16) | \
-        (lofarcat['FC_flag2'] == 16) )
+        (lofarcat['FC_flag2'] == 6) | \
+        (lofarcat['FC_flag2'] == 14) | \
+        (lofarcat['FC_flag2'] == 21) | \
+        (lofarcat['FC_flag2'] == 27))
+
 
 
 
