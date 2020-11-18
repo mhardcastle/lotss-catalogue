@@ -4,6 +4,7 @@ add some info on the gaussians to the lofar source table
 - it's a bit slow to do the separation calculation for all M sources, so do it once and save it
 '''
 import sys
+from tqdm import tqdm
 import numpy as np
 from astropy.table import Table, join, Column
 import astropy.coordinates as ac
@@ -94,8 +95,8 @@ if __name__=='__main__':
         cat['LR_threshold'][(cat['DEC']>=LR_thresh_dec)&(cat['lr'] >=lLR_thresh_n)] = True
         cat['LR_threshold'][(cat['DEC']<LR_thresh_dec)&(cat['lr'] >=lLR_thresh_s)] = True
         cat.add_column(Column(np.zeros(Ncat,dtype=bool), 'LR_threshold10'))
-        cat['LR_threshold'][(cat['DEC']>=LR_thresh_dec)&(cat['lr'] >=10*lLR_thresh_n)] = True
-        cat['LR_threshold'][(cat['DEC']<LR_thresh_dec)&(cat['lr'] >=10*lLR_thresh_s)] = True
+        cat['LR_threshold10'][(cat['DEC']>=LR_thresh_dec)&(cat['lr'] >=10*lLR_thresh_n)] = True
+        cat['LR_threshold10'][(cat['DEC']<LR_thresh_dec)&(cat['lr'] >=10*lLR_thresh_s)] = True
     
     
         mthresh = cat['LR_threshold']
@@ -134,7 +135,8 @@ if __name__=='__main__':
     m_S = lofarcat['S_Code'] =='S'
     minds = np.where(~m_S)[0]
     print('Counting gaussians for {n} sources'.format(n=len(minds)))
-    for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
+    print('calculating LR stuff for m sources - this can be slow')
+    for i,sid in tqdm(zip(minds, lofarcat['Source_Name'][~m_S])):
         ig = np.where(lofargcat['Source_Name']==sid)[0]
         Ng = len(ig)
         lofarcat['Ng'][i]= Ng
@@ -150,12 +152,8 @@ if __name__=='__main__':
         
         
         
-    print('calculating LR stuff for m sources - this can be slow')
-    m_S = lofarcat['S_Code'] =='S'
-    minds = np.where(~m_S)[0]
-    #minds = np.where(lofarcat['Ng']>1)[0]
-    for i,sid in zip(minds, lofarcat['Source_Name'][~m_S]):
-        ig = np.where(lofargcat['Source_Name']==sid)[0]
+    #for i,sid in tqdm(zip(minds, lofarcat['Source_Name'][~m_S])):
+        #ig = np.where(lofargcat['Source_Name']==sid)[0]
         lofarcat['G_LR_max'][i]= np.nanmax(lofargcat['LR'][ig])
         if np.any(np.isfinite(lofargcat['LR'][ig])):
             
@@ -220,7 +218,7 @@ if __name__=='__main__':
         # special case 3:
         elif (~lofarcat['LR_threshold'][i]) and (lofarcat['Ng_LR_good'][i] == 1):
             igi = ig[lofargcat['LR_threshold'][ig] ]
-            if (lofargcat['LR_threshold2'][igi] ) and (lofargcat['Maj'][igi] < 10):
+            if (lofargcat['LR_threshold10'][igi] ) and (lofargcat['Maj'][igi] < 10):
                 lofarcat['G_LR_case3'][i] = 1  # accept match
             else:
                 lofarcat['G_LR_case3'][i] = 2  # lgz
@@ -229,7 +227,7 @@ if __name__=='__main__':
         
         
     lofarcat['G_LR_max'][m_S] = lofarcat['LR'][m_S]
-    lofarcat['Ng_LR_good'][m_S] = 1*(lofarcat['LR'][m_S] >= lLR_thresh)
+    lofarcat['Ng_LR_good'][m_S] = 1*(lofarcat['LR_threshold'][m_S])
 
     # some flags for mult_gaus sources:
     # source has good LR match, and no gaus

@@ -160,15 +160,25 @@ if __name__=='__main__':
         # from Lara/Philip - classifications of compact isolated m sources
         #lofar_msource_flowchart = Table.read(lofar_msource_flowchart_file)
 
-        # NOTE : update based on latest main flowchart
-        if mode == 'isol':
-            FFlag = 9
-        elif mode == 'isol-faint':
-            FFlag = 10
-        elif mode == 'nonisol':
-            FFlag = 14
-        elif mode == 'nonisol-faint':
-            FFlag = 15
+        # NOTE : update based on latest main flowchart - note the difference for the two fields means different FC_flags
+        if h=='0h':
+            if mode == 'isol':
+                FFlag = 10
+            elif mode == 'isol-faint':
+                FFlag = 11
+            elif mode == 'nonisol':
+                FFlag = 14
+            elif mode == 'nonisol-faint':
+                FFlag = 15
+        elif h == '13h':
+            if mode == 'isol':
+                FFlag = 9
+            elif mode == 'isol-faint':
+                FFlag = 10
+            elif mode == 'nonisol':
+                FFlag = 14
+            elif mode == 'nonisol-faint':
+                FFlag = 15
 
         ## select only relevant sources - from step 1 of the flowchart (rerunning in step2 changes final outputs...)
         lofarcat = lofarcat_full[lofarcat_full['FC_flag1'] == FFlag]
