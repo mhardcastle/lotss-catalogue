@@ -1,3 +1,4 @@
+from __future__ import print_function
 from download_image_files import LofarMaps,get_legacy,get_first,get_wise
 from astropy.table import Table
 import sys
@@ -21,13 +22,21 @@ if __name__=='__main__':
     os.chdir('downloads')
 
     for r in t[startpoint:]:
-        print r['Source_Name']
-        print r['RA'],r['DEC']
+        print(r['Source_Name'])
+        print(r['RA'],r['DEC'])
         lofarname=lm.find(r['RA'],r['DEC'])
-        legacyname=get_legacy(r['RA'],r['DEC'],bands='zrg')
+        try:
+            legacyname=get_legacy(r['RA'],r['DEC'],bands='zrg')
+        except RuntimeError as e: # assume catching a 500 here
+            if '500' in e.args[0]:
+                print('Caught a 500, no image!')
+                legacyname="None"
+            else:
+                raise
+                
         #wisename=get_wise(r['RA'],r['DEC'],1)
         #firstname=get_first(r['RA'],r['DEC'])
-        print >>outfile,r['Source_Name'],lofarname,legacyname#,wisename,firstname
+        print(r['Source_Name'],lofarname,legacyname,file=outfile) 
 
     outfile.close()
 

@@ -43,17 +43,31 @@ if __name__=='__main__':
     tname=sys.argv[1]
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
+    # for Shane's file format...
+    if 'ra' in t.colnames:
+        t['ra'].name='RA'
+    if 'dec' in t.colnames:
+        t['dec'].name='DEC'
+
+    t['Maj']*=3600
+    t['Min']*=3600
+        
+        
     # Annotated PyBDSF table
-    ot=Table.read(os.environ['LOTSS_COMPONENT_CATALOGUE'])
+    ot=Table.read('/beegfs/lofar/deepfields/EDFN/edfn_srl_withid.fits')
     if 'Component_Name' in ot.colnames:
         cname='Component_Name'
     else:
         cname='Source_Name'
+    ot[cname]=[n.rstrip() for n in ot[cname]]
+
+    ot['Maj']*=3600
+    ot['Min']*=3600
     
     # large source table for neighbours
     #lt=ot[(ot['Total_flux']>3) & (ot['Maj']>8)]
     filt=ot['Maj']>8
-    filt&=ot['Total_flux']>1
+    filt&=ot['Total_flux']>1e-3
     filt&=ot['Peak_flux']>2*ot['Isl_rms']
     lt=ot[filt]
     
@@ -61,8 +75,8 @@ if __name__=='__main__':
     # read lists
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     lofarmaps=[l[1] for l in lines]
-    psmaps=[l[-1] for l in lines if len(l)>1]
-    #wisemaps=[l[3] for l in lines]
+    psmaps=[l[2] for l in lines]
+    wisemaps=[l[3] for l in lines]
     #firstmaps=[l[4] for l in lines]
 
     start=int(sys.argv[2])
@@ -73,6 +87,7 @@ if __name__=='__main__':
     except:
         end=start+1
     for i in range(start,end):
+        print '---- %i ----' %i
         r=t[i]
         #print r
         try:
@@ -82,42 +97,22 @@ if __name__=='__main__':
             t['Source_id'].name='Source_Name'
             sourcename=r['Source_Name']
         sourcename=sourcename.rstrip()
+        ft=ot[ot[cname]==sourcename]
+        if len(ft)!=1:
+            print 'Cannot find source',sourcename
+            continue
 
-        csimage=sourcename+'_CS.png'
         psimage=sourcename+'_PS.png'
         pspimage=sourcename+'_PSp.png'
+        wiseimage=sourcename+'_W.png'
+        wisepimage=sourcename+'_Wp.png'
         manifestname=sourcename+'-manifest.txt'
         #print lofarmaps[i],psmaps[i]
 
-        try:
-            mosaic=r['Mosaic_ID']
-        except:
-            mosaic=None
-        if mosaic is not None:
-            try:
-                lofarfile=get_mosaic_name(mosaic)
-            except RuntimeError:
-                print 'Could not get mosaic ID from',r['Mosaic_ID']
-                mosaic=None
-        if mosaic is None:
-            lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
-        if os.path.isdir(lofarfile):
-            lofarfile+='/mosaic.fits'
-            if not os.path.isfile(lofarfile):
-                lofarfile=lofarfile.replace('mosaic.fits','mosaic-blanked.fits')
-            
+        lofarfile='/beegfs/lofar/deepfields/EDFN/image_full_ampphase_di_m.NS.int.restoredcorrectedflux.fits'
 
-        #print lofarfile
-        if '.fits' not in lofarfile:
-            raise RuntimeError('Could not find mosaic fits file')
-            #print 'Could not find mosaic fits file, skipping {}'.format(r['Source_Name'])
-            #continue 
-
-        if psmaps[i]=='None':
-            print 'No optical image exists in the list for this source'
-            continue
-            
         if os.path.isfile(manifestname):
+            logfile.write('%i selected file exists already\n' % i)
             print 'Selected output file exists already'
             continue
 
@@ -137,9 +132,10 @@ if __name__=='__main__':
         # intersect the current one(s) (using ot)
 
         iter=0
-        checktable=Table(r)
+        checktable=ft
+        print checktable
         checktable['ellipse']=None
-        checktable['ellipse'][0]=ellipse(r,ra,dec)
+        checktable['ellipse'][0]=ellipse(ft[0],ra,dec)
         ctlen=1
         while True:
             tcopy=ot
@@ -199,7 +195,7 @@ if __name__=='__main__':
         
         # resize the image to look for interesting neighbours (using lt)
         iter=0
-        flux=r['Total_flux']
+        flux=ft[0]['Total_flux']
         while True:
             startra,startdec=ra,dec
             tcopy=lt
@@ -243,8 +239,6 @@ if __name__=='__main__':
         if size>300.0:
             # revert just to original
             ra,dec=r['RA'],r['DEC']
-            tcopy=checktable
-            ra,dec,size=find_bbox(tcopy)
 
         if size>300:
             size=300.0
@@ -271,7 +265,7 @@ if __name__=='__main__':
         print ls
 
         if 'Isl_rms' in r.colnames:
-            rms=r['Isl_rms']/1000.0
+            rms=r['Isl_rms']
         else:
             rms=None
 
@@ -280,7 +274,7 @@ if __name__=='__main__':
         pshdu=fits.open(optfile)
         if pshdu[0].header['NAXIS']==0:
             print '*** No optical image! ***'
-            logfile.write('*** No optical %s %f %f ***\n' % (sourcename,r['RA'],r['DEC']))
+            logfile.write('%i *** No optical %s %f %f ***\n' % (i,sourcename,r['RA'],r['DEC']))
             continue
         # nan-blank
         pshdu[0].data=np.where(pshdu[0].data>8,np.nan,pshdu[0].data)
@@ -289,31 +283,52 @@ if __name__=='__main__':
         lhdu.writeto('lofar.fits',clobber=True)
         #firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
         try:
-            peak==r['Peak_flux']/1000.0
+            peak==r['Peak_flux']
         except:
             peak=None
 
-        show_overlay(lhdu,lhdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=csimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5,show_lofar=False,cmap='inferno',lofar_colorscale=True)
+        failed=False
+        try:
+            show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,coords_ra=r['RA'],coords_dec=r['DEC'],lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=True,show_grid=True,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5)
+        except Exception as e:
+            failed=True
+        if failed:
+            print '*** Overlay failed! ***'
+            logfile.write('%i *** Overlay failed %s %f %f %s ***\n' % (i,sourcename,r['RA'],r['DEC'],e))
+            continue
 
-        show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5)
         
-        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,lw=2,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=False,show_grid=False,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,vmax_cap=0.5)
+        show_overlay(lhdu,pshdu,ra,dec,size,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=1,show_lofar=False,save_name=pspimage,no_labels=True,title=title,peak=peak,plot_coords=True,show_grid=True,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,vmax_cap=0.5)
 
-        #wiseimage=sourcename+'_W.png'
-        #firsthdu=extract_subim(imagedir+'/downloads/'+firstmaps[i],ra,dec,size)
-        #whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
-        #show_overlay(lhdu,whdu,ra,dec,size,firsthdu=firsthdu,
-        #             overlay_cat=ots,overlay_scale=scale,coords_color='red',
-        #             coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,
-        #             save_name=wiseimage,no_labels=True,marker_ra=marker_ra,
-        #             marker_dec=marker_dec,marker_lw=3,marker_color='cyan',
-        #             title=title,peak=peak,lw_ellipse=3,ellipse_style=ls,
-        #             ellipse_color='cyan',drlimit=1000,rms_use=rms,
-        #             lofarlevel=2.5,noisethresh=0)
+        whdu=extract_subim(imagedir+'/downloads/'+wisemaps[i],ra,dec,size)
+        try:
+            show_overlay(lhdu,whdu,ra,dec,size,firsthdu=None,
+                         overlay_cat=ots,overlay_scale=scale,coords_color='red',
+                         coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=1,
+                         save_name=wiseimage,no_labels=True,marker_ra=marker_ra,
+                         marker_dec=marker_dec,marker_lw=3,marker_color='cyan',
+                         title=title,peak=peak,lw_ellipse=3,ellipse_style=ls,
+                         ellipse_color='cyan',drlimit=1000,rms_use=rms,
+                         lofarlevel=2.5,noisethresh=0,cmap='inferno')
+        except Exception as e:
+            failed=True
+        if failed:
+            print '*** Overlay failed! ***'
+            logfile.write('%i *** Overlay failed %s %f %f %s ***\n' % (i,sourcename,r['RA'],r['DEC'],e))
+            continue
+
+        show_overlay(lhdu,whdu,ra,dec,size,firsthdu=None,
+                     overlay_cat=ots,overlay_scale=scale,coords_color='red',
+                     coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=1,
+                     show_lofar=False,save_name=wisepimage,no_labels=True,marker_ra=marker_ra,
+                     marker_dec=marker_dec,marker_lw=3,marker_color='cyan',
+                     title=title,peak=peak,lw_ellipse=3,ellipse_style=ls,
+                     ellipse_color='cyan',drlimit=1000,rms_use=rms,
+                     lofarlevel=2.5,noisethresh=0,cmap='inferno')
 
         
         with open(manifestname,'w') as manifest:
-            manifest.write('%i,%s,%s,%s,%s,%f,%f,%f\n' % (i,psimage,csimage,pspimage,sourcename,ra,dec,size*3600.0))
+            manifest.write('%i,%s,%s,%s,%s,%s,%i,%f,%f,%f\n' % (i,psimage,pspimage,wiseimage,wisepimage,sourcename,r['Source_id'],ra,dec,size*3600.0))
 
         os.system('mogrify -quality 90 -trim '+sourcename+'*.png')
 

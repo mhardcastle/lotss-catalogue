@@ -9,6 +9,7 @@ import MySQLdb as mdb
 import MySQLdb.cursors as mdbcursors
 import matplotlib.pyplot as plt 
 import matplotlib.image as img 
+import glob
 
 sys.stdout.write("\x1b]2;Classify\x07")
 
@@ -27,10 +28,14 @@ def get_next():
     
 ##### edit the following lines to choose the sample and possible options
 
-table='8h'
-dir='/beegfs/lofar/mjh/flowchart-endpoints-dr2/8h-prefilter'
+table='13h60fix'
+dir='/beegfs/lofar/mjh/flowchart-endpoints-dr2/%s-prefilter' % table
 os.chdir(dir)
-sample='LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_2.fits'
+
+g=glob.glob('LoTSS*fits')
+assert(len(g)==1)
+sample=g[0]
+
 options=('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend')
 user=os.getenv('USER')
 
