@@ -214,7 +214,7 @@ if __name__=='__main__':
         weave_pri = ''
     else:
         weave_pri = sys.argv[3]
-        if not weave_pri in ['1','2','12']:
+        if not weave_pri in ['1','2','12','3','123','all','dr1']:
             print('unknown weave priority', weave_pri)
             sys.exit()
     
@@ -351,10 +351,18 @@ if __name__=='__main__':
                 weave_sel = (lofarcat['WEAVE_priority2']==True)
             elif weave_pri == '12':
                 weave_sel = (lofarcat['WEAVE_priority1']==True) | (lofarcat['WEAVE_priority2']==True)
+            elif weave_pri == '3':
+                weave_sel = (lofarcat['WEAVE_priority3']==True)
+            elif weave_pri == 'dr1':
+                weave_sel = (lofarcat['HETDEX']==True)
+            elif weave_pri == 'all':
+                weave_sel = np.isfinite(lofarcat['RA'])
             
         elif h =='0h':
             if weave_pri == '1':
                 weave_sel = (lofarcat['WEAVE_priority1']==True)
+            elif weave_pri == 'all':
+                weave_sel = np.isfinite(lofarcat['RA'])
 
 
     # this is easy to run...

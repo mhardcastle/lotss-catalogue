@@ -18,7 +18,7 @@ from lofar_source_sorter_dr2 import Mask, Masks_disjoint_complete
 #################################################################################
 
 
-priority = '1'
+#priority = '1'
 #priority = '2'
 
 
@@ -29,9 +29,9 @@ lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.hdf5
 
 lofarcat = Table.read(lofarcat_file_srt)
 
-for priority in ['1','2']:
-    sel_file = path+'lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_{i}.fits'.format(i=priority)
-    if priority == '1' or priority == '2' or priority == '1a':
+for priority in ['3']:
+    sel_file = path+'lgz_selection_feb22/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_{i}.fits'.format(i=priority)
+    if priority in ['1' , '2' , '1a', '3']:
         sel_pri = (lofarcat['WEAVE_priority{i}'.format(i=priority)] == True)
     elif priority == '1b':
         sel_pri = (lofarcat['WEAVE_priority1'] == True) & (lofarcat['WEAVE_priority1a'] == False)  # special case of 1 and not 1a  make up 1b
@@ -49,7 +49,7 @@ for priority in ['1','2']:
 
     lofarcat1.write(sel_file, overwrite=True)
 
-    sel_file = path+'lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_{i}.fits'.format(i=priority)
+    sel_file = path+'lgz_selection_feb22/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_{i}.fits'.format(i=priority)
 
     sel = sel_pri & (
             (lofarcat['FC_flag2'] == 6) | \

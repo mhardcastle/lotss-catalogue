@@ -47,16 +47,16 @@ p_cat = Table.read(p_cat_file)
 lofarcat = Table.read(lofarcat_file_srt)
 lofarcat.sort('Source_Name')
 
+if 'Prefilter' in lofarcat.colnames:
+    lofarcat.remove_columns('Prefilter')
+
 for i in range(len(lofarcat)):
     lofarcat['Source_Name'][i] = lofarcat['Source_Name'][i].strip()
 
-tt = join(lofarcat, p_cat)
+tt = join(lofarcat, p_cat, keys='Source_Name')
 tt.sort('Source_Name')
 
-if 'Prefilter' in lofarcat.colnames:
-    lofarcat['Prefilter'] = tt['Prefilter']
-else:
-    lofarcat.add_column(tt['Prefilter'])
+lofarcat.add_column(tt['Prefilter'])
 
 
 ## write output file

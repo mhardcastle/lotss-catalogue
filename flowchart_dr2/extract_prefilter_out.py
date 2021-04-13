@@ -16,7 +16,7 @@ if h not in  ['0h','13h']:
 if h =='0h':
     tables = ['0h']
 elif h =='13h':
-    tables =  ['13h60', '13h60b','8h']
+    tables =  ['13h60', '13h60b','8h','13h60fix']
 
 
 con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorclass=mdbcursors.DictCursor)
@@ -45,7 +45,7 @@ for r in t:
 t.add_column(Column(name='Prefilter', data=np.array(classifications)))
 t.keep_columns(['Source_Name','Prefilter'])
 
-t.write('/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_{h}.prefilter_outputs.fits'.format(h=h))
+t.write('/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_{h}.prefilter_outputs.fits'.format(h=h),overwrite=True)
 
 
 con.close()
