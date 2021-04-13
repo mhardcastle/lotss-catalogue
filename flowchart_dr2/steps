@@ -61,3 +61,6 @@ topcat LoTSS_DR2_v100.srl_13h.lr-full.presort.fits
 
 
 
+# after step 2 and setting weave priorities again...
+python flowpython/select_dr2_complete_priority_lgz.py 0
+python flowpython/select_dr2_complete_priority_lgz.py 13

@@ -46,15 +46,24 @@ if h =='13h':
         lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='WEAVE_priority1a'))
         lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='WEAVE_priority2'))
         lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='WEAVE_priority3'))
+    else:
+        lofarcat['WEAVE_priority1'][:] = False
+        lofarcat['WEAVE_priority1a'][:] = False
+        lofarcat['WEAVE_priority2'][:] = False
+        lofarcat['WEAVE_priority3'][:] = False
 
     ind8hr = (lofarcat['RA']>= 110) & (lofarcat['RA']<= 135) & (lofarcat['DEC']>= 26) & (lofarcat['DEC']<= 41)
-    ind13hr45 = (lofarcat['RA']>= 130) & (lofarcat['RA']<= 280) & (lofarcat['DEC']>= 40) & (lofarcat['DEC']<= 45)
+    #ind13hr45 = (lofarcat['RA']>= 130) & (lofarcat['RA']<= 280) & (lofarcat['DEC']>= 40) & (lofarcat['DEC']<= 45)
+    ind13hr45 = (lofarcat['DEC']>= 39.8) & (lofarcat['DEC']<= 46.05)
     ind13hr60_1a = (lofarcat['RA']>= 120) & (lofarcat['RA']<= 240) & (lofarcat['DEC']>= 60) & (lofarcat['DEC']<= 65)
     ind13hr60 = (lofarcat['RA']>= 120) & (lofarcat['RA']<= 240) & (lofarcat['DEC']>= 59) & (lofarcat['DEC']<= 65.5)
     
     # 0hr start with all
     ind0hr = (lofarcat['RA']>= 0) & (lofarcat['RA']<= 360) & (lofarcat['DEC']>= -90) & (lofarcat['DEC']<= 90)
     
+    ## remove dr1 area:   - temp take out - slow and small area
+    #indhetdex = inHETDEX(lofarcat['RA'],lofarcat['DEC'])
+    #lofarcat['WEAVE_priority0'][indhetdex] = True
     
     lofarcat['WEAVE_priority1a'][ind13hr60_1a] = True  # this is the initial bit done - later expanded to full priority 1 area
     
@@ -63,14 +72,21 @@ if h =='13h':
     lofarcat['WEAVE_priority2'][ind8hr] = True  
     lofarcat['WEAVE_priority3'][ind13hr45& (~ind8hr)] = True    # 45 dec strip overlaps with 8hr region, so exclude that
     
-    ## remove dr1 area:   - temp take out - slow and small area
-    #indhetdex = inHETDEX(lofarcat['RA'],lofarcat['DEC'])
     #lofarcat['WEAVE_priority1'][indhetdex] = False
+    #lofarcat['WEAVE_priority3'][indhetdex] = False
     
-    print('{} sources out of {} with WEAVE_priority1 not hetdex ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority1'])/Nlofarcat))
-    print('{} sources out of {} with WEAVE_priority2 not hetdex ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority2'])/Nlofarcat))
+    print('{} sources out of {} with WEAVE_priority1 ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority1'])/Nlofarcat))
+    print('{} sources out of {} with WEAVE_priority2 ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority2']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority2'])/Nlofarcat))
+    print('{} sources out of {} with WEAVE_priority3 ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority3']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority3'])/Nlofarcat))
     
-     
+    
+    # priority area to complete IDs is same as 8hr weave priority
+    if 'Complete_priority1' not in lofarcat.colnames:
+        lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='Complete_priority1'))
+    else:
+        lofarcat['Complete_priority1'][:] = False
+        
+    lofarcat['Complete_priority1'][ind8hr] = True
     
 elif h =='0h':
     if 'WEAVE_priority1' not in lofarcat.colnames:
@@ -86,6 +102,17 @@ elif h =='0h':
 
     
     print('{} sources out of {} with WEAVE_priority1 ({:.1f}%)'.format(np.sum(lofarcat['WEAVE_priority1']), Nlofarcat, 100.*np.sum(lofarcat['WEAVE_priority1'])/Nlofarcat))
+    
+    
+    # priority area to complete IDs is same as 8hr weave priority
+    if 'Complete_priority1' not in lofarcat.colnames:
+        lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='Complete_priority1'))
+    else:
+        lofarcat['Complete_priority1'][:] = False
+        
+    # priority area to complete IDs is pointing P006+31
+    indP006p31 = lofarcat['Mosaic_ID']=='P006+31' 
+    lofarcat['Complete_priority1'][indP006p31] = True
     
 lofarcat.write(lofarcat_file_srt, overwrite=True, serialize_meta=True)
 
