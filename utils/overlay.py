@@ -22,7 +22,7 @@ def find_noise(a):
         b=b[b<(m+5.0*s)]
     return m,s
 
-def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False):
+def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False,debug=False):
     # ra, dec, size in degrees
     size/=1.5
     if len(hdu[0].data.shape)==2:
@@ -43,6 +43,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False):
             x,y=w.wcs_world2pix(r,d,0)
         xv.append(x)
         yv.append(y)
+    if debug: print xv,yv
     xmin=int(min(xv))
     if xmin<0: xmin=0
     xmax=int(max(xv))
@@ -51,11 +52,12 @@ def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False):
     if ymin<0: ymin=0
     ymax=int(max(yv))
     if ymax>=ysize: ymax=ysize-1
-    #print xmin,xmax,ymin,ymax
+    if debug: print xmin,xmax,ymin,ymax
     if cube:
         subim=hdu[0].data[channel,ymin:ymax,xmin:xmax]
     else:
         subim=hdu[0].data[ymin:ymax,xmin:xmax]
+    if debug: subim.shape
     mean,noise=find_noise(subim)
     if true_max:
         vmax=np.nanmax(subim)
@@ -218,13 +220,15 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         if not isinstance(plotpos,list):
             plotpos=[(plotpos,'x'),]
         for element in plotpos:
-            # originally this stated:
-            # if a colour is specified assume it's for a filled shape and unfill it
-            # but this doesn't seem sensible...
-            if len(element)==3:
+            if len(element)==4:
+                # 4 elements: specify edgecolor and fill color separately, can be none
+                t,marker,edgecolor,facecolor=element
+            elif len(element)==3:
+                # 3 elements, face color is edge color
                 t,marker,edgecolor=element
                 facecolor=edgecolor # was 'None'
             else:
+                # 2 elements, mark in white
                 t,marker=element
                 edgecolor='white'
                 facecolor=edgecolor

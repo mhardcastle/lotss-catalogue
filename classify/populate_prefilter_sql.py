@@ -1,17 +1,26 @@
 from astropy.table import Table
 import MySQLdb as mdb
 import MySQLdb.cursors as mdbcursors
+import os
+import glob
 
-table='8h'
+table='13h60fix'
+
+os.chdir('/beegfs/lofar/mjh/flowchart-endpoints-dr2/%s-prefilter' % table)
+
 
 con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorclass=mdbcursors.DictCursor)
 
 cur = con.cursor()
+cur.execute('create table %s like 8h' % table)
 
-t=Table.read('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_2.fits')
+g=glob.glob('*.fits')
+assert(len(g)==1)
+t=Table.read(g[0])
 for r in t:
-    command='insert into %s(object) values ("%s")' % (table,r['Source_Name'])
-    cur.execute(command)
+    if os.path.isfile(r['Source_Name']+'_j.png'):
+        command='insert into %s(object) values ("%s")' % (table,r['Source_Name'])
+        cur.execute(command)
 
 con.commit()
 con.close()

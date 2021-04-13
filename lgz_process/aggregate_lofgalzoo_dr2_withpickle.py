@@ -10,6 +10,8 @@
 
 from __future__ import print_function
 
+import pickle
+
 import sys
 import pandas as pd
 import numpy as np
@@ -284,250 +286,300 @@ t=Table.read(sourcecat)
 
 # Set up a bunch of lists
 
-badassocs=[]
-subjs_noassoc=[]
-subjs_noids=[]
-alist=[]
-tlist=[]
-ilist=[]
-multlist=[]
-multsets=[]
-subjs_mult=[]
-artlist=[]
-blendlist=[]
-zoomlist=[]
-brokenlist=[]
-missinglist=[]
-finalcat=[]
-assoccat=[]
-compcat=[]
-classa=[]
-sources_unique=[]
-classid=[]
-catalogued=[]
-overlap=[]
-seendict={}
-fluxdict={}
-sizedict={}
-mindict={}
-padict={}
-coordsdict=defaultdict(list)
-ocoordsdict=defaultdict(list)
-probdict=defaultdict(list)
-optiddict=defaultdict(list)
-assocdict=defaultdict(list)
-badclickdict=defaultdict(int)
-debug=True
+if not os.path.isfile('out.pickle'):
+    badassocs=[]
+    subjs_noassoc=[]
+    subjs_noids=[]
+    alist=[]
+    tlist=[]
+    ilist=[]
+    multlist=[]
+    multsets=[]
+    subjs_mult=[]
+    artlist=[]
+    blendlist=[]
+    zoomlist=[]
+    brokenlist=[]
+    missinglist=[]
+    finalcat=[]
+    assoccat=[]
+    compcat=[]
+    classa=[]
+    sources_unique=[]
+    classid=[]
+    catalogued=[]
+    overlap=[]
+    seendict={}
+    fluxdict={}
+    sizedict={}
+    mindict={}
+    padict={}
+    coordsdict=defaultdict(list)
+    ocoordsdict=defaultdict(list)
+    probdict=defaultdict(list)
+    optiddict=defaultdict(list)
+    assocdict=defaultdict(list)
+    badclickdict=defaultdict(int)
+    debug=True
 
-i=0
+    i=0
 
-# Loop through all sources by source_name to match clicks with associated regions and optical IDs
+    # Loop through all sources by source_name to match clicks with associated regions and optical IDs
 
-new_subs_unique=[]
-nonexist=[]
-nct=0
-for scount,subj in enumerate(subs_unique):
+    new_subs_unique=[]
+    nonexist=[]
+    nct=0
+    for scount,subj in enumerate(list(subs_unique)):
 
-    if debug:
-        print('subj is %s (%i of %i)' % (subj,scount,len(subs_unique)))
-    probflag=0
-    assocs_s = assocs.query('source_name == @subj')
-    ids_s = ids.query('source_name == @subj')
-    probs_s = problems.query('source_name == @subj')
-    subj_details=newsubj.query('source_name == @subj')
-    subj_class=subjects.query('source_name == @subj')
-    num_assoc = len(assocs_s)
-    num_ids = len(ids_s)
-    num_subj = len(subj_details)
-    num_probs = len(probs_s)
-    source_name = subj
+        if debug:
+            print('subj is %s (%i of %i)' % (subj,scount,len(subs_unique)))
+        probflag=0
+        assocs_s = assocs.query('source_name == @subj')
+        ids_s = ids.query('source_name == @subj')
+        probs_s = problems.query('source_name == @subj')
+        subj_details=newsubj.query('source_name == @subj')
+        subj_class=subjects.query('source_name == @subj')
+        num_assoc = len(assocs_s)
+        num_ids = len(ids_s)
+        num_subj = len(subj_details)
+        num_probs = len(probs_s)
+        source_name = subj
 
-    ra = subj_details.iloc[0]['ra']     # ra at pixel 433
-    dec = subj_details.iloc[0]['dec']   # dec at pixel 433
-    size = subj_details.iloc[0]['size']   # image size in arcsec
-    pscale=pixim/size
-    ascale=size/pixim    
-    
-    sourcematches=[]
-    imatches=[]
+        ra = subj_details.iloc[0]['ra']     # ra at pixel 433
+        dec = subj_details.iloc[0]['dec']   # dec at pixel 433
+        size = subj_details.iloc[0]['size']   # image size in arcsec
+        pscale=pixim/size
+        ascale=size/pixim    
 
-    srct=t
-    tabval=1
-    rowt=srct[srct['Source_Name']==subj]
-    if len(rowt)>0:
-        flux=rowt[0]['Total_flux']
-        majsize=rowt[0]['Maj']
-        minsize=rowt[0]['Min']
-        posang=rowt[0]['PA']
-        sourcera=rowt[0]['RA']
-        sourcedec=rowt[0]['DEC']
-    
-    new_subs_unique.append(source_name)
+        sourcematches=[]
+        imatches=[]
 
-    coordsdict.update({source_name:(sourcera,sourcedec)})
-    fluxdict.update({source_name:flux})
-    sizedict.update({source_name:majsize})
-    mindict.update({source_name:minsize})
-    padict.update({source_name:posang})
-    
-    # Now set up dict of how many classifiers have seen this source as main subject
-    # This does not include sights as a potential association, which are dealt with later
+        srct=t
+        tabval=1
+        rowt=srct[srct['Source_Name']==subj]
+        if len(rowt)>0:
+            flux=rowt[0]['Total_flux']
+            majsize=rowt[0]['Maj']
+            minsize=rowt[0]['Min']
+            posang=rowt[0]['PA']
+            sourcera=rowt[0]['RA']
+            sourcedec=rowt[0]['DEC']
 
-    users=subj_class.user_name
-    numseen=len(subj_class)
-    seendict.update({source_name:numseen})
-    
-    # Also set up a dict of which catalogue each source is in for future ref
+        new_subs_unique.append(source_name)
 
-    # Identify problems and tally votes for problems
-    
-    if num_probs>0:
-        probflag=1
-        acount=0
-        bcount=0
-        zcount=0
-        brcount=0
-        mcount=0
-        for ind,p in probs_s.iterrows():
-            if p['problem']=="Artefact":
-                acount=acount+1
-            if p['problem']=="Blend":
-                bcount=bcount+1
-            if p['problem']=="Too zoomed in" or p['problem']=="Too zoomed in ":
-                zcount=zcount+1
-            if p['problem']=="Host galaxy broken up":
-                brcount=brcount+1
-            if p['problem']=="Image missing":
-                mcount=mcount+1
-    
-        artfrac=float(acount)/float(numseen)
-        blendfrac=float(bcount)/float(numseen)
-        zoomfrac=float(zcount)/float(numseen)
-        brokefrac=float(brcount)/float(numseen)
-        missfrac=float(mcount)/float(numseen)
+        coordsdict.update({source_name:(sourcera,sourcedec)})
+        fluxdict.update({source_name:flux})
+        sizedict.update({source_name:majsize})
+        mindict.update({source_name:minsize})
+        padict.update({source_name:posang})
 
-        probdict.update({source_name:(artfrac,blendfrac,zoomfrac,brokefrac,missfrac)})    
-            
-    else:
-        probdict.update({source_name:(0.0,0.0,0.0,0.0,0.0)}) 
-    numgood=0
-    numigood=0
+        # Now set up dict of how many classifiers have seen this source as main subject
+        # This does not include sights as a potential association, which are dealt with later
 
-    # Loop through association clicks for this source to match each click to catalogued radio source
-    
-    if num_assoc>0:
+        users=subj_class.user_name
+        numseen=len(subj_class)
+        seendict.update({source_name:numseen})
 
-        rsize=2.0*size/3600.0
-        dsize=2.0*size/3600.0
-        subcat=srct[(np.abs(srct['RA']-ra)*np.cos(dec*np.pi/180.0)<rsize) & (np.abs(srct['DEC']-dec)<dsize)]
-        for index,news in assocs_s.iterrows():
-            classesa,lista,assocpos=match_click_ellipse(subcat,news,source_name)
-            for thing in classesa:
-                classa.append(thing)
-            for thing in lista:
-                alist.append(thing)
-            for thing in assocpos:
-                nam=thing[0]
-                nra=thing[1]
-                ndec=thing[2]
-                nflux=thing[3]
-                nmajsiz=thing[4]
-                nminsiz=thing[5]
-                nposang=thing[6]
-                coordsdict.update({nam:(nra,ndec)})
-                fluxdict.update({nam:nflux})
-                sizedict.update({nam:nmajsiz})
-                mindict.update({nam:nminsiz})
-                padict.update({nam:nposang})
-        del(subcat)
-    else:
-        # No associations for this subject
-        
-        subjs_noassoc.append(source_name)
+        # Also set up a dict of which catalogue each source is in for future ref
 
+        # Identify problems and tally votes for problems
 
-     # Loop through ID clicks for this source to match each click to a catalogued optical source
+        if num_probs>0:
+            probflag=1
+            acount=0
+            bcount=0
+            zcount=0
+            brcount=0
+            mcount=0
+            for ind,p in probs_s.iterrows():
+                if p['problem']=="Artefact":
+                    acount=acount+1
+                if p['problem']=="Blend":
+                    bcount=bcount+1
+                if p['problem']=="Too zoomed in" or p['problem']=="Too zoomed in ":
+                    zcount=zcount+1
+                if p['problem']=="Host galaxy broken up":
+                    brcount=brcount+1
+                if p['problem']=="Image missing":
+                    mcount=mcount+1
 
-    if num_ids>0:
+            artfrac=float(acount)/float(numseen)
+            blendfrac=float(bcount)/float(numseen)
+            zoomfrac=float(zcount)/float(numseen)
+            brokefrac=float(brcount)/float(numseen)
+            missfrac=float(mcount)/float(numseen)
 
-        rsize=0.5*size/3600.0
-        dsize=0.5*size/3600.0
+            probdict.update({source_name:(artfrac,blendfrac,zoomfrac,brokefrac,missfrac)})    
 
-        # Define sub-catalogues for the relevant sky regions
-        
-        osubcat=opt[(np.abs(opt[rast]-ra)*np.cos(dec*np.pi/180.0)<rsize) & (np.abs(opt[decst]-dec)<dsize)]
-        
-         
-        for index,news in ids_s.iterrows():
-
-            # Optical match
-            poss,ora,odec,user=match_opt(news,osubcat)
-            classification_id=news['classification_id']
-            ocoordsdict.update({poss:(ora,odec)})
-            if poss != "None":
-                if debug: print('Matched with',poss)
-                # check if ID/classification pair already exists
-                classlist=optiddict.get(poss,[])
-                if classification_id not in classlist:
-                    imatches.append(poss)
-                    classlist.append(classification_id)
-                    optiddict.update({poss:classlist})
-                else:
-                    print("Found duplicate PS ID/class pair: "+str(poss)+": "+str(classification_id))
-                
-                cflag=0
-            else:
-                badclickdict[subj]+=1
-                if debug: print('A click for this source was not matched to the optical catalogue',badclickdict[subj])
-
-        # Now tally up votes to generate a list of source_name, optical_ID name
-        # This will later be matched to the associated sources where appropriate
-      
-        goods=tally_votes(imatches,numseen)
-        numigood=len(goods)
-        
-        if numigood==1:
-                       
-            ilist.append({'Source_Name':source_name,'Opt_id':goods[0][0],'Numclass':numseen,'Quality':goods[0][1]})
-
-        elif numigood>1:
-            for thing in goods:
-                multlist.append({'Source_Name':source_name,'Opt_id':thing[0],'Numclass':numseen,'Quality':thing[1]})
-            subjs_mult.append(source_name)
-            
         else:
-            subjs_noids.append(source_name)
-        
-    else:
-# No IDs
-        subjs_noids.append(source_name)
-            
-    i=i+1
+            probdict.update({source_name:(0.0,0.0,0.0,0.0,0.0)}) 
+        numgood=0
+        numigood=0
 
+        # Loop through association clicks for this source to match each click to catalogued radio source
+
+        if num_assoc>0:
+
+            rsize=2.0*size/3600.0
+            dsize=2.0*size/3600.0
+            subcat=srct[(np.abs(srct['RA']-ra)*np.cos(dec*np.pi/180.0)<rsize) & (np.abs(srct['DEC']-dec)<dsize)]
+            for index,news in assocs_s.iterrows():
+                classesa,lista,assocpos=match_click_ellipse(subcat,news,source_name)
+                for thing in classesa:
+                    classa.append(thing)
+                for thing in lista:
+                    alist.append(thing)
+                for thing in assocpos:
+                    nam=thing[0]
+                    nra=thing[1]
+                    ndec=thing[2]
+                    nflux=thing[3]
+                    nmajsiz=thing[4]
+                    nminsiz=thing[5]
+                    nposang=thing[6]
+                    coordsdict.update({nam:(nra,ndec)})
+                    fluxdict.update({nam:nflux})
+                    sizedict.update({nam:nmajsiz})
+                    mindict.update({nam:nminsiz})
+                    padict.update({nam:nposang})
+            del(subcat)
+        else:
+            # No associations for this subject
+
+            subjs_noassoc.append(source_name)
+
+
+         # Loop through ID clicks for this source to match each click to a catalogued optical source
+
+        if num_ids>0:
+
+            rsize=0.5*size/3600.0
+            dsize=0.5*size/3600.0
+
+            # Define sub-catalogues for the relevant sky regions
+
+            osubcat=opt[(np.abs(opt[rast]-ra)*np.cos(dec*np.pi/180.0)<rsize) & (np.abs(opt[decst]-dec)<dsize)]
+
+
+            for index,news in ids_s.iterrows():
+
+                # Optical match
+                poss,ora,odec,user=match_opt(news,osubcat)
+                classification_id=news['classification_id']
+                ocoordsdict.update({poss:(ora,odec)})
+                if poss != "None":
+                    if debug: print('Matched with',poss)
+                    # check if ID/classification pair already exists
+                    classlist=optiddict.get(poss,[])
+                    if classification_id not in classlist:
+                        imatches.append(poss)
+                        classlist.append(classification_id)
+                        optiddict.update({poss:classlist})
+                    else:
+                        print("Found duplicate PS ID/class pair: "+str(poss)+": "+str(classification_id))
+
+                    cflag=0
+                else:
+                    badclickdict[subj]+=1
+                    if debug: print('A click for this source was not matched to the optical catalogue',badclickdict[subj])
+
+            # Now tally up votes to generate a list of source_name, optical_ID name
+            # This will later be matched to the associated sources where appropriate
+
+            goods=tally_votes(imatches,numseen)
+            numigood=len(goods)
+
+            if numigood==1:
+
+                ilist.append({'Source_Name':source_name,'Opt_id':goods[0][0],'Numclass':numseen,'Quality':goods[0][1]})
+
+            elif numigood>1:
+                for thing in goods:
+                    multlist.append({'Source_Name':source_name,'Opt_id':thing[0],'Numclass':numseen,'Quality':thing[1]})
+                subjs_mult.append(source_name)
+
+            else:
+                subjs_noids.append(source_name)
+
+        else:
+    # No IDs
+            subjs_noids.append(source_name)
+
+        i=i+1
+
+    with open('out.pickle','w') as f:
+        pickle.dump([badassocs,
+                     subjs_noassoc,
+                     subjs_noids,
+                     alist,
+                     tlist,
+                     ilist,
+                     multlist,
+                     multsets,
+                     subjs_mult,
+                     artlist,
+                     blendlist,
+                     zoomlist,
+                     brokenlist,
+                     missinglist,
+                     finalcat,
+                     assoccat,
+                     compcat,
+                     classa,
+                     sources_unique,
+                     classid,
+                     catalogued,
+                     overlap,
+                     seendict,
+                     fluxdict,
+                     sizedict,
+                     mindict,
+                     padict,
+                     coordsdict,
+                     ocoordsdict,
+                     probdict,
+                     optiddict,
+                     assocdict,
+                     badclickdict,
+                     new_subs_unique,
+                     nonexist],f)
+
+else:
+    print('Loading pre-existing pickle')
+    with open('out.pickle','r') as f:
+        badassocs, subjs_noassoc, subjs_noids, alist, tlist, ilist, multlist, multsets, subjs_mult, artlist, blendlist, zoomlist, brokenlist, missinglist, finalcat, assoccat, compcat, classa, sources_unique, classid, catalogued, overlap, seendict, fluxdict, sizedict, mindict, padict, coordsdict, ocoordsdict, probdict, optiddict, assocdict, badclickdict, new_subs_unique, nonexist=pickle.load(f)    
+    
 # Sort associated source_names into sets an individual clicker has associated together
 
-print('Creating sets')
+if not os.path.isfile('listofsets.pickle'):
 
-classinassocs=set(classa)
+    print('Creating sets')
 
-listofsets=[]
-for classed in classinassocs:
-    
-    # Define a set of associated sources and add to list of sets
+    classinassocs=set(classa)
 
-    newset=[]
-    allassocs=filter(lambda x: x['Class'] == classed, alist)
+    listofsets=[]
+    for i,classed in enumerate(classinassocs):
+        print('Set: %i of %i' % (i,len(classinassocs)))
+
+        # Define a set of associated sources and add to list of sets
+
+        newset=[]
+        allassocs=filter(lambda x: x['Class'] == classed, alist)
 
 
-    for thing in allassocs:
-        if thing['Source_Name'] in newset:
-            newset.append(thing['Assoc_Name'])
-        else:
-            newset.append(thing['Assoc_Name'])
-            newset.append(thing['Source_Name'])
+        for thing in allassocs:
+            if thing['Source_Name'] in newset:
+                newset.append(thing['Assoc_Name'])
+            else:
+                newset.append(thing['Assoc_Name'])
+                newset.append(thing['Source_Name'])
 
-    listofsets.append(newset)
-    
+        listofsets.append(newset)
+    with open('listofsets.pickle','w') as f:
+        pickle.dump(listofsets,f)
+else:
+    with open('listofsets.pickle','r') as f:
+        listofsets=pickle.load(f)
 
 # Create a dictionary that lists which additional subjects an associated subject is seen with.
 # The dictionary key is the subject, the value lists all other subjects whose "numseen" value should be
@@ -537,7 +589,8 @@ print('Creating associated sources')
 
 seenwithdict=defaultdict(list)
 
-for assocsrc in alist:
+for i,assocsrc in enumerate(alist):
+    if (i%1000) == 0: print('Assoc: %i of %i' % (i,len(alist)))
     if assocsrc['Assoc_Name'] in new_subs_unique:
         sourcesubj=assocsrc['Source_Name']
         asubj=assocsrc['Assoc_Name']
@@ -547,10 +600,14 @@ for assocsrc in alist:
 # For each main-subject source_name, consider all sets that include it and loop round
 # to tally the votes for that set
 
+print('Tallying votes')
+
 allgoodsets=[]
 setscore=[]
+toobig=[]
 
-for subj in new_subs_unique:
+for i,subj in enumerate(new_subs_unique):
+    print('Tally: %i of %i' % (i,len(new_subs_unique)))
 
     goodsets=[]
     subjseen=seendict.get(subj)
@@ -570,74 +627,84 @@ for subj in new_subs_unique:
  
     flat_list = [item for sublist in subjset for item in sublist]
     uniqelems=set(flat_list)
+    print('uniqelems are',uniqelems)
     nelem=len(uniqelems)
-    
-    # Consider all combinations of the unique sources anyone has suggested may be associated
 
-    c = [comb for i in range(1,nelem) for comb in combinations(uniqelems, i + 1)]
-
-    newc=set(c)
-
-    # Loop through all unique combinations to tally the votes for that combination
-    
-    for tesc in newc:
-        ts=set(tesc)
-        vote=0
-        for slist in subjset:
-
-            # This combination gets a vote for every listed set of which it is a subset
-            # because we want to catch cases where clickers agree a common subset even
-            # if full set is not in agreement
-
-            if ts.issubset(slist):
-                
-                vote=vote+1
-
-        # Calculate the score for this possible combination
-                
-        score=float(vote)/float(subjseen)
-       
-        if score>0.667:
-            goodsets.append(ts)
-            setscore.append((ts,score))
-
-
-    left=[]
-
-    # Remove any good sets that are either a subset of a larger set, or that don't include the
-    # subject -- the latter should be tabulated elsewhere to avoid duplication
-
-    if len(goodsets)>1:
- 
-        rem=[]
-        for item in goodsets:
-            for otheritem in goodsets:
-                if item.issubset(otheritem) and len(item) < len(otheritem):
-                    rem.append(item)
-            if subj not in item:
-                rem.append(item)
-        for item in goodsets:
-            if item not in rem:
-                left.append(item)
+    if nelem>30:
+        print('Too many unique elements, cannot count votes!')
+        toobig.append(subj)
     else:
-        rem=[]
-        for item in goodsets:
-            if subj not in item:
-                rem.append(item)
-            else:
-                left.append(item)
-            
-        
-    numsets=len(left)
-    for item in left:
-        if item not in allgoodsets:
-            allgoodsets.append(item)
+    
+        # Consider all combinations of the unique sources anyone has suggested may be associated
+
+        for i in range(1,nelem):
+            # loop over all possible numbers of combinations
+
+            newc=set(combinations(uniqelems, i + 1))
+
+            print('subset of i =',i,'has length',len(newc))
+
+            # Loop through all unique combinations to tally the votes for that combination
+
+            for tesc in newc:
+                ts=set(tesc)
+                vote=0
+                for slist in subjset:
+
+                    # This combination gets a vote for every listed set of which it is a subset
+                    # because we want to catch cases where clickers agree a common subset even
+                    # if full set is not in agreement
+
+                    if ts.issubset(slist):
+
+                        vote=vote+1
+
+                # Calculate the score for this possible combination
+
+                score=float(vote)/float(subjseen)
+
+                if score>0.667:
+                    goodsets.append(ts)
+                    setscore.append((ts,score))
+
+
+        left=[]
+
+        # Remove any good sets that are either a subset of a larger set, or that don't include the
+        # subject -- the latter should be tabulated elsewhere to avoid duplication
+
+        if len(goodsets)>1:
+
+            rem=[]
+            for item in goodsets:
+                for otheritem in goodsets:
+                    if item.issubset(otheritem) and len(item) < len(otheritem):
+                        rem.append(item)
+                if subj not in item:
+                    rem.append(item)
+            for item in goodsets:
+                if item not in rem:
+                    left.append(item)
+        else:
+            rem=[]
+            for item in goodsets:
+                if subj not in item:
+                    rem.append(item)
+                else:
+                    left.append(item)
+
+
+        numsets=len(left)
+        for item in left:
+            if item not in allgoodsets:
+                allgoodsets.append(item)
 
 # The list "allgoodsets" should now contain the largest set with a score>2.0/3.0 containing each target source, where such a set exists. 
         
 ngsets=len(allgoodsets)
 
 print("Total number of associated sources is ",ngsets)
+print("Too big list is",toobig)
 
 # Now we need to generate the final list of sources, including optical IDs and replacing individual components with associated sets where appropriate 
 
@@ -727,7 +794,6 @@ for finalset in allgoodsets:
                             
         ramean=sum(ralist)/float(len(ralist))
         decmean=sum(declist)/float(len(declist))
-        print('badclicklist is',badclicklist)
         badclick=sum(badclicklist)
         ndists=[]
         for elem in coordslist:
@@ -783,6 +849,9 @@ for subj in new_subs_unique:
     
     catalogued.append(subj)
     apb,bpb,zpb,hpb,imb=probdict.get(subj)
+    if subj in toobig:
+        print('Forcing zoom to 1.0 for',subj)
+        zpb=1.0
         
     # Source is not in an associated source, so tabulate with its ID if it exists or none if it doesn't
 
