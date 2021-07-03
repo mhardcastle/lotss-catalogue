@@ -159,7 +159,10 @@ def parsefile(sourcename,ss,dir=''):
                 lc+=1
                 l=lines[lc]
                 ra,dec=[float(b) for b in l.split()]
-                ss.set_opt(sourcename,ra,dec)
+                if ra<=360 and dec<=90:
+                    ss.set_opt(sourcename,ra,dec)
+                else:
+                    ss.set_opt(sourcename,np.nan,np.nan)
                 lc+=1
             elif bits[1]=="Size":
                 ss.set_size(sourcename,float(lines[lc+1]))
@@ -179,6 +182,7 @@ class Source(object):
         self.cd=defaultdict(dict)
         self.sd=defaultdict(dict)
         self.zoomneeded=[]
+        self.zoomreasons=[]
         self.stage='Initialize'
 
     def set_stage(self,s):
@@ -266,7 +270,12 @@ class Source(object):
                     ncomp+=self.sd[k]['Children']
         return ncomp
 
-    def set_components(self,sourcename,componentlist):
+    def addzoom(self,sourcename,reason):
+        print('Adding',sourcename,'to zoom list for reason:',reason)
+        self.zoomneeded.append(sourcename)
+        self.zoomreasons.append(reason)
+    
+    def set_components(self,sourcename,componentlist,flag_removals=False):
         print('setting components of',sourcename,'to',componentlist)
         orphans=list(set(self.sd[sourcename]['Children'])-set(componentlist))
         self.sd[sourcename]['Children']=componentlist
@@ -275,14 +284,17 @@ class Source(object):
             if 'Parent' in self.cd[comp] and self.cd[comp]['Parent']!='':
                 oldparent=self.cd[comp]['Parent']
                 if oldparent!=sourcename: # parent has changed
+                    if flag_removals and oldparent!=comp:
+                        # must be a previous LGZ source
+                        self.addzoom(oldparent,'set_components parent changed')
                     if 'Children' not in self.sd[oldparent]:
                         print('Old parent source of component %s (%s) has no children!' % (comp, oldparent))
                         print(self.cd[comp])
-                        self.delete_source(oldparent,'Reallocated in zoom (orphan)')
+                        self.delete_source(oldparent,'Reallocated (orphan)')
                     else:
                         self.sd[oldparent]['Children'].remove(comp)
                         if self.sd[oldparent]['Children']==[]:
-                            self.delete_source(oldparent,'Reallocated in zoom')
+                            self.delete_source(oldparent,'Reallocated (no children)')
 
             self.cd[comp]['Parent']=sourcename
             #over-ride component deletion if a zoom file specifies it
@@ -337,6 +349,8 @@ class Source(object):
             pickle.dump(self.gd, f, pickle.HIGHEST_PROTOCOL)
         with open(filename+'-zoomneeded.pickle', 'wb') as f:
             pickle.dump(self.zoomneeded, f, pickle.HIGHEST_PROTOCOL)
+        with open(filename+'-zoomreasons.pickle', 'wb') as f:
+            pickle.dump(self.zoomreasons, f, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
     def load(filename,components=True,gaussians=True):
@@ -361,6 +375,9 @@ class Source(object):
         
         with open(filename+'-zoomneeded.pickle', 'rb') as f:
             s.zoomneeded=pickle.load(f)
+
+        with open(filename+'-zoomreasons.pickle', 'rb') as f:
+            s.zoomreasons=pickle.load(f)
         return s
 
 def warn_or_die(warn,s):
@@ -401,6 +418,7 @@ def make_structure(field,warn=False):
     preselect_dir=None
     blend_dirs=['blend']
     noid_files=[]
+    ridgeline='allhosts.fits'
     
     s=Source()
     
@@ -425,7 +443,7 @@ def make_structure(field,warn=False):
     for component in s.cd:
         s.promote_component(component)
         if s.cd[component]['Prefilter']==4:
-            s.zoomneeded.append(component)
+            s.addzoom(component,'Prefilter zoom required')
         if s.cd[component]['Prefilter']==5:
             artefacts.append(component)
 
@@ -442,6 +460,8 @@ def make_structure(field,warn=False):
         sname=r['Source_Name']
         s.create_source(sname,r) # will add to what's on record for
                                  # the source, if it already exists
+        if s.sd[sname]['Compoverlap']==1:
+            s.addzoom(sname,'Compoverlap set')
         if 'lr_ra_fin' in s.sd[sname]:
             s.sd[sname]['old_ra']=s.sd[sname]['lr_ra_fin']
             s.sd[sname]['old_dec']=s.sd[sname]['lr_dec_fin']
@@ -450,6 +470,10 @@ def make_structure(field,warn=False):
         s.sd[sname]['Children']=[]
         # Mark this source for LGZ assembly, which we'll do after TZI
         s.sd[sname]['LGZ_assembly_required']=True
+        # make a component table
+        source_comps=lgz_comps[lgz_comps['Source_Name']==sname]
+        s.set_components(sname,list(source_comps['Comp_Name']),flag_removals=True)
+        '''
     for r in lgz_comps:
         name=r['Comp_Name']
         sname=r['Source_Name']
@@ -460,6 +484,7 @@ def make_structure(field,warn=False):
         if r['Assoc']!=0:
             # remove sources that are now part of an association
             s.delete_source(name,'LGZ association',descend=False)
+        '''
 
     # Blends
     s.set_stage('Blend processing')
@@ -652,7 +677,7 @@ def make_structure(field,warn=False):
 
     s.set_stage('Too zoomed in')
 
-    g=glob.glob(lgz_dir+'/zoom/ILTJ*.txt')
+    g=sorted(glob.glob(lgz_dir+'/zoom/ILTJ*.txt'),key=os.path.getmtime)
     for f in g:
         print('Zoomfile',f)
         source=f.replace('.txt','').replace(lgz_dir+'/zoom/','')
@@ -672,7 +697,7 @@ def make_structure(field,warn=False):
     for name in sources:
         if 'Deleted' not in s.sd[name] and 'LGZ_assembly_required' in s.sd[name]:
             if len(s.sd[name]['Children'])==1 and s.sd[name]['Children'][0]==name:
-                print('Source',name,'marked as assembly required but has only one component')
+                #print('Source',name,'marked as assembly required but has only one component')
                 del s.sd[name]['LGZ_assembly_required']
                 continue # source is single component
             print('Need to assemble source',name,'from children',s.sd[name]['Children'])
@@ -691,7 +716,7 @@ def make_structure(field,warn=False):
                 continue
             if error:
                 warn_or_die(True,'Source is partial, needs zoom file fix')
-                s.zoomneeded.append(name)
+                s.addzoom(name,'Partial source in LGZ post-processing')
             clist=new_ct[cids]
             r=assemble_source(clist)
             if 'Manual_Size' in s.sd[name]:
@@ -706,7 +731,7 @@ def make_structure(field,warn=False):
 
             for key in s.sd[name]:
                 if key not in r:
-                    r[key]=s.sd[name][key]
+                    r[key]=s.sd[name][key] # includes copying children
             for comp in r['Children']:
                 s.cd[comp]['Parent']=sname
 
@@ -769,7 +794,7 @@ def make_structure(field,warn=False):
                         else:
                             name=sname
                         print('Adding',name,'to zoom list')
-                        s.zoomneeded.append(name)
+                        s.addzoom(name,'NoID file required zoom')
                     else:
                         s.sd[sname]['NoID']=3
                 elif g==7 or g==9:
@@ -780,9 +805,25 @@ def make_structure(field,warn=False):
                             else:
                                 name=sname
                             print('Adding',name,'to zoom list')
-                            s.zoomneeded.append(name)
+                            s.zoomneeded.append(name,'NoID file required zoom (2)')
                     else:
                         s.sd[sname]['NoID']=3
+
+    s.set_stage('Ridge line ingest')
+    if ridgeline is not None and os.path.isfile(ridgeline):
+        tr=Table.read(ridgeline)
+        for r in tr:
+            if r['LRMagBoth']<1.0:
+                continue
+            name=r['Source_Name']
+            if name not in s.sd:
+                print('Warning: source %s in ridgeline file does not exist' % name)
+            else:
+                if 'optRA' not in s.sd[name] or np.isnan(s.sd[name]['optRA']) or 'Position_from' not in s.sd[name] or s.sd[name]['Position_from']=='LR':
+                    s.sd[name]['optRA']=r['optRA_RLC']
+                    s.sd[name]['optDec']=r['optDEC_RLC']
+                    s.sd[name]['Position_from']='Ridge line code'
+                    s.sd[name]['lr_fin']=r['LRMagBoth']
 
     s.set_stage('Opt ID overlap check')
     names=[]
@@ -822,7 +863,7 @@ def make_structure(field,warn=False):
                     print('*** problem -- source',sname,'with zoom file',s.sd[sname]['Zoomfile'],'has duplicate ID')
             count+=sm
     print('Total number of problem duplicates is',count)
-
+    
     s.set_stage('Check rescue file')
     if os.path.isfile('rescue.txt'):
         lines=open('rescue.txt').readlines()
@@ -834,13 +875,16 @@ def make_structure(field,warn=False):
                 if cname not in s.cd:
                     raise RuntimeError('Failed to find rescued component')
                 sname=s.cd[cname]['Parent']
-                if 'Zoomfile' not in s.sd[sname]:
-                    name=sname
-                    if 'LGZ' in s.sd[sname]['Created']:
-                        if 'Renamed_from' in s.sd[sname]:
-                            name=s.sd[sname]['Renamed_from']
-                    print('Adding',name,'(component',cname,') to zoom list')
-                    s.zoomneeded.append(name)
+                if sname not in s.sd:
+                    print('Rescue source',sname,'not in source list')
+                else:
+                    if 'Zoomfile' not in s.sd[sname]:
+                        name=sname
+                        if 'LGZ' in s.sd[sname]['Created']:
+                            if 'Renamed_from' in s.sd[sname]:
+                                name=s.sd[sname]['Renamed_from']
+                        print('Adding',name,'(component',cname,') to zoom list')
+                        s.addzoom(name,'Rescue file')
 
     s.set_stage('Assoc check')
     # At this point Assoc should be correct except for sources where
@@ -922,6 +966,9 @@ def sanity_check(s):
                             print('(blend file was %s)' % s.sd[source]['Blend_file'])
                         print('Component created by',s.cd[component]['Created'],'and deleted for reason',s.cd[component]['Deleted'])
                         errors+=1
+                    elif s.cd[component]['Parent']!=source:
+                        print('Source',source,'has a child',component,'that reports a different parent',s.cd[component]['Parent'])
+                        print('Source created by',s.sd[source]['Created'],'with children',s.sd[source]['Children']) 
                     else:
                         s.cd[component]['Checked']=True
                         for gaussian in s.cd[component]['Children']:
@@ -974,15 +1021,27 @@ if __name__=='__main__':
     
     sanity_check(s)
 
-    version='v0.3'
+    # find existing version
+    g=sorted(glob.glob('sources-v*.fits'))
+    if len(g)>0:
+        infile=g[-1]
+        version=infile.replace('sources-','').replace('.fits','')
+    else:
+        version='v0.1'
+
+    # version specified on command line over-rides this
+    if len(sys.argv)>1:
+        for a in sys.argv[1:]:
+            if a[0]=='v':
+                version=a
     
     print('Constructing output table')
-    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',np.nan),('E_DEC',np.nan),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('NoID',0),('lr_fin',np.nan),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
+    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',np.nan),('E_DEC',np.nan),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('NoID',0),('lr_fin',np.nan),('UID_L',""),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
     write_table('sources-'+version+'.fits',s.sd,columns)
 
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Deblended_from',""),('Parent',None)]
     rename=[('Source_Name','Component_Name'),('Parent','Parent_Source')]
     write_table('components-'+version+'.fits',s.cd,columns,rename=rename)
 
-    if len(sys.argv)>1 and sys.argv[1]=='save':
+    if len(sys.argv)>1 and 'save' in sys.argv:
         s.save('structure-'+version)

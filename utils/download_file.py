@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # Generic file download with retry and check for length
 
+from __future__ import print_function
 import requests
 import os
 from time import sleep,time
@@ -17,7 +18,7 @@ def download_file(url,filename):
         connected=False
         while not connected:
             try:
-                response = requests.get(url, stream=True,verify=False,timeout=60)
+                response = requests.get(url, stream=True,timeout=60)
                 if response.status_code>=502 and response.status_code<=504:
                     print('Code %i -- retrying in 10 seconds!' % response.status_code)
                     sleep(10)
@@ -46,9 +47,10 @@ def download_file(url,filename):
                 print('Download successful, %i of %i bytes received in %.2f seconds (%.2f MB/s)' % (fsize, esize, dt, fsize/(dt*1024*1024)))
                 downloaded=True
 
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, requests.exceptions.ChunkedEncodingError):
             print('Connection error! sleeping 30 seconds before retry...')
             sleep(30) # back to the connection
 
 
     del response
+    return downloaded

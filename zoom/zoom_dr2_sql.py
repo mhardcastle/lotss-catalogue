@@ -148,13 +148,15 @@ if __name__=='__main__':
     dir=os.getcwd()
     field=os.path.basename(dir)
     print('field is',field)
-    table=field
+    table=field.replace('-','_')
     sql=tzi_sql(table)
     
     if not os.path.isdir('zoom'):
         os.mkdir('zoom') # store text files in here
 
-    s=Source.load('structure-v0.2')
+    g=sorted(glob.glob('structure*-sources.pickle'))
+    print('Using structure',g[-1])
+    s=Source.load(g[-1].replace('-sources.pickle',''))
     #    s.save('structure.pickle')
 
     print('Reading files')
@@ -356,7 +358,7 @@ if __name__=='__main__':
             while not(stop):
                 print('Source %s, %i sources remaining' % (sourcename,sql.get_remaining()))
                 #print('Source number %i out of %i' % (sourcenumber, len(sourcelist)))
-                print('(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, save (f)its, go to (n)ext, (Z)oom out, \n   (i)nspect, (T)oggle galaxy overlay, change opt (I)mage,\n   (s)ave and continue or save and (q)uit?',end=' ')
+                print('(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, save (f)its, go to (n)ext, (Z)oom out, \n   (i)nspect, (T)oggle galaxy overlay, change opt (I)mage,\n   (F)avourite, (s)ave and continue or save and (q)uit?',end=' ')
                 command=raw_input()
                 if command=='s' or command=='q':
                     stop=True
@@ -378,6 +380,10 @@ if __name__=='__main__':
                     lhdu.writeto(sourcename+'.fits',overwrite=True)
                     print('Saved as',sourcename+'.fits')
                     subprocess.Popen(['/soft/bin/ds9',sourcename+'.fits'])
+                elif command=='F':
+                    with open(os.environ['HOME']+'/favourites.txt','a') as outfile:
+                        print('Adding',sourcename,'to favourites')
+                        outfile.write(sourcename+'\n')
                 elif 'Z' in command:
                     zi=command.find('Z')
                     try:

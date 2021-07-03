@@ -2,13 +2,13 @@ from astropy.table import Table
 import MySQLdb as mdb
 import MySQLdb.cursors as mdbcursors
 
-table='13h60fix'
+table='13h40'
 
 con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorclass=mdbcursors.DictCursor)
 
 cur = con.cursor()
 
-t=Table.read('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_12_fix.fits')
+t=Table.read('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_3.fits')
 
 command='select object,classification from %s' % (table)
 cur.execute(command)
@@ -30,10 +30,10 @@ print classifications
     
 t['Prefilter']=classifications
 
-t.write('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_12_fix_classified.fits')
+t.write('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_3_classified.fits')
 
 tf=t[t['Prefilter']==1]
-tf.write('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_selection_12_fix_tolgz.fits')
+tf.write('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_3_tolgz.fits')
 
 con.close()
 

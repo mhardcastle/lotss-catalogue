@@ -28,15 +28,16 @@ def get_next():
     
 ##### edit the following lines to choose the sample and possible options
 
-table='13h40'
-dir='/beegfs/lofar/mjh/flowchart-endpoints-dr2/%s-prefilter' % table
+dir='/beegfs/lofar/mjh/rgz/Spring-40-45/postfilter'
+bits=dir.split('/')
+table='post_'+bits[-2].replace('-','_') # e.g. post-Fall
 os.chdir(dir)
 
-g=glob.glob('LoTSS*fits')
+g=glob.glob('*.fits')
 assert(len(g)==1)
 sample=g[0]
 
-options=('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend')
+options=('OK', 'Needs inspection','Missing ID, to re-check','Artefact')
 user=os.getenv('USER')
 
 ##### don't change anything else
@@ -44,7 +45,7 @@ user=os.getenv('USER')
 con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorclass=mdbcursors.DictCursor, autocommit=True)
 cur = con.cursor()
 
-plt.figure(figsize=(10,5),facecolor='black')
+plt.figure(figsize=(8,8),facecolor='black')
 
 # get my old results if any
 
@@ -81,7 +82,7 @@ while True:
     stdscr.timeout(10)
     stdscr.clear()
 
-    f=name+'_j.png'
+    f=name+'_S.png'
     im=img.imread(f)
     plt.clf()
     plt.imshow(im)
@@ -102,14 +103,10 @@ while True:
         desc='Unclassified'
     else:
         desc=options[classification-1]
-    instructions=[str(name),'LR '+str(r['LR']),'(%i done, %i to do)' % (i, remaining),desc,'']
+    instructions=[str(name),'Origin '+r['Created'],'Position from '+r['Position_from'],'(%i done, %i to do)' % (i, remaining),desc,'']
     instructions+=['(%i) %s' % (j+1,s) for j,s in enumerate(options)]
     instructions+=['','LEFT: back one','RIGHT: forward one', 'Q: quit','',"Your choice:"]
     attrs=[curses.color_pair(1)]*4+[None,]*(len(instructions)-4)
-    lrvalid=True
-    if np.isnan(r['LR']) or r['LR']==0.0:
-        attrs[6]=curses.A_REVERSE
-        lrvalid=False
     for j in range(len(instructions)):
         l=instructions[j]
         a=attrs[j]
@@ -128,9 +125,6 @@ while True:
             quit=True
         elif key>ord('0') and key<=ord('9'):
             res=key-ord('0')
-            if res==2 and lrvalid==False:
-                valid=False
-                continue
             if i==len(results):
                 results.append({'object':name,'classification':res})
             else:

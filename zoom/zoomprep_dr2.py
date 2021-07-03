@@ -11,8 +11,39 @@ import MySQLdb as mdb
 import MySQLdb.cursors as mdbcursors
 import os
 from download_image_files import LofarMaps,get_legacy,get_first,get_wise
+from find_wise import WISE
 
 from make_catalogue import Source,make_structure,generate_table
+
+class prefilter_sql(object):
+    def __init__(self,table):
+        self.con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorclass=mdbcursors.DictCursor)
+        self.cur = self.con.cursor()
+        self.table=table
+
+    def get_objects(self,classification):
+        command='select object from %s where classification=%i' % (self.table,classification)
+        print('Running',command)
+        try:
+            self.cur.execute(command)
+            result=self.cur.fetchall()
+        except mdb.ProgrammingError as p:
+            print(p)
+            result=None
+        if result is None:
+            return result
+        olist=[]
+        for r in result:
+            olist.append(r['object'])
+        return olist
+        
+    def close(self):
+        self.cur.close()
+        self.con.close()
+            
+    def __exit__(self):
+        close(self)
+        
 
 class tzi_sql(object):
     def __init__(self,table):
@@ -64,13 +95,20 @@ class tzi_sql(object):
         res=self.fetchall()
         remaining=int(res[0]['count(object)'])
         return remaining
+
+    def close(self):
+        self.cur.close()
+        self.con.close()
             
 if __name__=='__main__':
 
-    table='Fall'
+    field=os.getcwd().split('/')[-1].replace('-','_')
+    table=field
     sql=tzi_sql(table)
 
-    s=Source.load('structure-v0.2',gaussians=False,components=False)
+    fname=sorted(glob.glob('structure-v*-sources.pickle'))[-1].replace('-sources.pickle','')
+    
+    s=Source.load(fname,gaussians=False,components=False)
 
     os.chdir('zoom')
     sourcelist=[]
@@ -96,13 +134,40 @@ if __name__=='__main__':
             else:
                 sourcelist=[l.rstrip() for l in open(sourcename).readlines()]
 
-    sourcelist+=s.zoomneeded
+    print('Starting from a source list of length',len(sourcelist))
+                
+    # zoomneeded sources may have been renamed
+    print('Processing zoomneeded list of length',len(s.zoomneeded))
+    for source in s.zoomneeded:
+        if source in s.sd:
+            sourcelist.append(source)
+        else:
+            for ts in s.sd:
+                if 'Renamed_from' in s.sd[ts] and s.sd[ts]['Renamed_from']==source:
+                    sourcelist.append(ts)
+                    break
+            else:
+                print('Zoomneeded source',source,'does not exist')
+
+    table='post_'+field.replace('-','_')
+    print('Extracting required sources from postfilter table',table)
+
+    postf=prefilter_sql(table)
+    postfilter=postf.get_objects(2)
+                
+    if postfilter is not None:
+        print('Adding',len(postfilter),'sources')
+        sourcelist+=postfilter
+    else:
+        print('No postfilter, hope this is what you want')
+    
     sourcelist=list(set(sourcelist))
     print('Processing',len(sourcelist),'sources')
 
     # now download any images we need!
     wd=os.getcwd() # the zoom directory
     lm=LofarMaps(stay_in_imagedir=True)
+    w=WISE()
     
     # now work in downloads dir
     os.chdir('downloads')
@@ -110,6 +175,13 @@ if __name__=='__main__':
     for sourcename in sourcelist:
         record=sql.get_object(sourcename,create=True)
         if 'legacyfile' in record and record['legacyfile'] is not None:
+            continue
+        if sourcename not in s.sd:
+            print('Skipping source',sourcename,'with no record')
+            continue
+        if 'RA' not in s.sd[sourcename]:
+            print('Skipping source',sourcename,'with no RA in record: record follows')
+            print(s.sd[sourcename])
             continue
         ra=s.sd[sourcename]['RA']
         dec=s.sd[sourcename]['DEC']
@@ -122,7 +194,10 @@ if __name__=='__main__':
                 record['legacyfile']=None
             else:
                 raise
-        record['wisefile']=get_wise(ra,dec,1)
+        wisename=w.find_pos(ra,dec)
+        if wisename is None:
+            wisename=get_wise(ra,dec,1)
+        record['wisefile']=wisename
         sql.set_object(sourcename,record)
 
     # back to zoom dir

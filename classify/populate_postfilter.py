@@ -4,10 +4,11 @@ import MySQLdb.cursors as mdbcursors
 import os
 import glob
 
-table='13h40'
+dir='/beegfs/lofar/mjh/rgz/Spring-40-45/postfilter'
+bits=dir.split('/')
+table='post_'+bits[-2].replace('-','_') # e.g. post-Fall
 
-os.chdir('/beegfs/lofar/mjh/flowchart-endpoints-dr2/%s-prefilter' % table)
-
+os.chdir(dir)
 
 con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorclass=mdbcursors.DictCursor)
 
@@ -18,7 +19,7 @@ g=glob.glob('*.fits')
 assert(len(g)==1)
 t=Table.read(g[0])
 for r in t:
-    if os.path.isfile(r['Source_Name']+'_j.png'):
+    if os.path.isfile(r['Source_Name']+'_S.png'):
         command='insert into %s(object) values ("%s")' % (table,r['Source_Name'])
         cur.execute(command)
 

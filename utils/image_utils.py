@@ -4,7 +4,8 @@ import glob
 
 def find_bbox(t,scale=3600.0):
     # given a table t find the bounding box of the ellipses for the regions
-
+    if len(t)==0:
+        raise RuntimeError('Zero-length table supplied')
     boxes=[]
     for r in t:
         a=r['Maj']/scale
@@ -17,8 +18,12 @@ def find_bbox(t,scale=3600.0):
                       r['DEC']-dy, r['DEC']+dy])
 
     boxes=np.array(boxes)
-
-    minra=np.nanmin(boxes[:,0])
+    try:
+        minra=np.nanmin(boxes[:,0])
+    except:
+        print boxes
+        raise
+    
     maxra=np.nanmax(boxes[:,1])
     mindec=np.nanmin(boxes[:,2])
     maxdec=np.nanmax(boxes[:,3])

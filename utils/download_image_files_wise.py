@@ -5,11 +5,12 @@ import sys
 import os
 
 if __name__=='__main__':
+    w=WISE()
     t=Table.read(sys.argv[1])
-    #if 'ra' in t.colnames:
-    #    t['ra'].name='RA'
-    #if 'dec' in t.colnames:
-    #    t['dec'].name='DEC'
+    if 'ra' in t.colnames:
+        t['ra'].name='RA'
+    if 'dec' in t.colnames:
+        t['dec'].name='DEC'
     outfilename=sys.argv[1].replace('.fits','-list.txt')
     if not(os.path.isfile(outfilename)):
         startpoint=0
@@ -19,7 +20,7 @@ if __name__=='__main__':
         outfile=open(outfilename,'a')
 
     lm=LofarMaps(stay_in_imagedir=True)
-    w=WISE()
+    
     # now work in downloads dir
     os.chdir('downloads')
 
@@ -27,10 +28,12 @@ if __name__=='__main__':
         print r['Source_Name']
         print r['RA'],r['DEC']
         lofarname=lm.find(r['RA'],r['DEC'])
-        legacyname=get_legacy(r['RA'],r['DEC'],bands='zrg')
+        #legacyname=get_legacy(r['RA'],r['DEC'],bands='zrg')
         wisename=w.find_pos(r['RA'],r['DEC'])
+        if wisename is None:
+            wisename=get_wise(r['RA'],r['DEC'],1)
         #firstname=get_first(r['RA'],r['DEC'])
-        print >>outfile,r['Source_Name'],lofarname,legacyname,wisename#,firstname
+        print >>outfile,r['Source_Name'],lofarname,wisename#,firstname
         outfile.flush()
     outfile.close()
 

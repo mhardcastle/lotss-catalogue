@@ -32,7 +32,7 @@ if __name__=='__main__':
     tname=sys.argv[1]
     t=Table.read(tname)
     print 'Reading data...'
-    ot=Table.read('/beegfs/lofar/deepfields/lgz/'+field+'/components-v0.7.fits')
+    ot=Table.read('/beegfs/lofar/deepfields/lgz/'+field+'/components-v1.0.fits')
     if field=='en1':
         gals=Table.read('/beegfs/lofar/deepfields/ELAIS_N1_optical/catalogues/EN1_merged_pos.fits')
         lofarfile=fits.open('/beegfs/lofar/deepfields/ELAIS-N1_LOFAR/image_full_ampphase_di_m.NS_shift.int.facetRestored.fits')

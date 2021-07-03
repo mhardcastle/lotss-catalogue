@@ -140,6 +140,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         print lofarmax/drlimit,rms_use*lofarlevel
         minlevel=max([lofarmax/drlimit,rms_use*lofarlevel])
         print 'Using minimum level',minlevel
+        if peak is not None and peak/minlevel<10:
+            lofarmax=np.nanmax(lofarhdu[0].data) # revert
         levels=minlevel*2.0**np.linspace(0,14,30)
 
     rgbname=None
