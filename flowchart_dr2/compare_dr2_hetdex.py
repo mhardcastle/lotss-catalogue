@@ -12,6 +12,8 @@ from astropy.table import Table, Column, join, vstack
 import astropy.coordinates as ac
 import astropy.units as u
 
+from utils import plotting as pp
+
 #from lofar_source_sorter_dr2 import Mask, Masks_disjoint_complete
 
 
@@ -29,12 +31,60 @@ path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
 lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.hdf5'
 
 
+dr1cat = Table.read('/data2/wwilliams/projects/lofar_surveys/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_optical_f_v1.2b_restframe.fits')
+dr1compcat = Table.read('/data2/wwilliams/projects/lofar_surveys/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_v1.2.comp.fits')
+
 lofarcat = Table.read(lofarcat_file_srt)
 
 lofarcat.add_column(Column(name='hetdex_field',data=np.zeros(len(lofarcat))))
 for field in hetdex_fields:
     lofarcat['hetdex_field'] = lofarcat['hetdex_field'] + (lofarcat['Mosaic_ID'] == field)
 
+lofarcat = lofarcat[lofarcat['hetdex_field']>0]
+
+
+lofarcat.write(path+'LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.hetdex.fits', overwrite=True)
+
+size_large = 15.           # in arcsec
+separation1 = 45.          # in arcsec
+size_huge = 25.            # in arcsec
+#separation2 = 30.          # in arcsec
+fluxcut = 8.               # in mJy
+fluxcut2 = 4.   #float(sys.argv[3])
+
+
+
+mLargeFaint_dr1 = (dr1compcat['Total_flux'] < fluxcut2 ) & (dr1compcat['Maj'] > size_large)
+mLargeFaint_dr2 = (lofarcat['Total_flux'] < fluxcut2 ) & (lofarcat['Maj'] > size_large)
+dr1compcat = dr1compcat[mLargeFaint_dr1]
+lofarcat = lofarcat[mLargeFaint_dr2]
+
+c = ac.SkyCoord(lofarcat['RA'],lofarcat['DEC'])
+cdr1 = ac.SkyCoord(dr1compcat['RA'],dr1compcat['DEC'])
+idx, sep,_ = c.match_to_catalog_sky(cdr1)
+
+#matched = sep < 0.5*lofarcat['Maj']
+matched = sep < 12.*u.arcsec
+
+mlofarcat = lofarcat[matched]
+mdr1compcat = dr1compcat[idx[matched]]
+
+
+f,ax = pp.paper_single_ax()
+ax.scatter(mlofarcat['Total_flux'], mdr1compcat['Total_flux'],alpha=0.2)
+#ax.loglog()
+pp.set_attrib(ax,xlabel='DR2 flux (mJy)',ylabel='DR1 flux (mJy)')
+
+f,ax = pp.paper_single_ax()
+ax.scatter(mlofarcat['Maj'], mdr1compcat['Maj'],alpha=0.2)
+#ax.loglog()
+pp.set_attrib(ax,xlabel='DR2 size (arcsec)',ylabel='DR1 size (arcsec)')
+
+
+
+dr1compcat['Component_Name']
+
+sys.exit()
 for priority in ['hetdex','hetdex_missing','last','1','2','3']:
     sel_file = path+'lgz_selection_sep9/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_{i}.fits'.format(i=priority)
     if priority in ['1' , '2' , '1a', '3']:

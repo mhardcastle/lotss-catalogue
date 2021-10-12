@@ -13,10 +13,13 @@ if h not in  ['0h','13h']:
     sys.exit(1)
     
     
-if h =='0h':
-    tables = ['0h']
-elif h =='13h':
-    tables =  ['13h60', '13h60b','8h','13h60fix']
+#if h =='0h':
+    #tables = ['0h']
+#elif h =='13h':
+    #tables =  ['13h60', '13h60b','8h','13h60fix','13h40']
+
+tables = ['0h', '13h40', '13h60', '13h60b', '13h60fix', '8h', 'post_Fall', 'post_Spring_40_45', 'post_Spring_60_65', 'post_Winter']
+
 
 
 con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorclass=mdbcursors.DictCursor)
