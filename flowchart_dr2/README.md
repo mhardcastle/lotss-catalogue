@@ -51,7 +51,7 @@ Operates on the presorted catalogue: LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5
 
 For 13hr:
 * WEAVE_priority1 - RA>=120 & RA<=240 & DEC>=59 & DEC<=65.5
-* WEAVE_priority1a - RA>=120 & RA<=240 & DEC>=60 & DEC<=65
+* WEAVE_priority1a - RA>=120 & RA<=240 & DEC>=60 & DEC<=65 (was the original too small area)
 * WEAVE_priority2 - RA>=110 & RA<=135 & DEC>= 26 & DEC<=41
 * WEAVE_priority3 - DEC>= 39.8 & DEC<=46.05 & ~WEAVE_priority2
 
@@ -123,7 +123,10 @@ ML_flag - flag indicating output of ML classification for identification
 ### `lofar_source_sorter.py`
 requires pygraphviz and graphviz to plot the flowchart
 
-function `make_sample` can be used to generate a random subsample of a given mask, to be used in making cutout images for inspection with code from lgz_create
+Contains the `Mask` class which stores the boolean mask and associated information necessary for the flowchart (parent, children, colour, label)
+* function `make_sample` can be used to generate a random subsample of a given mask, to be used in making cutout images for inspection with code from lgz_create
+* function `submask` will make a child of the current instance applying a new mask (join masks with AND)
+* the flowchart is built by defining an initial mask, and subsequent submasks for each flowchart endpoint all stored in a list (masterlist)
 
 Usage is : python lofar_source_sorter_dr2.py field_code step_number (weave_priority)
 * weave_priority is not needed for step 1
