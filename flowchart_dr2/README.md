@@ -125,11 +125,14 @@ requires pygraphviz and graphviz to plot the flowchart
 
 function `make_sample` can be used to generate a random subsample of a given mask, to be used in making cutout images for inspection with code from lgz_create
 
-Usage is : python lofar_source_sorter_dr2.py field_code step_number weave_priority
+Usage is : python lofar_source_sorter_dr2.py field_code step_number (weave_priority)
+* weave_priority is not needed for step 1
+
 Inputs step N+1 requires the output from step N, i.e.
 * step1: LoTSS_DR2_{version}.srl_{h}.lr-full.presort.hdf5
 * step2: LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1_flux{ff:.0f}.hdf5
 * step3: LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux{ff:.0f}.hdf5
+
 
 Hardcoded values:
 *    size_large = 15.           # in arcsec
@@ -137,6 +140,9 @@ Hardcoded values:
 *    size_huge = 25.            # in arcsec
 *    fluxcut = 8.               # in mJy
 *    fluxcut2 = 4.              # in mJy
+
+Output flowchart images in pdf:
+flow_13h_v100_step{step}_s15_nn45_flux4_weavepri{weavepri}.pdf
 
 ### `handle_m_sources_dr2.py`
 requires pygraphviz and graphviz to plot the flowchart
@@ -152,7 +158,9 @@ Hardcoded values:
 *   separation1 = 45.  # in arcsec
 *   size_huge = 25.    # in arcsec
 *   fluxcut2 = 4.      # in mJy
-   
+
+Output flowchart image as pdf:
+flow_13h_v100_step{step}_s15_nn45_msources_{mode}_flux4.pdf
 
 # flags
 
