@@ -131,7 +131,6 @@ Inputs step N+1 requires the output from step N, i.e.
 * step2: LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1_flux{ff:.0f}.hdf5
 * step3: LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux{ff:.0f}.hdf5
 
-
 Hardcoded values:
 *    size_large = 15.           # in arcsec
 *    separation1 = 45.          # in arcsec
@@ -148,60 +147,58 @@ field_code is one of [0, 13]
 step_number should be 1 (2 is leftover from DR1)
 mode is one of  [all, isol, nonisol, isol-faint, nonisol-faint] for doing all, isolated, non-isolated, faint isolated or faint non-isolated Msources.
 
-
-
 Hardcoded values:
-*     size_large = 15. # in arcsec
-*    separation1 = 45. # in arcsec
-*    size_huge = 25.  # in arcsec
-*   fluxcut2 = 4.  #mJy
+*   size_large = 15.   # in arcsec
+*   separation1 = 45.  # in arcsec
+*   size_huge = 25.    # in arcsec
+*   fluxcut2 = 4.      # in mJy
    
 
 # flags
 
 msource_flag1 - set for multiple Gaussian sources flags msource_flag1
-  0 - no match
-  1 - accept ML of the source
-  2 - accept ML of the gaussian with highest ML
-  3 - deblend and accept both gaussians
-  4 - deblend workflow
-  5 - LOFAR galaxy zoo 
-  6 - visual check 
+*  0 - no match
+*  1 - accept ML of the source
+*  2 - accept ML of the gaussian with highest ML
+*  3 - deblend and accept both gaussians
+*  4 - deblend workflow
+*  5 - LOFAR galaxy zoo 
+*  6 - visual check 
 
-FC_flagN - flowchart endpoint  for step N
+FC_flagN - int flowchart endpoint  for step N
 
 ID_flag
-  -99 not set
-  -1 artefact or no priority set
-  0 - no id
-  1 - LR id or no id
-  2 - large optical galaxy
-  3 - LGZ
-  4 - visual id / prefilter
-  5 - tbd
-  6 - deblend
-  7 - too zoomed in after prefilter
-  8 - Uncatalogued host after prefilter
+*  -99 not set
+*  -1 artefact or no priority set
+*  0 - no id
+*  1 - LR id or no id
+*  2 - large optical galaxy
+*  3 - LGZ
+*  4 - visual id / prefilter
+*  5 - tbd
+*  6 - deblend
+*  7 - too zoomed in after prefilter
+*  8 - Uncatalogued host after prefilter
 
 LGZ_flag
-  1 - direct selection - large and bright
-  2 - direct selection - flowchart others
-  3 - direct selection - msource flowchart
-  4 - prefilter lgz
-  5 - prefilter deblend
-  6 - prefilter too zoomed in
+*  1 - direct selection - large and bright
+*  2 - direct selection - flowchart others
+*  3 - direct selection - msource flowchart
+*  4 - prefilter lgz
+*  5 - prefilter deblend
+*  6 - prefilter too zoomed in
  
 LR_flag
-  0 - no LR id
-  1 - has LR id
-  2 - has LR gaus id
+*  0 - no LR id
+*  1 - has LR id
+*  2 - has LR gaus id
 
 Prefilter
-  0 - Send to LGZ
-  1 - Accept ML match
-  2 - No good match
-  3 - Too zoomed in
-  4 - Artefact
-  5 - Uncatalogued host
-  6 - Blend
+*  0 - Send to LGZ
+*  1 - Accept ML match
+*  2 - No good match
+*  3 - Too zoomed in
+*  4 - Artefact
+*  5 - Uncatalogued host
+*  6 - Blend
 
