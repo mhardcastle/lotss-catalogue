@@ -1,31 +1,44 @@
 # flowchart_dr2
-Various scripts for the LOFAR source classification decision tree including merging catalogues from ML and LGZ outputs. Used for DR2 catalogues
+Various scripts for the LOFAR source classification decision tree including merging catalogues from ML and LGZ outputs. Used for DR2 catalogues.
+
+requires pygraphviz and graphviz to plot the flowchart
 
 Inputs:
 * LoTSS_DR2_v100.srl_{h}.lr-full.fits -- PyDBSF catalogue including ML output
 * LoTSS_DR2_v100.gaus_{h}.lr-full.fits -- PyBDSF Gaussian component catalogue including ML output
 
 # steps 
-match_2masx.py
-set_weave_priorities.py 0
-add_gaus_info.py 0 
-get_nearest_neighbours.py 0 
-get_ml_flags.py 0 
-lofar_source_sorter_dr2.py 0 1
-handle_m_sources_dr2.py 0 1 all
-lofar_source_sorter_dr2.py 0 2 all
-extract_prefilter_out.py 0  (run on lofar and copy over output...
-scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_0h.prefilter_outputs.fits . )
-get_prefilter_flags.py 0
-lofar_source_sorter_dr2.py 0 3 all
+Scripts need to be run in order:
+1. match_2masx.py
+2. set_weave_priorities.py 0
+3. add_gaus_info.py 0 
+4. get_nearest_neighbours.py 0 
+5. get_ml_flags.py 0 
+6. lofar_source_sorter_dr2.py 0 1
+7. handle_m_sources_dr2.py 0 1 all
+8. lofar_source_sorter_dr2.py 0 2 all
+9. extract_prefilter_out.py 0  (run on lofar and copy over output... scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_0h.prefilter_outputs.fits . )
+10. get_prefilter_flags.py 0
+11. lofar_source_sorter_dr2.py 0 3 all
+Notes: 
+* 1-5 are initialisation steps that need to be run once
+* 2-5 can be swapped around
+* each takes as first argument the field code: 0 or 13
 
-step1 is running lofar_source_sorter_dr2 for the first time
-step2 is running it after m sources have been done
-step2 is running after prefilter outputs have been added
+1. step1 is running lofar_source_sorter_dr2 for the first time
+2. step2 is running it after m sources have been done
+3. step3 is running after prefilter outputs have been added
 
 ### `match_2masx.py`
 Produces the first presorted catalogue: LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5
-Note: some 2MASX parameters need to be fixed with `fix_2mass_catalogue.py`. Here we add the following columns to the PyBDSF catalouge:
+
+Input:
+* 2MASX_dr2.fits -  2MASX table downloaded from https://vizier.u-strasbg.fr/viz-bin/VizieR?-source=%202MASX taking only relevant columns
+* LoTSS_DR2_v100.srl_{h}.lr-full.fits
+
+Note: some 2MASX parameters need to be fixed with `fix_2mass_catalogue.py`. 
+
+Here we add the following columns to the PyBDSF catalouge:
 * 2MASX -- has a *possible* 2MASX match
 * 2MASX_name -- name
 * 2MASX_ra, 2MASX_dec --  position
@@ -48,7 +61,13 @@ For 0hr:
 ### `add_gaus_info.py`
 Operates on the presorted catalogue: LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5
 
-required to set the log LR thresh (lLR_thresh). For DR2 this is different for the 0hr and 13hr fields, and within the 13hr field it is different above and below LR_thresh_dec (=32.375)
+required columns in radio catlogue with LR outputs
+* lr - likelihood ratio -> LR (=lr when above the threshold, =nan otherwise)
+* UNWISE_OBJID - unwise match name -> LR_name_wise
+* UID_L - legacy match name -> LR_name_l
+* ra, dec - position of match - LR_ra, LR_dec
+
+Need to set the log LR thresh (lLR_thresh) which is hardcoded. For DR2 this is different for the 0hr and 13hr fields, and within the 13hr field it is different above and below LR_thresh_dec (=32.375)
 
 script adds more info from the Gaussians and calculates the Msource special cases:
 * Ng - the number of Gaussians making up the source
@@ -59,11 +78,6 @@ script adds more info from the Gaussians and calculates the Msource special case
 * G_LR_case2 - source with lr, 2 gaus with lr, 1 diff to source
 * G_LR_case3 - 
 
-required columns in LR catalogue
-* lr - likelihood ratio -> LR (=lr when above the threshold, =nan otherwise)
-* UNWISE_OBJID - unwise match name -> LR_name_wise
-* UID_L - legacy match name -> LR_name_l
-* ra, dec - position of match - LR_ra, LR_dec
 
     
 
@@ -102,8 +116,8 @@ Inputs:
 * For 13hr field: GradientBoostingClassifier_M2_31504_17F_TT42_B1_rd_dc_opt_tlv_high/pred_thresholds_full_13h_fixnames.fits
 
 ML_flag - flag indicating output of ML classification for identification
- 1 for LR
- 0 for LGZ
+* 1 for LR
+* 0 for LGZ
 
 
 ### `lofar_source_sorter.py`
@@ -118,6 +132,12 @@ Inputs step N+1 requires the output from step N, i.e.
 * step3: LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux{ff:.0f}.hdf5
 
 
+Hardcoded values:
+*    size_large = 15.           # in arcsec
+*    separation1 = 45.          # in arcsec
+*    size_huge = 25.            # in arcsec
+*    fluxcut = 8.               # in mJy
+*    fluxcut2 = 4.              # in mJy
 
 ### `handle_m_sources_dr2.py`
 requires pygraphviz and graphviz to plot the flowchart
@@ -129,6 +149,13 @@ step_number should be 1 (2 is leftover from DR1)
 mode is one of  [all, isol, nonisol, isol-faint, nonisol-faint] for doing all, isolated, non-isolated, faint isolated or faint non-isolated Msources.
 
 
+
+Hardcoded values:
+*     size_large = 15. # in arcsec
+*    separation1 = 45. # in arcsec
+*    size_huge = 25.  # in arcsec
+*   fluxcut2 = 4.  #mJy
+   
 
 # flags
 
