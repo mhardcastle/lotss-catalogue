@@ -1,3 +1,4 @@
+from __future__ import print_function
 from download_image_files import LofarMaps,get_legacy,get_first,get_wise
 from find_wise import WISE
 from astropy.table import Table
@@ -24,13 +25,13 @@ if __name__=='__main__':
     os.chdir('downloads')
 
     for r in t[startpoint:]:
-        print r['Source_Name']
-        print r['RA'],r['DEC']
+        print(r['Source_Name'])
+        print(r['RA'],r['DEC'])
         lofarname=lm.find(r['RA'],r['DEC'])
         legacyname=get_legacy(r['RA'],r['DEC'],bands='zrg')
         wisename=w.find_pos(r['RA'],r['DEC'])
         #firstname=get_first(r['RA'],r['DEC'])
-        print >>outfile,r['Source_Name'],lofarname,legacyname,wisename#,firstname
+        print(r['Source_Name'],lofarname,legacyname,wisename,file=outfile)
         outfile.flush()
     outfile.close()
 

@@ -14,23 +14,10 @@ import matplotlib.image as img
 import glob
 
 sys.stdout.write("\x1b]2;Classify\x07")
-
-def get_next():
-    cur.execute('lock table %s write' % table)
-    cur.execute('select object from %s where user is NULL order by object limit 1' % table )
-    res=cur.fetchall()
-    if len(res)==0:
-        object=None
-    else:
-        object=res[0]['object']
-        cur.execute('update %s set user="%s" where object="%s"' % (table,user,object))
-    cur.execute('unlock tables')
-    return object
-                    
     
 ##### edit the following lines to choose the sample and possible options
 
-dir='/beegfs/lofar/mjh/classify-2arcmin'
+dir='/beegfs/lofar/mjh/classify-v2'
 bits=dir.split('/')
 table=bits[-1].replace('-','_')
 os.chdir(dir)
@@ -143,14 +130,21 @@ for j in range(0, curses.COLORS):
     curses.init_pair(j, j, -1);
 
 show_ellipses=True
+skip_done=True
 while True:
     start=2
     cstart=2
-    r=t[i]
-    name=r['Source_Name']
-    cur.execute('select * from %s where user="%s" and source="%s"' % (table,user,name))
-    res=cur.fetchall()
-    db=res[0] # a dictionary of key/value pairs for this source
+    while True:
+        r=t[i]
+        name=r['Source_Name']
+        cur.execute('select * from %s where user="%s" and source="%s"' % (table,user,name))
+        res=cur.fetchall()
+        db=res[0] # a dictionary of key/value pairs for this source
+        if db['done'] and skip_done:
+            i+=1
+        else:
+            break
+        
     stdscr.keypad(1)
     stdscr.timeout(10)
     stdscr.clear()
@@ -221,8 +215,13 @@ while True:
             os.system('/soft/bin/ds9 '+name+'.fits &')
         elif key==curses.KEY_LEFT and i>0:
             newi=i-1
-        elif key==curses.KEY_RIGHT or key==curses.KEY_ENTER or key==13 or key==10:
+            skip_done=False
+        elif key==curses.KEY_RIGHT:
             newi+=1
+            skip_done=False
+        elif key==curses.KEY_ENTER or key==13 or key==10:
+            newi+=1
+            skip_done=True
         elif key>=ord('0') and key<=ord('z'):
             # check if this is one of the keys in the section
             for k in letters:

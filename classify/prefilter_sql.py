@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 from astropy.table import Table
 from subprocess import Popen
@@ -28,7 +29,7 @@ def get_next():
     
 ##### edit the following lines to choose the sample and possible options
 
-table='13h40'
+table='last'
 dir='/beegfs/lofar/mjh/flowchart-endpoints-dr2/%s-prefilter' % table
 os.chdir(dir)
 
@@ -52,7 +53,7 @@ cur.execute('select * from %s where user="%s"' % (table, user))
 
 results=list(cur.fetchall())
 
-print results
+#print results
 i=len(results)
     
 t=Table.read(sample)
@@ -129,6 +130,9 @@ while True:
         elif key>ord('0') and key<=ord('9'):
             res=key-ord('0')
             if res==2 and lrvalid==False:
+                valid=False
+                continue
+            if res>len(options):
                 valid=False
                 continue
             if i==len(results):

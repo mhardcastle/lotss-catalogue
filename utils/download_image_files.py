@@ -4,6 +4,7 @@
 # input objects in a FITS catalogue. Outputs an image file and populates the
 # $IMAGEDIR/downloads directory
 
+from __future__ import print_function
 import requests
 from astroquery.skyview import SkyView
 from astropy.io import fits
@@ -24,8 +25,8 @@ from download_file import download_file
 
 def get_panstarrs(ra,dec,psband):
     page=requests.get('http://ps1images.stsci.edu/cgi-bin/ps1filenames.py?ra=%f&dec=%f' % (ra,dec),verify=False)
-    print page.status_code
-    print page.headers['content-type']
+    print(page.status_code)
+    print(page.headers['content-type'])
     lines=page.text.split('\n')
     downloads=[]
     for l in lines[1:]:
@@ -45,7 +46,7 @@ def get_wise(ra,dec,band):
             results=Ibe.query_region(coord.SkyCoord(ra, dec, unit=(u.deg, u.deg), frame='icrs'),mission=mission,dataset=dataset,table=table)
             successful=True
         except requests.exceptions.ConnectionError:
-            print 'Connection failed, retrying'
+            print('Connection failed, retrying')
             sleep(10)
     
     url = 'http://irsa.ipac.caltech.edu/ibe/data/'+mission+'/'+dataset+'/'+table+'/'
@@ -61,7 +62,7 @@ def get_wise(ra,dec,band):
 def get_first(ra,dec):
     url="http://archive.stsci.edu/"
     page=requests.get(url+"vlafirst/search.php?RA=%.7f&DEC=%.6f&Radius=30.0&action=Search" % (ra,dec),verify=False)
-    print page.status_code
+    print(page.status_code)
 
     tree=html.fromstring(page.text)
     table=tree.xpath('//tbody')
@@ -156,6 +157,6 @@ if __name__=='__main__':
         psnames=get_panstarrs(r['RA'],r['DEC'],'i')
         wisename=get_wise(r['RA'],r['DEC'],1)
         firstname=get_first(r['RA'],r['DEC'])
-        print >>outfile,r['Source_Name'],lofarname,psnames[0],wisename,firstname
+        print(r['Source_Name'],lofarname,psnames[0],wisename,firstname,file=outfile)
 
     outfile.close()
