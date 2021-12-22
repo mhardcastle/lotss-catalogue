@@ -99,7 +99,7 @@ for wpri in ['WEAVE_priority1','WEAVE_priority2','WEAVE_priority3','HETDEX']:
             (cat13['FC_flag2'] == 26) | \
             (cat13['FC_flag2'] == 20) )
     N13 = np.sum(sel)
-    print ('{0} 13hr: {1:d}'.format(wpri, N13))
+    print (' {0} 13hr: {1:d}'.format(wpri, N13))
 
 
 print ('Flowchart PF selection')
@@ -112,7 +112,19 @@ for wpri in ['WEAVE_priority1','WEAVE_priority2','WEAVE_priority3','HETDEX']:
             (cat13['FC_flag2'] == 27) | \
             (cat13['FC_flag2'] == 21) )
     N13 = np.sum(sel)
-    print ('{0} 13hr: {1:d}'.format(wpri, N13))
+    print (' {0} 13hr: {1:d}'.format(wpri, N13))
+
+print ('Flowchart PF LGZ selection')
+for wpri in ['WEAVE_priority1','WEAVE_priority2','WEAVE_priority3','HETDEX']:
+    sel =  (cat13[wpri]) & (cat13['Prefilter'] == 1) & (
+    #sel =   (
+            (cat13['FC_flag2'] == 6) | \
+            (cat13['FC_flag2'] == 13) | \
+            (cat13['FC_flag2'] == 16) | \
+            (cat13['FC_flag2'] == 27) | \
+            (cat13['FC_flag2'] == 21) )
+    N13 = np.sum(sel)
+    print (' {0} 13hr: {1:d}'.format(wpri, N13))
 
 
 print ('Flowchart TBD selection')
@@ -127,9 +139,9 @@ for wpri in ['WEAVE_priority1','WEAVE_priority2','WEAVE_priority3','HETDEX']:
     N13 = np.sum(sel)
     N13ml = np.sum(sel & (cat13['ML_flag']==1))
     N13lgz = np.sum(sel & (cat13['ML_flag']==0))
-    print ('{0} 13hr: {1:d}'.format(wpri, N13))
-    print ('{0} ml 13hr: {1:d}'.format(wpri, N13ml))
-    print ('{0} lgz 13hr: {1:d}'.format(wpri, N13lgz))
+    print (' {0} 13hr: {1:d}'.format(wpri, N13))
+    print (' {0} ml 13hr: {1:d}'.format(wpri, N13ml))
+    print (' {0} lgz 13hr: {1:d}'.format(wpri, N13lgz))
 
 print ('Flowchart TBD selection large, faint')
 for wpri in ['WEAVE_priority1','WEAVE_priority2','WEAVE_priority3','HETDEX']:
@@ -139,9 +151,9 @@ for wpri in ['WEAVE_priority1','WEAVE_priority2','WEAVE_priority3','HETDEX']:
     N13 = np.sum(sel)
     N13ml = np.sum(sel & (cat13['ML_flag']==1))
     N13lgz = np.sum(sel & (cat13['ML_flag']==0))
-    print ('{0} 13hr: {1:d}'.format(wpri, N13))
-    print ('{0} ml 13hr: {1:d}'.format(wpri, N13ml))
-    print ('{0} lgz 13hr: {1:d}'.format(wpri, N13lgz))
+    print (' {0} 13hr: {1:d}'.format(wpri, N13))
+    print (' {0} ml 13hr: {1:d}'.format(wpri, N13ml))
+    print (' {0} lgz 13hr: {1:d}'.format(wpri, N13lgz))
 
 sys.exit()
 print()
@@ -158,7 +170,7 @@ for wpri in ['WEAVE_priority1']:
         (cat0['FC_flag2'] == 20)| \
         (cat0['FC_flag2'] == 26) )
     N13 = np.sum(sel)
-    print ('{0} 0hr: {1:d}'.format(wpri, N13))
+    print (' {0} 0hr: {1:d}'.format(wpri, N13))
 
 
 print ('Flowchart PF selection')
@@ -170,7 +182,7 @@ for wpri in ['WEAVE_priority1']:
         (cat0['FC_flag2'] == 21) | \
         (cat0['FC_flag2'] == 27))
     N13 = np.sum(sel)
-    print ('{0} 0hr: {1:d}'.format(wpri, N13))
+    print (' {0} 0hr: {1:d}'.format(wpri, N13))
 
 
 print ('Flowchart TBD selection')
@@ -184,9 +196,9 @@ for wpri in ['WEAVE_priority1']:
     N13 = np.sum(sel)
     N13ml = np.sum(sel & (cat0['ML_flag']==1))
     N13lgz = np.sum(sel & (cat0['ML_flag']==0))
-    print ('{0} 0hr: {1:d}'.format(wpri, N13))
-    print ('{0} ml 13hr: {1:d}'.format(wpri, N13ml))
-    print ('{0} lgz 13hr: {1:d}'.format(wpri, N13lgz))
+    print (' {0} 0hr: {1:d}'.format(wpri, N13))
+    print (' {0} ml 13hr: {1:d}'.format(wpri, N13ml))
+    print (' {0} lgz 13hr: {1:d}'.format(wpri, N13lgz))
 
 print ('Flowchart TBD selection - large, faint')
 for wpri in ['WEAVE_priority1']:
@@ -196,9 +208,9 @@ for wpri in ['WEAVE_priority1']:
     N13 = np.sum(sel)
     N13ml = np.sum(sel & (cat0['ML_flag']==1))
     N13lgz = np.sum(sel & (cat0['ML_flag']==0))
-    print ('{0} 0hr: {1:d}'.format(wpri, N13))
-    print ('{0} ml 13hr: {1:d}'.format(wpri, N13ml))
-    print ('{0} lgz 13hr: {1:d}'.format(wpri, N13lgz))
+    print (' {0} 0hr: {1:d}'.format(wpri, N13))
+    print (' {0} ml 13hr: {1:d}'.format(wpri, N13ml))
+    print (' {0} lgz 13hr: {1:d}'.format(wpri, N13lgz))
 
 
 ''' ID_flags are
