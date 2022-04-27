@@ -157,12 +157,9 @@ if __name__=='__main__':
     g=sorted(glob.glob('structure*-sources.pickle'))
     print('Using structure',g[-1])
     s=Source.load(g[-1].replace('-sources.pickle',''))
-    #    s.save('structure.pickle')
 
     print('Reading files')
 
-    # all LOFAR sources
-    # we generate this on the fly from the s structure, since otherwise it doesn't take any deblending etc into account
     optcat='optical.fits'
     gals=Table.read(optcat)
     if 'RA' in gals.colnames:
@@ -176,35 +173,7 @@ if __name__=='__main__':
     lt=ot[(ot['Total_flux']>0.005) & (ot['Maj']>10)]
 
     os.chdir('zoom')
-    sourcelist=[]
-    try:
-        sourcename=sys.argv[1]
-    except:
-        sourcename=None
-    if sourcename is None:
-        for sourcename in s.sd:
-            if 'Deleted' in s.sd[sourcename]:
-                continue
-            if ( ('Zoom_prob' in s.sd[sourcename] and s.sd[sourcename]['Zoom_prob']>0.5) or
-                 ('Imagemissing_prob' in s.sd[sourcename] and s.sd[sourcename]['Imagemissing_prob']>0.5) or
-                 ('Hostbroken_prob' in s.sd[sourcename] and s.sd[sourcename]['Hostbroken_prob']>0.5) ):
-            
-                sourcelist.append(sourcename)
-    else:
-        if sourcename.startswith('ILTJ'):
-            sourcelist=[sourcename]
-        else:
-            # maybe this is a file with a list of sources
-            if not os.path.isfile(sourcename):
-                raise RuntimeError('Cannot parse entity on command line')
-            else:
-                sourcelist=[l.rstrip() for l in open(sourcename).readlines()]
 
-    sourcelist+=s.zoomneeded
-
-    # now download any images we need!
-    wd=os.getcwd() # the zoom directory
-    
     mode='wise'
     quit=False
     while not(quit):
@@ -219,10 +188,11 @@ if __name__=='__main__':
             s.sd[sourcename]['legacyfile']=None 
         s.sd[sourcename]['wisefile']=os.environ['IMAGEDIR']+'/downloads/'+record['wisefile']
         if 'Deleted' in s.sd[sourcename]:
+            print(sourcename,'has been deleted for reason',s.sd[sourcename]['Deleted'])
             record['complete']=1
             sql.set_object(sourcename,record)
             continue
-        if len(sourcelist)>1 and os.path.isfile(sourcename+'.txt'):
+        if os.path.isfile(sourcename+'.txt'):
             print(sourcename,'already has a zoom file')
             record['complete']=1
             sql.set_object(sourcename,record)
@@ -357,7 +327,6 @@ if __name__=='__main__':
             stop=False
             while not(stop):
                 print('Source %s, %i sources remaining' % (sourcename,sql.get_remaining()))
-                #print('Source number %i out of %i' % (sourcenumber, len(sourcelist)))
                 print('(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, save (f)its, go to (n)ext, (Z)oom out, \n   (i)nspect, (T)oggle galaxy overlay, change opt (I)mage,\n   (F)avourite, (s)ave and continue or save and (q)uit?',end=' ')
                 command=raw_input()
                 if command=='s' or command=='q':

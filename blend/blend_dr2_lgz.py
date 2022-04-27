@@ -1,3 +1,4 @@
+from __future__ import print_function
 from astropy.table import Table,vstack
 from astropy.io import fits
 from astropy.wcs import WCS
@@ -11,6 +12,7 @@ from separation import separation
 from image_utils import find_bbox,get_mosaic_name
 from overlay import show_overlay
 from download_image_files import LofarMaps,get_legacy,get_first,get_wise
+from find_wise import WISE
 
 scale=3600.0 # units of catalogue are arcsec
 
@@ -81,12 +83,12 @@ class GaussAssoc(object):
         outfile.close()
 
     def dump(self):
-        print 'Components:'
+        print('Components:')
         for i,cc in enumerate(self.components):
-            print i,cc,self.assocs[cc],self.ots[i]['Total_flux']
-        print 'Optical IDs'
+            print(i,cc,self.assocs[cc],self.ots[i]['Total_flux'])
+        print('Optical IDs')
         for k in self.optids:
-            print k,self.optids[k]
+            print(k,self.optids[k])
         
 class Interactive(object):
     def __init__(self,f,ga):
@@ -126,7 +128,7 @@ class Interactive(object):
         # do something which depends on mode
         if self.mode=='o' or self.mode=='O':
             self.ga.set_optid(self.c,ra,dec)
-            print '\nOptical ID at',ra,dec
+            print('\nOptical ID at',ra,dec)
             if self.mode=='o': self.redraw()
         if self.mode=='m' or self.mode=='O':
             sep=separation(ra,dec,self.ots['RA'],self.ots['DEC'])
@@ -134,10 +136,10 @@ class Interactive(object):
             name=self.ots[index]['Gaus_id']
             if self.ga.ismember(self.c,name):
                 self.ga.remove(name)
-                print '\nremoved component',name,'from source',self.c
+                print('\nremoved component',name,'from source',self.c)
             else:
                 self.ga.add(self.c,name)
-                print '\nadded component',name,'to source',self.c
+                print('\nadded component',name,'to source',self.c)
             self.redraw()
             if self.mode=='O':
                 self.set_mode('m')
@@ -153,11 +155,11 @@ class Interactive(object):
     def set_mode(self,mode):
         self.mode=mode
         if self.mode=='m':
-            print 'Selected mark/unmark source mode'
+            print('Selected mark/unmark source mode')
         elif self.mode=='o':
-            print 'Selected optical ID mode'
+            print('Selected optical ID mode')
         elif self.mode=='O':
-            print 'Selected select-and-ID mode'
+            print('Selected select-and-ID mode')
         else:
             raise NotImplementedError('Mode not recognised')
 
@@ -165,7 +167,7 @@ if __name__=='__main__':
 
     dir=os.getcwd()
     field=os.path.basename(dir)
-    print 'field is',field
+    print('field is',field)
     if not os.path.isdir('blend'):
         os.mkdir('blend') # store text files in here
 
@@ -174,9 +176,9 @@ if __name__=='__main__':
     filt|=(t['Badclick']>=2) & (t['Zoom_prob']<=0.5)
     filt|=t['OptID_Name']=='Mult'
     t=t[filt]
-    print 'About to deblend',len(t),'sources:',len(glob.glob('blend/*.txt')),'blend files already exist'
+    print('About to deblend',len(t),'sources:',len(glob.glob('blend/*.txt')),'blend files already exist')
     mt=Table.read('LGZ-multiple.fits')
-    print 'Reading data...'
+    print('Reading data...')
     sourcecat='source_lr.fits'
     optcat='optical.fits'
     opt=Table.read(optcat)
@@ -190,6 +192,7 @@ if __name__=='__main__':
     lofarfiles={}
     legacyfiles={}
     wisefiles={}
+    w=WISE()
     if not os.path.isfile('blend-list.txt'):
         outfile=open('blend-list.txt','w')
         # now work in downloads dir
@@ -204,8 +207,11 @@ if __name__=='__main__':
             dec=r['Dec']
             lofarfiles[sourcename]=os.environ['IMAGEDIR']+'/'+lm.find(ra,dec)
             legacyfiles[sourcename]=os.environ['IMAGEDIR']+'/downloads/'+get_legacy(ra,dec,bands='zrg')
-            wisefiles[sourcename]=os.environ['IMAGEDIR']+'/downloads/'+get_wise(ra,dec,1)
-            print >>outfile,sourcename,lofarfiles[sourcename],legacyfiles[sourcename],wisefiles[sourcename]
+            wisename=w.find_pos(ra,dec)
+            if wisename is None:
+                wisename=get_wise(ra,dec,1)
+            wisefiles[sourcename]=os.environ['IMAGEDIR']+'/downloads/'+wisename
+            print(sourcename,lofarfiles[sourcename],legacyfiles[sourcename],wisefiles[sourcename],file=outfile)
         outfile.close()
         # back to zoom dir
         os.chdir(wd)
@@ -232,7 +238,7 @@ if __name__=='__main__':
         lofarfile=lofarfiles[name]
         wisefile=wisefiles[name]
         legacyfile=legacyfiles[name]
-        print 'Optid name is',r['OptID_Name']
+        print('Optid name is',r['OptID_Name'])
         # work out whether there are sources selected in LGZ
         if r['OptID_Name']=="None":
             selected=None
@@ -245,23 +251,23 @@ if __name__=='__main__':
             gzlist=[]
             for s in selected:
                 gzlist.append(np.argmax(gals[idname]==s))
-            print gzlist
+            print(gzlist)
             gzgals=gals[gzlist]
         else:
             gzgals=None
-        print 'Selected list is',selected
+        print('Selected list is',selected)
             
         sts=st[st['Source_Name']==name]
         if len(sts)==0:
-            print name,'does not exist in source table, skipping'
+            print(name,'does not exist in source table, skipping')
             continue
         r2=sts[0] # corresponding row in source table
         if os.path.isfile('blend/'+name+'.txt'):
-            print name,'already has a blend file'
+            print(name,'already has a blend file')
             continue
-        print r2
+        print(r2)
         rgt=gt[gt['Parent_Name']==name]
-        print 'Contains',len(rgt),'Gaussians'
+        print('Contains',len(rgt),'Gaussians')
         mlt=rgt[~np.isnan(rgt['ra'])]
         mlt['ra']=mlt['ra']
         mlt['dec']=mlt['dec']
@@ -269,7 +275,7 @@ if __name__=='__main__':
         ra,dec,size=find_bbox(rgt,scale=scale)
         size*=1.5
         size/=3600.0
-        print 'Lofarfile is',lofarfile
+        print('Lofarfile is',lofarfile)
         lhdu=extract_subim(lofarfile,ra,dec,size*2)
         try:
             peak==r2['Peak_flux']/1000.0
@@ -307,11 +313,11 @@ if __name__=='__main__':
             plt.show(block=False)
 
             while not(stop):
-                print 'Object number %i of %i' % (i,len(t))
-                print 'Source number %i, display mode %s, operation mode %s' % (I.c,display_mode,I.mode)
-                print 'Number keys -- select new source number'
-                print '(d)ump, (m)ark components (default), mark an (o)ptical ID, (f)lag,\n    display (i)-band, display (W)ISE, go to (n)ext, (r)emove opt ID, \n    automatically separate into (t)wo or (s)ave and continue?',
-                command=raw_input()
+                print('Object number %i of %i' % (i,len(t)))
+                print('Source number %i, display mode %s, operation mode %s' % (I.c,display_mode,I.mode))
+                print('Number keys -- select new source number')
+                print('(d)ump, (m)ark components (default), mark an (o)ptical ID, (f)lag,\n    display (i)-band, display (W)ISE, go to (n)ext, (r)emove opt ID, \n    automatically separate into (t)wo or (s)ave and continue?',end=' ')
+                command=input()
                 if command=='d':
                     ga.dump()
                 elif command=='s':
@@ -342,11 +348,11 @@ if __name__=='__main__':
                 elif command=='t':
                     # Automatically select the other component of two
                     if len(mlt)!=2:
-                        print 'There are more than two possibilities!'
+                        print('There are more than two possibilities!')
                     else:
                         cra,cdec=ga.optpos(I.c)
                         if cra is None or cdec is None:
-                            print 'No existing optical ID!'
+                            print('No existing optical ID!')
                         else:
                             sep=separation(cra,cdec,mlt['ra'],mlt['dec'])
                             index=np.argmax(sep)

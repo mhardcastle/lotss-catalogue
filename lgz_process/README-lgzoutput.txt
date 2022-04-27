@@ -13,5 +13,10 @@ aggregate_lofgalzoo.py with code to check the field ID and match with
 the appropriate catalogue. It removes the catalogue mismatch code of
 aggregate_lofgalzoo.py.
 
+galzoo_export_dr2.py is the DR2 version of galzoo_export.py and
+includes some additional code to flag sources that may need to be
+'rescued' due to slight mismatches between L/RGZ input catalogues and
+the DR2 data.
+
 aggregate_lofgalzoo_dr2.py is the DR2 version of
 aggregate_lofgalzoo_deep.py designed to work on the LGZ/UNWISE catalogues.

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 import matplotlib
 matplotlib.use('Agg')
 from astropy.table import Table,vstack
@@ -81,7 +82,7 @@ if __name__=='__main__':
     except:
         end=start+1
     for i in range(start,end):
-        print '---- %i ----' %i
+        print('---- %i ----' %i)
         r=t[i]
         #print r
         try:
@@ -93,8 +94,11 @@ if __name__=='__main__':
         sourcename=sourcename.rstrip()
         ft=ot[ot[cname]==sourcename]
         if len(ft)!=1:
-            print 'Cannot find source',sourcename
-            continue
+            print('Cannot find source',sourcename)
+            dist=((np.cos(r['DEC']*np.pi/180.0)*(r['RA']-ot['RA']))**2+
+                  (r['DEC']-ot['DEC'])**2)
+            mindist=np.min(dist)
+            ft=ot[dist<=mindist]
 
         psimage=sourcename+'_PS.png'
         pspimage=sourcename+'_PSp.png'
@@ -111,7 +115,7 @@ if __name__=='__main__':
             try:
                 lofarfile=get_mosaic_name(mosaic)
             except RuntimeError:
-                print 'Could not get mosaic ID from',r['Mosaic_ID']
+                print('Could not get mosaic ID from',r['Mosaic_ID'])
                 mosaic=None
         if mosaic is None:
             lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
@@ -129,11 +133,11 @@ if __name__=='__main__':
 
         if os.path.isfile(manifestname):
             logfile.write('%i selected file exists already\n' % i)
-            print 'Selected output file exists already'
+            print('Selected output file exists already')
             continue
 
         ra,dec=r['RA'],r['DEC']
-        print 'Original RA DEC is',ra,dec
+        print('Original RA DEC is',ra,dec)
         
         #try:
         #    marker_ra=r['ra']
@@ -149,7 +153,7 @@ if __name__=='__main__':
 
         iter=0
         checktable=ft
-        print checktable
+        print(checktable)
         checktable['ellipse']=None
         checktable['ellipse'][0]=ellipse(ft[0],ra,dec)
         ctlen=1
@@ -160,7 +164,7 @@ if __name__=='__main__':
             filt&=tcopy['dist']>0
             tcopy=tcopy[filt]
             if len(tcopy)==0:
-                print 'No neighbours found!'
+                print('No neighbours found!')
                 break
             tcopy['ellipse']=None
             for j in range(len(tcopy)):
@@ -173,33 +177,33 @@ if __name__=='__main__':
                         result=False
                     else:
                         result=intersects(row,row2)
-                    print 'Check intercept between',row[cname],'and',row2[cname],'result is',result
+                    print('Check intercept between',row[cname],'and',row2[cname],'result is',result)
                     
                     filt.append(result)
-            print 'Filt is',filt
+            print('Filt is',filt)
             itable=tcopy[filt]
-            print 'Length of checktable is',len(checktable)
-            print 'Length of itable is',len(itable)
+            print('Length of checktable is',len(checktable))
+            print('Length of itable is',len(itable))
             interim=vstack((checktable,itable))
-            print 'Length of interim table is',len(interim)
+            print('Length of interim table is',len(interim))
             names=list(set(interim[cname]))
-            print 'Names are',names
+            print('Names are',names)
             filt=[False]*len(interim)
             for n in names:
                 pos=np.argmax(interim[cname]==n)
                 filt[pos]=True
             checktable=interim[filt]
-            print 'New checktable length is',len(checktable)
+            print('New checktable length is',len(checktable))
             if len(checktable)==ctlen:
-                print 'Checktable length converged!'
+                print('Checktable length converged!')
                 break
             ctlen=len(checktable)
             iter+=1
             if iter==10:
-                print 'Not converged!'
+                print('Not converged!')
                 break
 
-        print checktable
+        print(checktable)
         '''
         import matplotlib.pyplot as plt
         for r in checktable:
@@ -219,13 +223,13 @@ if __name__=='__main__':
             filt=tcopy['dist']<180
             filt&=tcopy['Total_flux']>flux/3.0 # look for similar flux
             tcopy=tcopy[filt]
-            print 'Iter',iter,'found',len(tcopy),'neighbours'
+            print('Iter',iter,'found',len(tcopy),'neighbours')
 
             # include checktable
             interim=vstack((tcopy,checktable))
             # de-dupe again
             names=list(set(interim[cname]))
-            print 'Names are',names
+            print('Names are',names)
             filt=[False]*len(interim)
             for n in names:
                 pos=np.argmax(interim[cname]==n)
@@ -236,7 +240,7 @@ if __name__=='__main__':
             dec=np.mean(tcopy['DEC'])
             
             newra,newdec,size=find_bbox(tcopy)
-            print '     size is',size
+            print('     size is',size)
 
             if startra==ra and startdec==dec:
                 break
@@ -261,8 +265,8 @@ if __name__=='__main__':
         if size<60:
             size=60.0
         size=(int(0.5+size/10))*10
-        print 'final size is',size
-        print 'final RA DEC is',ra,dec
+        print('final size is',size)
+        print('final RA DEC is',ra,dec)
         
         size/=3600.0
 
@@ -273,12 +277,12 @@ if __name__=='__main__':
         #ots.write(sourcename+'-ellipses.fits',overwrite=True)
         ls=[]
         for nr in ots:
-            print nr[cname],sourcename
+            print(nr[cname],sourcename)
             if nr[cname].rstrip()==sourcename:
                 ls.append('solid')
             else:
                 ls.append('dashed')
-        print ls
+        print(ls)
 
         if 'Isl_rms' in r.colnames:
             rms=r['Isl_rms']/1000.0
@@ -286,10 +290,10 @@ if __name__=='__main__':
             rms=None
 
         optfile=imagedir+'/downloads/'+psmaps[i]
-        print 'Using optical image',optfile
+        print('Using optical image',optfile)
         pshdu=fits.open(optfile)
         if pshdu[0].header['NAXIS']==0:
-            print '*** No optical image! ***'
+            print('*** No optical image! ***')
             logfile.write('%i *** No optical %s %f %f ***\n' % (i,sourcename,r['RA'],r['DEC']))
             continue
         # nan-blank
@@ -307,9 +311,10 @@ if __name__=='__main__':
         try:
             show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_lw=3,coords_ra=r['RA'],coords_dec=r['DEC'],lw=1,save_name=psimage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,peak=peak,plot_coords=True,show_grid=True,lw_ellipse=3,ellipse_style=ls,ellipse_color='cyan',noisethresh=1.5,drlimit=1000,rms_use=rms,lofarlevel=2.5,logfile=logfile,sourcename=sourcename,vmax_cap=0.5)
         except Exception as e:
+            raise
             failed=True
         if failed:
-            print '*** Overlay failed! ***'
+            print('*** Overlay failed! ***')
             logfile.write('%i *** Overlay failed %s %f %f %s ***\n' % (i,sourcename,r['RA'],r['DEC'],e))
             continue
 
@@ -337,7 +342,11 @@ if __name__=='__main__':
 
         
         with open(manifestname,'w') as manifest:
-            manifest.write('%i,%s,%s,%s,%s,%s,%i,%f,%f,%f\n' % (i,psimage,pspimage,wiseimage,wisepimage,sourcename,r['id'],ra,dec,size*3600.0))
+            try:
+                id=r['id']
+            except KeyError:
+                id=0
+            manifest.write('%i,%s,%s,%s,%s,%s,%i,%f,%f,%f\n' % (i,psimage,pspimage,wiseimage,wisepimage,sourcename,id,ra,dec,size*3600.0))
 
         os.system('mogrify -quality 90 -trim '+sourcename+'*.png')
 

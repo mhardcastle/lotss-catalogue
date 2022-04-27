@@ -1,3 +1,4 @@
+from __future__ import print_function
 import astropy
 from astropy.io import fits
 from astropy.wcs import WCS
@@ -15,7 +16,7 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
         raise RuntimeError('Can\'t make map from this')
 
     if verbose:
-        print 'Input image shape is',f[hduid].data.shape
+        print('Input image shape is',f[hduid].data.shape)
     ds=f[hduid].data.shape[-2:]
     by,bx=ds
     if size is None:
@@ -39,7 +40,7 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
     
     if ymax<=ymin or xmax<=xmin:
         # this can only happen if the required position is not on the map
-        print xmin,xmax,ymin,ymax
+        print(xmin,xmax,ymin,ymax)
         raise RuntimeError('Failed to make subimage!')
 
     w = WCS(f[hduid].header)
@@ -76,7 +77,7 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
         else:
             slice.append(0)
     if verbose:
-        print slice
+        print(slice)
 
     hdu=fits.PrimaryHDU(f[hduid].data[slice],header)
     copy=('EQUINOX','EPOCH','BMAJ','BMIN','BPA')
@@ -101,7 +102,7 @@ def extract_subim(filename,ra,dec,size,hduid=0,verbose=True):
         orighdu=filename
     else:
         if verbose:
-            print 'Opening',filename
+            print('Opening',filename)
         orighdu=fits.open(filename)
     if 'CDELT2' in orighdu[hduid].header:
         delt=orighdu[hduid].header['CDELT2']
@@ -120,7 +121,7 @@ def extract_subim(filename,ra,dec,size,hduid=0,verbose=True):
     x=imc[0][0]
     y=imc[0][1]
     if verbose:
-        print 'Extracting sub-image'
+        print('Extracting sub-image')
     hdu=flatten(orighdu,ra,dec,x,y,psize,hduid=hduid,verbose=verbose)
     '''
     del(hdu[hduid].header['PC1_1'])

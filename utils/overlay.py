@@ -6,6 +6,7 @@
 # lofarhdu must be a flattened (2D) LOFAR map. opthdu can be any type
 # of optical map. rms_use must be the local rms
 
+from __future__ import print_function
 import os
 from time import sleep
 import numpy as np
@@ -13,6 +14,17 @@ import aplpy
 import matplotlib.pyplot as plt
 from astropy.wcs import WCS
 from astropy.table import Table
+import random
+import string
+
+def choices(string, k=1):
+    outstr=''
+    for i in range(k):
+        outstr+=string[np.random.randint(len(string))]
+    return outstr
+
+def tempnam():
+    return ''.join(choices(string.ascii_uppercase + string.digits, k=10))
 
 def find_noise(a):
     b=a.flatten()
@@ -43,7 +55,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False,debug=False):
             x,y=w.wcs_world2pix(r,d,0)
         xv.append(x)
         yv.append(y)
-    if debug: print xv,yv
+    if debug: print(xv,yv)
     xmin=int(min(xv))
     if xmin<0: xmin=0
     xmax=int(max(xv))
@@ -52,7 +64,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False,debug=False):
     if ymin<0: ymin=0
     ymax=int(max(yv))
     if ymax>=ysize: ymax=ysize-1
-    if debug: print xmin,xmax,ymin,ymax
+    if debug: print(xmin,xmax,ymin,ymax)
     if cube:
         subim=hdu[0].data[channel,ymin:ymax,xmin:xmax]
     else:
@@ -112,17 +124,17 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
 
     '''
     if lofarhdu is None:
-        print 'LOFAR HDU is missing, not showing it'
+        print('LOFAR HDU is missing, not showing it')
         show_lofar=False
     try:
         from matplotlib.cbook import MatplotlibDeprecationWarning
         import warnings
         warnings.simplefilter('ignore', MatplotlibDeprecationWarning)
     except:
-        print 'Cannot hide warnings'
+        print('Cannot hide warnings')
 
-    print '========== Doing overlay at',ra,dec,'with size',size,'==========='
-    print '========== Title is',title,'=========='    
+    print('========== Doing overlay at',ra,dec,'with size',size,'===========')
+    print('========== Title is',title,'==========')
     
     if coords_ra is None:
         coords_ra=ra
@@ -132,14 +144,14 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         if peak is None:
             lofarmax=np.nanmax(lofarhdu[0].data)
         else:
-            print 'Using user-specified peak flux of',peak
+            print('Using user-specified peak flux of',peak)
             lofarmax=peak
         if rms_use is None:
             rms_use=find_noise_area(lofarhdu,ra,dec,size)[1]
-            print 'Using LOFAR rms',rms_use
-        print lofarmax/drlimit,rms_use*lofarlevel
+            print('Using LOFAR rms',rms_use)
+        print(lofarmax/drlimit,rms_use*lofarlevel)
         minlevel=max([lofarmax/drlimit,rms_use*lofarlevel])
-        print 'Using minimum level',minlevel
+        print('Using minimum level',minlevel)
         if peak is not None and peak/minlevel<10:
             lofarmax=np.nanmax(lofarhdu[0].data) # revert
         levels=minlevel*2.0**np.linspace(0,14,30)
@@ -154,34 +166,34 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         for i in range(3):
             mean,noise,vmax=find_noise_area(hdu,ra,dec,size,channel=i)
             vmin=mean+noisethresh*noise
-            print 'channel',i,mean,noise,vmin,vmax
+            print('channel',i,mean,noise,vmin,vmax)
             vmins.append(vmin)
             vmaxes.append(vmax)
         vmax=np.nanmax(vmaxes)
         if vmax_cap is not None and vmax>vmax_cap:
             vmax=vmax_cap
-        rgbname=os.tempnam('.','rgb')+'.png'
+        rgbname='rgb_'+tempnam()+'.png'
         aplpy.make_rgb_image(hdu.filename(),rgbname,stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2],vmax_r=vmax,vmax_g=vmax,vmax_b=vmax)
         f=aplpy.FITSFigure(rgbname,north=True)
-        print 'centring on',ra,dec,size
+        print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
         f.show_rgb()
         if logfile is not None:
             mytuple=tuple([sourcename]+vmins+vmaxes+[vmax])
-            print mytuple
+            print(mytuple)
             logfile.write('%s %f %f %f %f %f %f %f\n' % mytuple)
     elif lofar_colorscale:
-        print 'Doing a LOFAR colour scale'
+        print('Doing a LOFAR colour scale')
         f = aplpy.FITSFigure(hdu,north=True)
-        print 'centring on',ra,dec,size
+        print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
         f.show_colorscale(vmin=rms_use,vmax=lofarmax,stretch='log',cmap=cmap)
    
     else:
         mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
-        print 'Optical parameters are',mean,noise,vmax
+        print('Optical parameters are',mean,noise,vmax)
         f = aplpy.FITSFigure(hdu,north=True)
-        print 'centring on',ra,dec,size
+        print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
         f.show_colorscale(vmin=mean+noisethresh*noise,vmax=vmax,stretch='log',cmap=cmap)
         #f.show_colorscale(stretch='log')
@@ -195,13 +207,13 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
 
     if firsthdu is not None:
         firstrms=find_noise_area(firsthdu,ra,dec,size)[1]
-        print 'Using FIRST rms',firstrms
+        print('Using FIRST rms',firstrms)
         firstlevels=firstrms*3*2.0**np.linspace(0,14,30)
         f.show_contour(firsthdu,colors=first_color,linewidths=lw, levels=firstlevels)
 
     if vlasshdu is not None:
         vlassrms=find_noise_area(vlasshdu,ra,dec,size)[1]
-        print 'Using VLASS rms',vlassrms
+        print('Using VLASS rms',vlassrms)
         vlasslevels=vlassrms*3*2.0**np.linspace(0,14,30)
         f.show_contour(vlasshdu,colors=vlass_color,linewidths=lw, levels=vlasslevels)
 
@@ -270,7 +282,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         yp=event.ydata
         xw,yw=f.pixel2world(xp,yp)
         if event.button==2:
-            print title,xw,yw
+            print(title,xw,yw)
 
     if interactive:
         fig=plt.gcf()

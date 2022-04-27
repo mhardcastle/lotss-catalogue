@@ -71,11 +71,11 @@ class tzi_sql(object):
         else:
             return result[0]
 
-    def set_object(self,objname,record):
+    def set_object(self,objname,record,set_null=False):
         for k in record:
             if k=='object':
                 continue
-            if record[k] is not None:
+            if record[k] is not None or set_null:
                 self.execute('update '+self.table+' set '+k+'=%s where object=%s',(record[k],objname))
 
     def get_next(self):
@@ -110,13 +110,13 @@ if __name__=='__main__':
     
     s=Source.load(fname,gaussians=False,components=False)
 
-    os.chdir('zoom')
     sourcelist=[]
     try:
         sourcename=sys.argv[1]
     except:
         sourcename=None
     if sourcename is None:
+        # no arguments, construct zoom list from source database
         for sourcename in s.sd:
             if 'Deleted' in s.sd[sourcename]:
                 continue
@@ -124,6 +124,7 @@ if __name__=='__main__':
                  ('Imagemissing_prob' in s.sd[sourcename] and s.sd[sourcename]['Imagemissing_prob']>0.5)):
             
                 sourcelist.append(sourcename)
+        print('Starting from an auto-generated source list of length',len(sourcelist))
     else:
         if sourcename.startswith('ILTJ'):
             sourcelist=[sourcename]
@@ -134,7 +135,22 @@ if __name__=='__main__':
             else:
                 sourcelist=[l.rstrip() for l in open(sourcename).readlines()]
 
-    print('Starting from a source list of length',len(sourcelist))
+        print('Starting from a user-supplied source list of length',len(sourcelist))
+
+        # check whether any of these sources have zoom files already
+        for source in sourcelist:
+            zoomfile=s.sd[source].get('Zoomfile')
+            if zoomfile:
+                print(source,'has a zoom file already')
+                if not os.path.isdir('old_zoom'):
+                    os.mkdir('old_zoom')
+                os.rename(zoomfile,'old_zoom/'+os.path.basename(zoomfile))
+            record=sql.get_object(source,create=False)
+            if record is not None:
+                print(source,': clearing existing SQL record')
+                sql.execute('update '+sql.table+' set complete=NULL where object="%s"' % source)
+                sql.execute('update '+sql.table+' set user=NULL where object="%s"' % source)
+            
                 
     # zoomneeded sources may have been renamed
     print('Processing zoomneeded list of length',len(s.zoomneeded))
@@ -164,6 +180,7 @@ if __name__=='__main__':
     sourcelist=list(set(sourcelist))
     print('Processing',len(sourcelist),'sources')
 
+    os.chdir('zoom')
     # now download any images we need!
     wd=os.getcwd() # the zoom directory
     lm=LofarMaps(stay_in_imagedir=True)

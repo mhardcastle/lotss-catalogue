@@ -278,6 +278,7 @@ subs_unique=set(newsubj.source_name)
 # Read in catalogues
 
 t=Table.read(sourcecat)
+srct=t
 # Convert axes to arcsec, as the code expects
 #t['Maj']*=3600.0
 #t['Min']*=3600.0
@@ -351,7 +352,6 @@ for scount,subj in enumerate(subs_unique):
     sourcematches=[]
     imatches=[]
 
-    srct=t
     tabval=1
     rowt=srct[srct['Source_Name']==subj]
     if len(rowt)>0:
@@ -446,7 +446,7 @@ for scount,subj in enumerate(subs_unique):
         subjs_noassoc.append(source_name)
 
 
-     # Loop through ID clicks for this source to match each click to a catalogued optical source
+    # Loop through ID clicks for this source to match each click to a catalogued optical source
 
     if num_ids>0:
 

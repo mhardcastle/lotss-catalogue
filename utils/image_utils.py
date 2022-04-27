@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import numpy as np
 import glob
@@ -21,7 +22,7 @@ def find_bbox(t,scale=3600.0):
     try:
         minra=np.nanmin(boxes[:,0])
     except:
-        print boxes
+        print(boxes)
         raise
     
     maxra=np.nanmax(boxes[:,1])

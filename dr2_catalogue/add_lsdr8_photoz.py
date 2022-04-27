@@ -26,7 +26,7 @@ infile=g[-1]
 print('Processing',infile)
 
 lofar_cat_path = infile
-version_number = '0.1' # photoz merge version counter
+version_number = '0.2' # photoz merge version counter
 
 spec_sep = 1.5 # arcsec - matching radius for spec-zs
 xray_sep = 3 # arcsec - matching radius for X-ray cross-IDs
@@ -134,15 +134,23 @@ for hemisphere in hemispheres:
 
         pzpath = '{0}/hpx_{1:03}_merged.fits'
         filenames=[pzpath.format(photoz_cat_path, o) for o in hpx_list]
+        if verbose:
+            print(filenames)
+        tables=[Table.read(f) for f in filenames if os.path.isfile(f)]
+        if len(tables):
+            print(len(tables))
+            try:
+                photoz = vstack(tables)
+            except TypeError:
+                print(tables)
+                raise
 
-        photoz = vstack([Table.read(f) for f in filenames if os.path.isfile(f)])
+            photoz['id'].name = 'Legacy_ID'
 
-        photoz['id'].name = 'Legacy_ID'
+            ls_joined = join(lofar_cat[lofar_subset], photoz,
+                             keys='Legacy_ID', join_type='left')
 
-        ls_joined = join(lofar_cat[lofar_subset], photoz,
-                         keys='Legacy_ID', join_type='left')
-
-        ls_joined_all.append(ls_joined)
+            ls_joined_all.append(ls_joined)
 
 
     merged_all = vstack(ls_joined_all)

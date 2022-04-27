@@ -6,14 +6,11 @@
 # workflow version numbers as the Zooniverse export includes everything. I have found it easiest
 # to manually remove earlier workflow version entires from the csv before running this,
 # rather than filtering using this script.
-#
-# At the moment there are also specific tweaks to accommodate problems with one of the
-# manifest files.
-#
+##
 # The output from the scipt is four csv files: a list of association click data, a list of optical ID clicks,
 # a list of subject information, and a list of problem clicks.
 #
-# This version by J. Croston 17/11/17, modified M Hardcastle 2020
+# Original version by J. Croston 17/11/17, modified M. Hardcastle 2020-2022
 #
 # It follows various examples from Zooniverse, including the Andromeda project example from
 # https://github.com/zooniverse/Data-digging
@@ -106,12 +103,13 @@ for index,c in iclass.iterrows():
 
     subj=c.subject_data['source_name']
     user=c.user_name
-    ra=c.subject_data['ra']
-    dec=c.subject_data['dec']
-    size=c.subject_data['#size']
+    ra=float(c.subject_data['ra'])
+    dec=float(c.subject_data['dec'])
+    size=float(c.subject_data['#size'])
     if subj not in sources:
       if subj not in rescued:
         print('Attempting to rescue subject',subj,'which is missing from table')
+        print('RA is',ra,'and DEC is',dec)
         dra=t['RA']-ra
         ddec=t['DEC']-dec
         dist=3600*np.sqrt((np.cos(ra*np.pi/180)*dra)**2.0+ddec**2.0)
