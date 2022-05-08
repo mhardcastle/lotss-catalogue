@@ -15,6 +15,11 @@ import shapely
 from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
 from separation import separation
+from tqdm import tqdm
+from astropy_healpix import HEALPix
+from astropy import units as u
+from multiprocessing import Pool
+
 
 # ellipse code taken from old process_lgz
 
@@ -102,7 +107,7 @@ def assemble_source(clist):
     ra=np.sum(clist['RA']*clist['Total_flux'])/tfluxsum
     dec=np.sum(clist['DEC']*clist['Total_flux'])/tfluxsum
     sname=sourcename(ra,dec)
-    print('New sourcename is',sname)
+    #print('New sourcename is',sname)
     r={'Source_Name':sname}
     r['RA']=ra
     r['DEC']=dec
@@ -118,9 +123,9 @@ def assemble_source(clist):
     r['Isl_rms']=np.mean(clist['Isl_rms'])
     ms=Make_Shape(clist)
     r['LGZ_Size']=ms.length()
-    if r['LGZ_Size']>1000:
-        print(clist['Source_Name'])
-        print('Unreasonable source size detected')
+    #if r['LGZ_Size']>1000:
+    #    print(clist['Source_Name'])
+    #    print('Unreasonable source size detected')
     r['LGZ_Width']=ms.width()
     r['LGZ_PA']=ms.pa()
     for k in ['Maj','Min','PA','E_Maj','E_Min','E_PA','DC_Maj','DC_Min','DC_PA']:
@@ -186,16 +191,21 @@ def parsefile(sourcename,ss,dir=''):
         ss.sd[sourcename]['NoID']=11
         
 class Source(object):
-    def __init__(self):
+    def __init__(self,logfile=None):
         self.gd=defaultdict(dict)
         self.cd=defaultdict(dict)
         self.sd=defaultdict(dict)
         self.zoomneeded=[]
         self.zoomreasons=[]
         self.stage='Initialize'
+        self.logfile=logfile
 
+    def log(self,*kwargs):
+        print(*kwargs,file=self.logfile)
+        
     def set_stage(self,s):
         print('Stage is',s)
+        self.log('=========== Stage is',s,' ============')
         self.stage=s
 
     def create_gaussian(self,n,r):
@@ -229,32 +239,32 @@ class Source(object):
         self.sd[n]['Created']=self.stage
 
     def delete_source(self,n,reason,descend=True):
-        print('Deleting source',n,'for reason',reason)
+        self.log('Deleting source',n,'for reason',reason)
         self.sd[n]['Deleted']=reason
         if descend:
             for cchild in self.sd[n]['Children']:
                 if self.cd[cchild]['Parent']==n:
                     self.cd[cchild]['Deleted']=reason
                 else:
-                    print('Not deleting child',cchild,'as parent mismatch')
+                    self.log('Not deleting child',cchild,'as parent mismatch')
 
                 for gchild in self.cd[cchild]['Children']:
                     if self.gd[gchild]['Parent']==cchild:
                         self.gd[gchild]['Deleted']=reason
                     else:
-                        print('Not deleting Gaussian child',gchild,'as parent mismatch')
+                        self.log('Not deleting Gaussian child',gchild,'as parent mismatch')
 
     def delete_component(self,n,reason,descend=True):
-        print('Deleting component',n,'for reason',reason)
+        self.log('Deleting component',n,'for reason',reason)
         self.cd[n]['Deleted']=reason
         for gchild in self.cd[n]['Children']:
             if self.gd[gchild]['Parent']==n:
                 self.gd[gchild]['Deleted']=reason
             else:
-                print('Not deleting Gaussian child',gchild,'as parent mismatch')
+                self.log('Not deleting Gaussian child',gchild,'as parent mismatch')
                        
     def delete_gaussian(self,n,reason):
-        print('Deleting Gaussian',n,'for reason',reason)
+        self.log('Deleting Gaussian',n,'for reason',reason)
         self.gd[n]['Deleted']=reason
 
     # methods for the zoom code
@@ -266,7 +276,7 @@ class Source(object):
                 if c in self.cd and 'Deleted' not in self.cd[c]:
                     components.append(c)
         else:
-            print('Source',sourcename,'has no children -- this should not happen!')
+            self.log('Source',sourcename,'has no children -- this should not happen!')
         return components
 
     def get_ncomps(self,sourcename):
@@ -274,18 +284,18 @@ class Source(object):
         for k in self.sd:
             if k!=sourcename and 'Deleted' not in self.sd[k]:
                 if 'Children' not in self.sd[k]:
-                    print('Children missing!',k,self.sd[k])
+                    self.log('Children missing!',k,self.sd[k])
                 else:
                     ncomp+=self.sd[k]['Children']
         return ncomp
 
     def addzoom(self,sourcename,reason):
-        print('Adding',sourcename,'to zoom list for reason:',reason)
+        self.log('Adding',sourcename,'to zoom list for reason:',reason)
         self.zoomneeded.append(sourcename)
         self.zoomreasons.append(reason)
     
     def set_components(self,sourcename,componentlist,flag_removals=False):
-        print('setting components of',sourcename,'to',componentlist)
+        self.log('setting components of',sourcename,'to',componentlist)
         orphans=list(set(self.sd[sourcename]['Children'])-set(componentlist))
         self.sd[sourcename]['Children']=componentlist
         for comp in componentlist:
@@ -297,8 +307,8 @@ class Source(object):
                         # must be a previous LGZ source
                         self.addzoom(oldparent,'set_components parent changed')
                     if 'Children' not in self.sd[oldparent]:
-                        print('Old parent source of component %s (%s) has no children!' % (comp, oldparent))
-                        print(self.cd[comp])
+                        self.log('Old parent source of component %s (%s) has no children!' % (comp, oldparent))
+                        self.log(self.cd[comp])
                         self.delete_source(oldparent,'Reallocated (orphan)')
                     else:
                         self.sd[oldparent]['Children'].remove(comp)
@@ -321,7 +331,7 @@ class Source(object):
             # skip check of all sources
             for checksource in self.sd:
                 if 'Children' not in self.sd[checksource]:
-                    print('Children field missing!',checksource,self.sd[checksource])
+                    self.log('Children field missing!',checksource,self.sd[checksource])
                     self.sd[checksource]['Children']=[]
                 if checksource!=sourcename and comp in self.sd[checksource]['Children']:
                    self.sd[checksource]['Children'].remove(comp)
@@ -329,7 +339,7 @@ class Source(object):
                        self.delete_source(checksource,'Reallocated in zoom')
             '''
         for comp in orphans:
-            print('*** Creating orphan %s' % comp)
+            self.log('*** Creating orphan %s' % comp)
             self.cd[comp]['Parent']=''
             
     def set_opt(self,sourcename,ra,dec):
@@ -437,16 +447,16 @@ def make_structure(field,warn=False):
     noid_files=[]
     ridgeline='allhosts.fits'
     
-    s=Source()
+    s=Source(logfile=open('logfile.txt','w'))
     
     s.set_stage('Ingest components')
-    for r in ct:
+    for r in tqdm(ct):
         name=r['Source_Name']
         s.create_component(name,r)
         s.cd[name]['Children']=[]
 
     s.set_stage('Ingest Gaussians')
-    for r in gt:
+    for r in tqdm(gt):
         name=r['Source_Name']
         cname=r['Parent_Name']
         if cname not in s.cd:
@@ -457,7 +467,7 @@ def make_structure(field,warn=False):
 
     s.set_stage('Create initial sources')
     artefacts=[]
-    for component in s.cd:
+    for component in tqdm(s.cd):
         s.promote_component(component)
         if s.cd[component]['Prefilter']==4:
             s.addzoom(component,'Prefilter zoom required')
@@ -465,7 +475,7 @@ def make_structure(field,warn=False):
             artefacts.append(component)
 
     print('Deleting',len(artefacts),'prefilter artefacts')
-    for c in artefacts:
+    for c in tqdm(artefacts):
         s.delete_source(c,'Artefact')
             
     s.set_stage('Ingest LGZ')
@@ -473,7 +483,7 @@ def make_structure(field,warn=False):
     lgz_source['Dec'].name='DEC'
     lgz_comps=Table.read(lgz_dir+'/LGZ-comps.fits')
     # create LGZ entries
-    for r in lgz_source:
+    for r in tqdm(lgz_source):
         sname=r['Source_Name']
         s.create_source(sname,r) # will add to what's on record for
                                  # the source, if it already exists
@@ -510,12 +520,11 @@ def make_structure(field,warn=False):
         patches=glob.glob(bd+'/ILT*.txt')
         #if len(patches)==0:
         #    raise RuntimeError('No patches found in directory %s, did you get the pathname wrong?' % bd)
-        for f in patches:
+        for f in tqdm(patches):
             name=f.replace(bd+'/','').replace('.txt','')
-            print('Blend file for',name,'is',f)
+            s.log('Blend file for',name,'is',f)
             if name not in s.sd:
-                print(name,'not in source list')
-                sys.exit(2)
+                raise RuntimeError(name+' not in source list')
             # whatever happens to the source, these issues are dealt with...
             s.sd[name]['Blend_prob']=0
             s.sd[name]['Hostbroken_prob']=0
@@ -528,20 +537,20 @@ def make_structure(field,warn=False):
             elif lines[0]=='## Unchanged':
                 # source stays as it is, BUT lr must be accepted if present
                 if not np.isnan(s.sd[name]['lr_ra_fin']):
-                    print('Accepting LR position for this source')
+                    s.log('Accepting LR position for this source')
                     s.sd[name]['optRA']=s.sd[name]['lr_ra_fin']
                     s.sd[name]['optDec']=s.sd[name]['lr_dec_fin']
                 elif 'old_ra' in s.sd[name]:
-                    print('Accepting pre-LGZ LR position for this source')
+                    s.log('Accepting pre-LGZ LR position for this source')
                     s.sd[name]['optRA']=s.sd[name]['old_ra']
                     s.sd[name]['optDec']=s.sd[name]['old_dec']
                     
             elif lines[0]=='## Components':
-                print(name,': output file to be processed!')
+                s.log(name,': output file to be processed!')
                 s.sd[name]['lr_ra_fin']=np.nan
                 s.sd[name]['lr_dec_fin']=np.nan
                 components=len(s.cd[name]['Children'])
-                print('Component has',components,'Gaussians:',s.cd[name]['Children'])
+                s.log('Component has',components,'Gaussians:',s.cd[name]['Children'],file=logfile)
                 # parse the component ID part
                 child_ids=[]
                 gaussian_names=[]
@@ -568,11 +577,11 @@ def make_structure(field,warn=False):
                     dec=float(bits[2])
                     optid[id]=(ra,dec)
                 if np.all(child_ids==0):
-                    print('No unflagged components!')
+                    s.log('No unflagged components!')
                     # probably should never happen
                     s.delete_source(name,'All components removed')
                 elif np.all(child_ids==1):
-                    print('Components unchanged')
+                    s.log('Components unchanged')
                     # Using the LGZ names
                     if 1 in optid:
                         ra,dec=optid[1]
@@ -586,7 +595,7 @@ def make_structure(field,warn=False):
                         s.sd[name]['optDec']=np.nan
                         s.sd[name]['noID']=11
                 else:
-                    print("It's complicated")
+                    s.log("It's complicated")
                     # This means that the component has been split
                     # into more than one set of Gaussians, possibly
                     # each with an optical ID.
@@ -606,15 +615,15 @@ def make_structure(field,warn=False):
                                 s.delete_gaussian(g,'Gaussian not included in blend')
                         else:
                             if len(gaussians)==1:
-                                print('Promoting single Gaussian to component and source')
+                                s.log('Promoting single Gaussian to component and source')
                                 # Single Gaussian should be promoted to a source
                                 gname=gaussians[0]
                                 parent=s.gd[gname]['Parent']
                                 if 'Promoted' not in s.cd[parent]['Created']:
-                                    print(gname,'has parent',parent,' -- marking deleted')
+                                    s.log(gname,'has parent',parent,' -- marking deleted')
                                     s.cd[parent]['Deleted']='Removed by blend file (single)'
                                 else:
-                                    print('Not deleting parent',parent)
+                                    s.log('Not deleting parent',parent)
                                 s.cd[gname]=deepcopy(s.gd[gname])
                                 s.cd[gname]['Created']='Promoted from single Gaussian'
                                 s.cd[gname]['Children']=[gname]
@@ -622,7 +631,7 @@ def make_structure(field,warn=False):
                                 s.promote_component(gname)
                                 sname=gname
                             else:
-                                print('Assembling several Gaussians to component and source')
+                                s.log('Assembling several Gaussians to component and source')
                                 # Several Gaussians need to be
                                 # assembled into a source, which will
                                 # have a new name and other new
@@ -641,7 +650,7 @@ def make_structure(field,warn=False):
                                     else:
                                         sname=sname[:-1]+chr(ord(sname[-1])+1)
                                     r['Source_Name']=sname
-                                    print('Trying new source name',sname)
+                                    s.log('Trying new source name',sname)
                                 if len(clist)==1:
                                     r['Assoc']=0
                                 else:
@@ -652,8 +661,8 @@ def make_structure(field,warn=False):
                                 r['Created']='Deblend'
                                 r['Blend_file']=f
                                 r['Children']=gaussians
-                                print('Creating source',sname,'with children',gaussians)
-                                print(clist['Source_Name'])
+                                s.log('Creating source',sname,'with children',gaussians)
+                                #print(clist['Source_Name'])
                                 #if sname in s.sd:
                                 #    print('Source exists! Previous source was created by',s.sd[sname]['Created'],'and has children',s.sd[sname]['Children'])
                                 #    if s.sd[sname]['Created']=='Deblend':
@@ -664,10 +673,10 @@ def make_structure(field,warn=False):
                                     # logic here and above deals with the case where a component created elsewhere in the loop has the same name as a parent component of a Gaussian that would normally be deleted. As the old parent has already been overwritten the deletion is not necessary.
                                     parent=s.gd[g]['Parent']
                                     if 'Promoted' not in s.cd[parent]['Created']:
-                                        print(g,'has parent',parent,' -- marking deleted')
+                                        s.log(g,'has parent',parent,' -- marking deleted')
                                         s.cd[parent]['Deleted']='Removed by blend file (multiple)'
                                     else:
-                                        print('Not deleting parent',parent)
+                                        s.log('Not deleting parent',parent)
                                     s.cd[g]=deepcopy(s.gd[g])
                                     s.cd[g]['Created']='Promoted from Gaussian'
                                     s.cd[g]['Deblended_from']=name
@@ -695,8 +704,8 @@ def make_structure(field,warn=False):
     s.set_stage('Too zoomed in')
 
     g=sorted(glob.glob(lgz_dir+'/zoom/ILTJ*.txt'),key=os.path.getmtime)
-    for f in g:
-        print('Zoomfile',f)
+    for f in tqdm(g):
+        s.log('Zoomfile',f)
         source=f.replace('.txt','').replace(lgz_dir+'/zoom/','')
         parsefile(source,s,dir=lgz_dir+'/zoom/')
         s.sd[source]['Created']='Too zoomed in'
@@ -705,43 +714,43 @@ def make_structure(field,warn=False):
 
     # component table won't now change, so generate it so it can be
     # passed to assemble_source
-    print('Building new component table')
+    s.set_stage('Building new component table')
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('Created',None),('Parent',None)]
     new_ct=generate_table(s.cd,columns)
     
     s.set_stage('LGZ post-processing')
     sources=s.sd.keys() # copy because we rename as we go
-    for name in sources:
+    for name in tqdm(sources):
         if 'Deleted' not in s.sd[name] and 'LGZ_assembly_required' in s.sd[name]:
             if len(s.sd[name]['Children'])==1 and s.sd[name]['Children'][0]==name:
                 #print('Source',name,'marked as assembly required but has only one component')
                 del s.sd[name]['LGZ_assembly_required']
                 continue # source is single component
-            print('Need to assemble source',name,'from children',s.sd[name]['Children'])
+            s.log('Need to assemble source',name,'from children',s.sd[name]['Children'])
             cids=[]
             error=False
             for cname in s.sd[name]['Children']:
                 filt=(new_ct['Source_Name']==cname)
                 if not np.any(filt):
-                    print('Source created by',s.sd[name]['Created'])
+                    s.log('Source created by',s.sd[name]['Created'])
                     error=True
-                    print('Child %s does not exist!' % cname)
+                    s.log('Child %s does not exist!' % cname)
                 else:
                     cids.append(np.argmax(filt))
             if len(cids)==0:
                 s.delete_source(name,'All components removed')
                 continue
             if error:
-                warn_or_die(True,'Source is partial, needs zoom file fix')
+                s.log('Source is partial, needs zoom file fix')
                 s.addzoom(name,'Partial source in LGZ post-processing')
             clist=new_ct[cids]
             r=assemble_source(clist)
             if 'Manual_Size' in s.sd[name]:
-                print('Adding manual size measurement')
+                s.log('Adding manual size measurement')
                 r['LGZ_Size']=s.sd[name]['Manual_Size']
             sname=r['Source_Name']
             if sname!=name:
-                print('Renaming old source',name,'created by',s.sd[name]['Created'],'to',sname)
+                s.log('Renaming old source',name,'created by',s.sd[name]['Created'],'to',sname)
                 r['Renamed_from']=name
                 s.delete_source(name,'Renamed',descend=False)
                         
@@ -770,7 +779,8 @@ def make_structure(field,warn=False):
             del s.sd[sname]['LGZ_assembly_required']
             
     # finally sort out optical positions
-    for source in s.sd:
+    s.set_stage('Sorting optical positions')
+    for source in tqdm(s.sd):
         if 'Deleted' in s.sd[source]:
             continue
         if 'optRA' in s.sd[source]:
@@ -796,7 +806,7 @@ def make_structure(field,warn=False):
                 source.append(bits[1])
             for sname,g in zip(source,group):
                 if sname not in s.sd:
-                    print('Source',name,'already deleted, skipping')
+                    s.log('Source',name,'already deleted, skipping')
                     continue
                 #if 'optRA' in s.sd[sname] and not np.isnan(s.sd[sname]['optRA']):
                 #    print 'Source',sname,'in noid list but has id, skipping'
@@ -810,7 +820,7 @@ def make_structure(field,warn=False):
                             name=s.sd[sname]['Renamed_from']
                         else:
                             name=sname
-                        print('Adding',name,'to zoom list')
+                        s.log('Adding',name,'to zoom list')
                         s.addzoom(name,'NoID file required zoom')
                     else:
                         s.sd[sname]['NoID']=3
@@ -821,7 +831,7 @@ def make_structure(field,warn=False):
                                 name=s.sd[sname]['Renamed_from']
                             else:
                                 name=sname
-                            print('Adding',name,'to zoom list')
+                            s.log('Adding',name,'to zoom list')
                             s.addzoom(name,'NoID file required zoom (2)')
                     else:
                         s.sd[sname]['NoID']=3
@@ -829,12 +839,12 @@ def make_structure(field,warn=False):
     s.set_stage('Ridge line ingest')
     if ridgeline is not None and os.path.isfile(ridgeline):
         tr=Table.read(ridgeline)
-        for r in tr:
+        for r in tqdm(tr):
             if r['LRMagBoth']<1.0:
                 continue
             name=r['Source_Name']
             if name not in s.sd:
-                print('Warning: source %s in ridgeline file does not exist' % name)
+                s.log('Warning: source %s in ridgeline file does not exist' % name)
             else:
                 if 'optRA' not in s.sd[name] or np.isnan(s.sd[name]['optRA']) or 'Position_from' not in s.sd[name] or s.sd[name]['Position_from']=='LR':
                     s.sd[name]['optRA']=r['optRA_RLC']
@@ -843,6 +853,7 @@ def make_structure(field,warn=False):
                     s.sd[name]['lr_fin']=r['LRMagBoth']
 
     s.set_stage('Opt ID overlap check')
+
     names=[]
     optras=[]
     optdecs=[]
@@ -853,33 +864,28 @@ def make_structure(field,warn=False):
             names.append(name)
             optras.append(s.sd[name]['optRA'])
             optdecs.append(s.sd[name]['optDec'])
-    t=Table([names,optras,optdecs],names=['Source_Name','optRA','optDec'])
-    print('Made table of length',len(t))
+    names=np.array(names)
+    optras=np.array(optras)
+    optdecs=np.array(optdecs)
+    with open('optical.pickle','w') as pf:
+        pickle.dump((names,optras,optdecs),pf)
+
+    os.system('python ${LGZPATH}/dr2_catalogue/process_overlap.py')
+
+    with open('badlist.pickle') as pf:
+        bad=pickle.load(pf)
+    
     badlist=[]
     badzoom=[]
-    for r in t:
-        if np.isnan(r['optRA']): continue
-        filt=np.abs(t['optDec']-r['optDec'])<0.01
-        filt&=np.abs(t['optRA']-r['optRA'])<0.01
-        tf=t[filt]
-        dist=separation(r['optRA'],r['optDec'],tf['optRA'],tf['optDec'])
-        filt=dist<1.5/3600.0
-        sm=np.sum(filt)
-        if sm>1:
-            print(r['Source_Name'],'has',sm-1,'duplicates!',r['optRA'],r['optDec'])
-            tf=tf[filt]
-            for sname in tf['Source_Name']:
-                print('Checking duplicate ID source',sname,s.sd[sname]['Created'])
-                if 'Zoomfile' not in s.sd[sname]:
-                    name=sname
-                    #if 'LGZ' in s.sd[sname]['Created']:
-                    #    if 'Renamed_from' in s.sd[sname]:
-                    #        name=s.sd[sname]['Renamed_from']
-                    print('Adding',name,'to zoom list')
-                    badlist.append(name)
-                else:
-                    print('*** problem -- source',sname,'with zoom file',s.sd[sname]['Zoomfile'],'has duplicate ID')
-                    badzoom.append((sname,s.sd[sname]['Zoomfile']))
+    print('Processing bad sources')
+    for sname in tqdm(bad):
+        s.log('Checking duplicate ID source',sname,s.sd[sname]['Created'])
+        if 'Zoomfile' not in s.sd[sname]:
+            s.log('Adding',sname,'to zoom list')
+            badlist.append(sname)
+        else:
+            s.log('*** problem -- source',sname,'with zoom file',s.sd[sname]['Zoomfile'],'has duplicate ID')
+            badzoom.append((sname,s.sd[sname]['Zoomfile']))
                     
 
     badlist=list(set(badlist))
@@ -905,7 +911,7 @@ def make_structure(field,warn=False):
     s.set_stage('Check rescue file')
     if os.path.isfile('rescue.txt'):
         lines=open('rescue.txt').readlines()
-        for l in lines:
+        for l in tqdm(lines):
             bits=l.rstrip().split()
             dist=float(bits[2])
             if dist>3:
@@ -914,31 +920,31 @@ def make_structure(field,warn=False):
                     raise RuntimeError('Failed to find rescued component')
                 sname=s.cd[cname]['Parent']
                 if sname not in s.sd:
-                    print('Rescue source',sname,'not in source list')
+                    s.log('Rescue source',sname,'not in source list')
                 else:
                     if 'Zoomfile' not in s.sd[sname]:
                         name=sname
                         if 'LGZ' in s.sd[sname]['Created']:
                             if 'Renamed_from' in s.sd[sname]:
                                 name=s.sd[sname]['Renamed_from']
-                        print('Adding',name,'(component',cname,') to zoom list')
+                        s.log('Adding',name,'(component',cname,') to zoom list')
                         s.addzoom(name,'Rescue file')
 
     s.set_stage('Assoc check')
     # At this point Assoc should be correct except for sources where
     # e.g. a zoom file has over-ridden a de-blend. Fix those
-    for source in s.sd:
+    for source in tqdm(s.sd):
         if 'Deleted' in s.sd[source]:
             continue
         if len(s.sd[source]['Children'])>1:
             if 'Assoc' not in s.sd[source]:
-                print('Fixing',source,'created by',s.sd[source]['Created'],'which has assoc unset but',len(s.sd[source]['Children']),'children')
+                s.log('Fixing',source,'created by',s.sd[source]['Created'],'which has assoc unset but',len(s.sd[source]['Children']),'children')
             elif s.sd[source]['Assoc']!=len(s.sd[source]['Children']):
-                print('Fixing',source,'created by',s.sd[source]['Created'],'which has assoc =',s.sd[source]['Assoc'],'but',len(s.sd[source]['Children']),'children')
+                s.log('Fixing',source,'created by',s.sd[source]['Created'],'which has assoc =',s.sd[source]['Assoc'],'but',len(s.sd[source]['Children']),'children')
                 s.sd[source]['Assoc']=len(s.sd[source]['Children'])
         elif len(s.sd[source]['Children'])==1:
             if 'Assoc' in s.sd[source] and s.sd[source]['Assoc']!=0:
-                print('Fixing',source,'created by',s.sd[source]['Created'],'which has assoc =',s.sd[source]['Assoc'],'but',len(s.sd[source]['Children']),'children')
+                s.log('Fixing',source,'created by',s.sd[source]['Created'],'which has assoc =',s.sd[source]['Assoc'],'but',len(s.sd[source]['Children']),'children')
                 s.sd[source]['Assoc']=0
     return s
 
@@ -971,71 +977,71 @@ def generate_table(sd,columns,keep_deleted=False):
 
 def sanity_check(s):
     errors=0
-    for source in s.sd:
+    for source in tqdm(s.sd,desc='Sources   '):
         if 'Deleted' not in s.sd[source]:
             if 'Children' not in s.sd[source]:
-                print('Source',source,'has no children!')
-                print(s.sd[source])
+                s.log('Source',source,'has no children!')
+                s.log(s.sd[source])
                 errors+=1
             else:
                 # add children/assoc integrity check
                 nchildren=len(s.sd[source]['Children'])
                 if 'Assoc' not in s.sd[source]:
                     if nchildren>1:
-                        print('Source',source,'has unset assoc but more than one child')
+                        s.log('Source',source,'has unset assoc but more than one child')
                         errors+=1
                     else:
                         #fine
                         pass
                 elif s.sd[source]['Assoc']==0 and nchildren!=1:
-                    print('Source',source,'has assoc=0 but more than 1 child')
+                    s.log('Source',source,'has assoc=0 but more than 1 child')
                     errors+=1
                 elif s.sd[source]['Assoc']>0 and nchildren!=s.sd[source]['Assoc']:
-                    print('Source',source,'has assoc', s.sd[source]['Assoc'],'but',nchildren,'children')
+                    s.log('Source',source,'has assoc', s.sd[source]['Assoc'],'but',nchildren,'children')
                     errors+=1
                               
                     
                 for component in s.sd[source]['Children']:
                     if 'Deleted' in s.cd[component]:
-                        print(source)
-                        print('Deleted component ',component,'in child list')
-                        print('Source created by',s.sd[source]['Created'],'with children',s.sd[source]['Children'])
+                        s.log(source)
+                        s.log('Deleted component ',component,'in child list')
+                        s.log('Source created by',s.sd[source]['Created'],'with children',s.sd[source]['Children'])
                         if s.sd[source]['Created']=='Deblend':
-                            print('(blend file was %s)' % s.sd[source]['Blend_file'])
-                        print('Component created by',s.cd[component]['Created'],'and deleted for reason',s.cd[component]['Deleted'])
+                            s.log('(blend file was %s)' % s.sd[source]['Blend_file'])
+                        s.log('Component created by',s.cd[component]['Created'],'and deleted for reason',s.cd[component]['Deleted'])
                         errors+=1
                     elif s.cd[component]['Parent']!=source:
-                        print('Source',source,'has a child',component,'that reports a different parent',s.cd[component]['Parent'])
-                        print('Source created by',s.sd[source]['Created'],'with children',s.sd[source]['Children']) 
+                        s.log('Source',source,'has a child',component,'that reports a different parent',s.cd[component]['Parent'])
+                        s.log('Source created by',s.sd[source]['Created'],'with children',s.sd[source]['Children']) 
                     else:
                         s.cd[component]['Checked']=True
                         for gaussian in s.cd[component]['Children']:
                             if 'Deleted' in s.gd[gaussian]:
-                                print(source,component)
-                                print('Deleted Gaussian',gaussian,'in child list')
+                                s.log(source,component)
+                                s.log('Deleted Gaussian',gaussian,'in child list')
                                 errors+=1
                             else:
                                 s.gd[gaussian]['Checked']=True
 
-    for component in s.cd:
+    for component in tqdm(s.cd,desc='Components'):
         if 'Deleted' not in s.cd[component] and 'Checked' not in s.cd[component]:
             if 'Parent' not in s.cd[component]:
-                print('Component',component,'has no parent!!')
-                print(s.cd[component])
+                s.log('Component',component,'has no parent!!')
+                s.log(s.cd[component])
             else:
                 parent=s.cd[component]['Parent']
-                print('Component',component,'neither deleted nor part of a source (alleged parent is',parent,' and creation route is',s.cd[component]['Created'],')')
+                s.log('Component',component,'neither deleted nor part of a source (alleged parent is',parent,' and creation route is',s.cd[component]['Created'],')')
                 if parent in s.sd and 'Deleted' in s.sd[parent]:
-                    print('Parent is deleted for reason',s.sd[parent]['Deleted'])
+                    s.log('Parent is deleted for reason',s.sd[parent]['Deleted'])
                 elif parent not in s.sd:
-                    print('Parent',parent,'does not exist')
+                    s.log('Parent',parent,'does not exist')
                 else:
-                    print('Parent properties are',s.sd[parent])
+                    s.log('Parent properties are',s.sd[parent])
             errors+=1
 
-    for gaussian in s.gd:
+    for gaussian in tqdm(s.gd,desc='Gaussians '):
         if 'Deleted' not in s.gd[gaussian] and 'Checked' not in s.gd[gaussian]:
-            print('Gaussian',gaussian,'neither deleted nor part of a source (alleged parent is',s.gd[gaussian]['Parent'],')')
+            s.log('Gaussian',gaussian,'neither deleted nor part of a source (alleged parent is',s.gd[gaussian]['Parent'],')')
             errors+=1
 
     print('Total errors',errors)
