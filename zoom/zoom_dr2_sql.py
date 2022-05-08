@@ -19,6 +19,8 @@ from overlay import show_overlay
 import MySQLdb as mdb
 import MySQLdb.cursors as mdbcursors
 from zoomprep_dr2 import tzi_sql
+from astropy_healpix import HEALPix
+from astropy import units as u
 
 scale=3600.0 # units of catalogue are arcsec
 
@@ -142,6 +144,12 @@ class Interactive(object):
             outfile.write(c+'\n')
         outfile.close()
 
+def load_opt(h):
+    try:
+        t=Table.read(cwd+'/optical_hpix_256/%i.fits' % h)
+    except IOError:
+        t=None
+    return t
                 
 if __name__=='__main__':
 
@@ -160,18 +168,25 @@ if __name__=='__main__':
 
     print('Reading files')
 
-    optcat='optical.fits'
-    gals=Table.read(optcat)
-    if 'RA' in gals.colnames:
-        gals['RA'].name='ra'
-    if 'DEC' in gals.colnames:
-        gals['DEC'].name='dec'
+    dynamic_opt=False
+    if os.path.isdir('optical_hpix_256'):
+        dynamic_opt=True
+        print('Using dynamic loading of optical data')
+        od={}
+        hp = HEALPix(nside=256)
+    else:
+        optcat='optical.fits'
+        gals=Table.read(optcat)
+        if 'RA' in gals.colnames:
+            gals['RA'].name='ra'
+        if 'DEC' in gals.colnames:
+            gals['DEC'].name='dec'
 
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Parent',None)]
     ot=generate_table(s.cd,columns,keep_deleted=True)
     # large source table
     lt=ot[(ot['Total_flux']>0.005) & (ot['Maj']>10)]
-
+    cwd=os.getcwd()
     os.chdir('zoom')
 
     mode='wise'
@@ -269,6 +284,26 @@ if __name__=='__main__':
         while True:
             print('Scale factor is',scalefactor)
             if overlaygals:
+                if dynamic_opt:
+                    rsize=size*scalefactor/np.cos(dec*np.pi/180.0)
+                    dsize=0.5*size*scalefactor/3600.0
+                    lhp=hp.lonlat_to_healpix(np.array([ra,ra-rsize,ra+rsize,ra-rsize,ra+rsize])*u.deg,np.array([dec,dec-dsize,dec-dsize,dec+dsize,dec+dsize])*u.deg)
+                    lpix=sorted(list(set(lhp)))
+                    tables=[]
+                    for p in lpix:
+                        if p in od:
+                            tables.append(od[p])
+                        else:
+                            newopt=load_opt(p)
+                            if newopt is not None:
+                                od[p]=newopt
+                                tables.append(newopt)
+                    gals=vstack(tables)
+                    if 'RA' in gals.colnames:
+                        gals['RA'].name='ra'
+                    if 'DEC' in gals.colnames:
+                        gals['DEC'].name='dec'
+
                 pwg=gals[(np.abs(gals['ra']-ra)<size*scalefactor/np.cos(dec*np.pi/180.0)) & (np.abs(gals['dec']-dec)<size*3)]
             else:
                 pwg=None

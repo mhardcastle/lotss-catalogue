@@ -47,7 +47,7 @@ class prefilter_sql(object):
 
 class tzi_sql(object):
     def __init__(self,table):
-        self.con=mdb.connect('127.0.0.1', 'tzi_user', 'IK34daKG', 'tzi', cursorclass=mdbcursors.DictCursor, autocommit=True)
+        self.con=mdb.connect('192.168.2.249', 'tzi_user', 'IK34daKG', 'tzi', cursorclass=mdbcursors.DictCursor, autocommit=True)
         self.cur = self.con.cursor()
         self.execute=self.cur.execute
         self.fetchall=self.cur.fetchall

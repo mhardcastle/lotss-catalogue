@@ -26,6 +26,7 @@ import pandas as pd
 import sys
 import os
 from multiprocessing import Pool
+from tqdm import tqdm
 
 # generate global dicts of component properties
 
@@ -521,22 +522,19 @@ def dfilt(cat,ra,dec,thres):
 #MAIN
 
 def df_process_source(src,verbose=False,save_cutouts=False):
-    if not verbose:
-        print('.',end='')
-        sys.stdout.flush()
     ra=src['RA']
     dec=src['DEC']
     mpath="/home/mjh/lofar-surveys/public/deepfields/data_release/"
     if(ra<170.0):
         #lockman
-        print("Lockman")
+        if verbose: print("Lockman")
         imfile=mpath+"/lockman/radio_image.fits"
     elif(ra>230):
-        print("EN1")
+        if verbose: print("EN1")
         # EN1
         imfile=mpath+"/en1/radio_image.fits"
     else:
-        print("Bootes")
+        if verbose: print("Bootes")
         # bootes
         imfile=mpath+"/bootes/radio_image.fits"
 
@@ -566,7 +564,7 @@ def df_process_source(src,verbose=False,save_cutouts=False):
     size=2.5*srcSize # cutout size
 
     # extract fits cutout as hdu obj
-    cutout,ff=extract_subim(imfile,ra,dec,size)
+    cutout,ff=extract_subim(imfile,ra,dec,size,verbose=verbose)
 
     # locate optical ID -- for Leon
     id_ra=src['optRA']
@@ -630,7 +628,7 @@ if __name__=='__main__':
     lcincat=Table.read(pdir+"/lockman/final_component_catalogue-v1.0.fits")
     ecincat=Table.read(pdir+"/en1/final_component_catalogue-v1.0.fits")
     #incat=vstack([bincat,lincat,eincat])
-    incat=Table.read("/home/mjh/lofar/catalogues/deepfield/combined_agn.fits")
+    incat=Table.read(sys.argv[1])
     compcat=vstack([bcincat,lcincat,ecincat])
     
     if not os.path.isdir('cutouts'):
@@ -660,6 +658,7 @@ if __name__=='__main__':
     # Loop through rows, making cutout for each source, generating floodmask and then measuring size and flux
 
     pool=Pool(16)
-    outcat=pool.map(df_process_source,incat)
+    for result in tqdm(pool.map(df_process_source,incat),total=len(incat)):
+        outcat.append(result)
         
-    write_fits_out(['Source_Name','RA','DEC','Total_flux_LoTSS','New_flux','Maj_LoTSS','LGZ_Size_LoTSS','New_size'],outcat,'LM-size-flux.fits')
+    write_fits_out(['Source_Name','RA','DEC','Total_flux_LoTSS','New_flux','Maj_LoTSS','LGZ_Size_LoTSS','New_size'],outcat,sys.argv[1].replace('.fits','-size-flux.fits'))

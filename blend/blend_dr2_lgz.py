@@ -13,6 +13,7 @@ from image_utils import find_bbox,get_mosaic_name
 from overlay import show_overlay
 from download_image_files import LofarMaps,get_legacy,get_first,get_wise
 from find_wise import WISE
+from builtins import input
 
 scale=3600.0 # units of catalogue are arcsec
 
