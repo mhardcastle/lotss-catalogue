@@ -191,7 +191,11 @@ if __name__=='__main__':
 
     mode='wise'
     quit=False
+    ds9=False
     while not(quit):
+        if ds9:
+            os.system('killall ds9')
+            ds9=False
         sourcename=sql.get_next()
         if sourcename is None:
             break
@@ -284,27 +288,32 @@ if __name__=='__main__':
         while True:
             print('Scale factor is',scalefactor)
             if overlaygals:
+                rsize=size*scalefactor/np.cos(dec*np.pi/180.0)
+                dsize=size*scalefactor
                 if dynamic_opt:
-                    rsize=size*scalefactor/np.cos(dec*np.pi/180.0)
-                    dsize=0.5*size*scalefactor/3600.0
                     lhp=hp.lonlat_to_healpix(np.array([ra,ra-rsize,ra+rsize,ra-rsize,ra+rsize])*u.deg,np.array([dec,dec-dsize,dec-dsize,dec+dsize,dec+dsize])*u.deg)
                     lpix=sorted(list(set(lhp)))
+                    print('Healpixes are',lpix)
                     tables=[]
                     for p in lpix:
                         if p in od:
                             tables.append(od[p])
+                            print('Appending already loaded healpix',p)
                         else:
                             newopt=load_opt(p)
                             if newopt is not None:
                                 od[p]=newopt
+                                print('Dynamically loaded healpix',p)
                                 tables.append(newopt)
+                            else:
+                                print('Healpix',p,'not found')
                     gals=vstack(tables)
                     if 'RA' in gals.colnames:
                         gals['RA'].name='ra'
                     if 'DEC' in gals.colnames:
                         gals['DEC'].name='dec'
 
-                pwg=gals[(np.abs(gals['ra']-ra)<size*scalefactor/np.cos(dec*np.pi/180.0)) & (np.abs(gals['dec']-dec)<size*3)]
+                pwg=gals[(np.abs(gals['ra']-ra)<rsize) & (np.abs(gals['dec']-dec)<dsize)]
             else:
                 pwg=None
 
@@ -358,58 +367,60 @@ if __name__=='__main__':
 
             plt.ion()
             plt.show(block=False)
-
             stop=False
             while not(stop):
                 print('Source %s, %i sources remaining' % (sourcename,sql.get_remaining()))
                 print('(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, save (f)its, go to (n)ext, (Z)oom out, \n   (i)nspect, (T)oggle galaxy overlay, change opt (I)mage,\n   (F)avourite, (s)ave and continue or save and (q)uit?',end=' ')
                 command=raw_input()
+                replot=False
                 if command=='s' or command=='q':
                     stop=True
                     I.write(sourcename)
                     if command=='q':
                         quit=True
-                elif command=='d':
+                if command=='d':
                     stop=True
                     I.delete(sourcename)
-                elif command=='n':
+                if command=='n':
                     stop=True
-                elif command in ['m','o','z','i']:
+                if command in ['m','o','z','i']:
                     I.set_mode(command)
-                elif command=='b':
+                if command=='b':
                     I.blend=True
-                elif command=='p':
+                if command=='p':
                     continue
-                elif command=='f':
+                if 'f' in command:
                     lhdu.writeto(sourcename+'.fits',overwrite=True)
                     print('Saved as',sourcename+'.fits')
                     subprocess.Popen(['/soft/bin/ds9',sourcename+'.fits'])
-                elif command=='F':
+                    ds9=True
+                if command=='F':
                     with open(os.environ['HOME']+'/favourites.txt','a') as outfile:
                         print('Adding',sourcename,'to favourites')
                         outfile.write(sourcename+'\n')
-                elif 'Z' in command:
+                if 'Z' in command:
                     zi=command.find('Z')
                     try:
                         scalefactor=int(command[zi+1:])
                     except:
                         scalefactor*=2
-                    plt.close()
-                    break
-                elif 'T' in command:
+                    replot=True
+                if 'T' in command:
                     overlaygals=not(overlaygals)
-                    plt.close()
-                    break
-                elif 'I' in command:
+                    replot=True
+                if 'I' in command:
                     if mode=='wise':
                         mode='optical'
                     else:
                         mode='wise'
+                    replot=True
+                #else:
+                #    print('Command not recognised!')
+                if replot:
                     plt.close()
                     break
-                else:
-                    print('Command not recognised!')
 
+                    
             # out of inner loop
             if command=='d':
                 s.delete_source(sourcename,'Marked as LGZ artefact')

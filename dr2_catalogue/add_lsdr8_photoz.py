@@ -49,7 +49,7 @@ if np.nanmin(t['ID_DEC'])<critical_dec:
 
 del(t)
 
-tables=[]
+final_tables=[]
 for hemisphere in hemispheres:
     print('======= Doing hemisphere %s =======' % hemisphere)
     ancillary_data = '/beegfs/lofar/duncan/ancillary_data'
@@ -254,21 +254,21 @@ for hemisphere in hemispheres:
 
     #t['Legacy_ID']=np.where(filt,np.nan,t['Legacy_ID'])
 
-    print('Remove -99s:',end='')
+    print('Remove -99s: ',end='')
     dblcols=[n for (n,ty) in t.dtype.descr if ('f8' in ty or 'f4' in ty)]
     for c in dblcols:
         print(c,end=' ')
         sys.stdout.flush()
         t[c]=np.where(t[c]==-99,np.nan,t[c])
 
-    print('\nRemove 1e20s:',end='')
+    print('\nRemove 1e20s: ',end='')
     dblcols=[n for (n,ty) in t.dtype.descr if ('f8' in ty or 'f4' in ty)]
     for c in dblcols:
         print(c,end=' ')
         sys.stdout.flush()
         t[c]=np.where(t[c]==1e20,np.nan,t[c])
 
-    print('\nRemove whitespace padding:',end='')
+    print('\nRemove whitespace padding: ',end='')
     sys.stdout.flush()
     stringcols=[n for (n,ty) in t.dtype.descr if 'S' in ty]
     for c in stringcols:
@@ -280,7 +280,10 @@ for hemisphere in hemispheres:
 
     t.write('{0}_photoz_v{1}_{2}.fits'.format(os.path.splitext(os.path.split(lofar_cat_path)[1])[0],version_number,hemisphere), overwrite=True)
 
-    tables.append(t)
+    final_tables.append(t)
 
-if len(tables)>1:
-    vstack(tables).write('{0}_photoz_v{1}_{2}.fits'.format(os.path.splitext(os.path.split(lofar_cat_path)[1])[0],version_number,'joined'), overwrite=True)
+if len(final_tables)>1:
+    print('Stack and write joined table:')
+    vstack(final_tables).write('{0}_photoz_v{1}_{2}.fits'.format(os.path.splitext(os.path.split(lofar_cat_path)[1])[0],version_number,'joined'), overwrite=True)
+
+print('Done!')

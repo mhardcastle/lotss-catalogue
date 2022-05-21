@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from __future__ import print_function
 import os
 from astropy.table import Table
@@ -9,7 +11,7 @@ from separation import separation
 from tqdm import tqdm
 from astropy_healpix import HEALPix
 from astropy import units as u
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 
 def select_multi(i):
     if np.isnan(optras[i]): return []
@@ -26,7 +28,8 @@ def select_multi(i):
 def slice_multi(hpv):
     filt=(hps==hpv)
     return (names[filt],optras[filt],optdecs[filt])
-    
+
+print('*** process_overlap starting ***')
 with open('optical.pickle') as pf:
     (names,optras,optdecs)=pickle.load(pf)
 
@@ -34,7 +37,7 @@ hd={}
 hp = HEALPix(nside=512)
 hps=hp.lonlat_to_healpix(optras*u.deg,optdecs*u.deg)
 
-p=Pool(48)
+p=Pool(cpu_count())
 
 hpl=list(set(hps))
 for i,result in enumerate(tqdm(p.imap(slice_multi,hpl),total=len(hpl),desc='Make dictionary')):

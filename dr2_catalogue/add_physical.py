@@ -14,7 +14,6 @@ zspec=np.where(t['zwarning_sdss']==0,t['zspec_sdss'],np.nan)
 zphot=np.where(t['flag_qual']==1,t['zphot'],np.nan)
 zbest=np.where(~np.isnan(zspec),zspec,zphot)
 zbest=np.where(zbest<0,np.nan,zbest)
-z
 t['z_best']=zbest
 z=zbest
 

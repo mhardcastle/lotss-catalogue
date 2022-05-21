@@ -16,10 +16,8 @@ from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
 from separation import separation
 from tqdm import tqdm
-from astropy_healpix import HEALPix
-from astropy import units as u
-from multiprocessing import Pool
-
+import MySQLdb as mdb
+import MySQLdb.cursors as mdbcursors
 
 # ellipse code taken from old process_lgz
 
@@ -413,10 +411,9 @@ def warn_or_die(warn,s):
     else:
         raise RuntimeError(s)
         
-def make_structure(field,warn=False):
+def make_structure(field,warn=False,version=None):
     print('Reading data...')
 
-    # MKSP paths
     lgz_dir='.'
     ct=Table.read('source_lr.fits')
     ct['ra'].name='lr_ra_fin'
@@ -446,8 +443,12 @@ def make_structure(field,warn=False):
     blend_dirs=['blend']
     noid_files=[]
     ridgeline='allhosts.fits'
+    if version is None:
+        logfilename='logfile.txt'
+    else:
+        logfilename='logfile-'+version+'.txt'
     
-    s=Source(logfile=open('logfile.txt','w'))
+    s=Source(logfile=open(logfilename,'w'))
     
     s.set_stage('Ingest components')
     for r in tqdm(ct):
@@ -550,7 +551,7 @@ def make_structure(field,warn=False):
                 s.sd[name]['lr_ra_fin']=np.nan
                 s.sd[name]['lr_dec_fin']=np.nan
                 components=len(s.cd[name]['Children'])
-                s.log('Component has',components,'Gaussians:',s.cd[name]['Children'],file=logfile)
+                s.log('Component has',components,'Gaussians:',s.cd[name]['Children'])
                 # parse the component ID part
                 child_ids=[]
                 gaussian_names=[]
@@ -717,67 +718,126 @@ def make_structure(field,warn=False):
     s.set_stage('Building new component table')
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('Created',None),('Parent',None)]
     new_ct=generate_table(s.cd,columns)
+    # create a lookup dictionary so we don't have to inefficiently search for source name many times
+    print('Build the lookup dictionary for this table')
+    idd={}
+    for i,r in tqdm(enumerate(new_ct),total=len(new_ct)):
+        idd[r['Source_Name']]=i
     
-    s.set_stage('LGZ post-processing')
-    sources=s.sd.keys() # copy because we rename as we go
-    for name in tqdm(sources):
-        if 'Deleted' not in s.sd[name] and 'LGZ_assembly_required' in s.sd[name]:
-            if len(s.sd[name]['Children'])==1 and s.sd[name]['Children'][0]==name:
-                #print('Source',name,'marked as assembly required but has only one component')
-                del s.sd[name]['LGZ_assembly_required']
-                continue # source is single component
-            s.log('Need to assemble source',name,'from children',s.sd[name]['Children'])
-            cids=[]
-            error=False
-            for cname in s.sd[name]['Children']:
-                filt=(new_ct['Source_Name']==cname)
-                if not np.any(filt):
-                    s.log('Source created by',s.sd[name]['Created'])
-                    error=True
-                    s.log('Child %s does not exist!' % cname)
-                else:
-                    cids.append(np.argmax(filt))
-            if len(cids)==0:
-                s.delete_source(name,'All components removed')
-                continue
-            if error:
-                s.log('Source is partial, needs zoom file fix')
-                s.addzoom(name,'Partial source in LGZ post-processing')
-            clist=new_ct[cids]
-            r=assemble_source(clist)
-            if 'Manual_Size' in s.sd[name]:
-                s.log('Adding manual size measurement')
-                r['LGZ_Size']=s.sd[name]['Manual_Size']
-            sname=r['Source_Name']
-            if sname!=name:
-                s.log('Renaming old source',name,'created by',s.sd[name]['Created'],'to',sname)
-                r['Renamed_from']=name
-                s.delete_source(name,'Renamed',descend=False)
-                        
+    for assembly_stage in [1,2]:
+        s.set_stage('Source assembly stage %i' % assembly_stage)
+        sources=s.sd.keys() # copy because we rename as we go
+        for name in tqdm(sources):
+            if 'Deleted' not in s.sd[name] and 'LGZ_assembly_required' in s.sd[name]:
+                if len(s.sd[name]['Children'])==1 and s.sd[name]['Children'][0]==name:
+                    #print('Source',name,'marked as assembly required but has only one component')
+                    del s.sd[name]['LGZ_assembly_required']
+                    continue # source is single component
+                s.log('Need to assemble source',name,'from children',s.sd[name]['Children'])
+                cids=[]
+                error=False
+                for cname in s.sd[name]['Children']:
+                    try:
+                        cid=idd[cname]
+                    except KeyError:
+                        cid=None
+                    if cid is None:
+                        s.log('Source created by',s.sd[name]['Created'])
+                        error=True
+                        s.log('Child %s does not exist!' % cname)
+                    else:
+                        cids.append(cid)
+                if len(cids)==0:
+                    s.delete_source(name,'All components removed')
+                    continue
+                if error:
+                    s.log('Source is partial, needs zoom file fix')
+                    s.addzoom(name,'Partial source in LGZ post-processing')
+                clist=new_ct[cids]
+                r=assemble_source(clist)
+                if 'Manual_Size' in s.sd[name]:
+                    s.log('Adding manual size measurement')
+                    r['LGZ_Size']=s.sd[name]['Manual_Size']
+                sname=r['Source_Name']
+                if sname!=name:
+                    s.log('Renaming old source',name,'created by',s.sd[name]['Created'],'to',sname)
+                    r['Renamed_from']=name
+                    s.delete_source(name,'Renamed',descend=False)
 
-            for key in s.sd[name]:
-                if key not in r:
-                    r[key]=s.sd[name][key] # includes copying children
-            for comp in r['Children']:
-                s.cd[comp]['Parent']=sname
 
-            '''
-            # this part should only be necessary if Parent keys are screwed up
-            if name!=sname:
-                components=list(s.cd)
-                for comp in components:
-                    if s.cd[comp]['Parent']==name:
-                        s.delete_component(comp,'Orphaned')
-            '''
-                
-            r['Assoc']=len(r['Children'])
-            s.create_source(sname,r)
-            if 'Deleted' in s.sd[sname]:
-                del(s.sd[sname]['Deleted'])
-            if 'Art_prob' in s.sd[sname] and s.sd[sname]['Art_prob']>0.5:
-                s.delete_source(sname,'LGZ artefact')
-            del s.sd[sname]['LGZ_assembly_required']
-            
+                for key in s.sd[name]:
+                    if key not in r:
+                        r[key]=s.sd[name][key] # includes copying children
+                for comp in r['Children']:
+                    s.cd[comp]['Parent']=sname
+
+                '''
+                # this part should only be necessary if Parent keys are screwed up
+                if name!=sname:
+                    components=list(s.cd)
+                    for comp in components:
+                        if s.cd[comp]['Parent']==name:
+                            s.delete_component(comp,'Orphaned')
+                '''
+
+                r['Assoc']=len(r['Children'])
+                s.create_source(sname,r)
+                if 'Deleted' in s.sd[sname]:
+                    del(s.sd[sname]['Deleted'])
+                if 'Art_prob' in s.sd[sname] and s.sd[sname]['Art_prob']>0.5:
+                    s.delete_source(sname,'LGZ artefact')
+                del s.sd[sname]['LGZ_assembly_required']
+        if assembly_stage==1:
+            s.set_stage('Duplicates')
+            # Directly read duplicate information from the database
+            con=mdb.connect('192.168.2.249', 'tzi_user', 'IK34daKG', 'duplicates', cursorclass=mdbcursors.DictCursor, autocommit=True)
+            cur = con.cursor()
+            table=field.replace('-','_')
+            try:
+                cur.execute('select * from %s where classification is not NULL' % table)
+                results=cur.fetchall()
+            except mdb.ProgrammingError:
+                results=None
+            con.close()
+            if results is not None:
+                for r in tqdm(results):
+                    # options are
+                    # 1. merge sources
+                    # 2. drop source 2
+                    # 3. drop source 1
+                    # 4. pass to TZI
+                    # 5. drop optical ID (for both) and merge
+                    # 6. drop optical ID (for both)  and don't merge
+                    if r['source1'] not in s.sd:
+                        s.log('%s does not exist in dedupe!' % r['source1'])
+                        continue
+                    if r['source2'] not in s.sd:
+                        s.log('%s does not exist in dedupe!' % r['source2'])
+                        continue
+                    if r['classification']==1 or r['classification']==5:
+                        # merger
+                        # we take all components from source 2 and add them to source 1,
+                        # then delete source 2 and mark source 1 as needing assembly.
+                        s.set_components(r['source1'],s.sd[r['source1']]['Children']+s.sd[r['source2']]['Children'])
+                        s.sd[r['source1']]['Created']='Deduplicate'
+                        s.sd[r['source1']]['LGZ_assembly_required']=True
+                        if r['classification']==5:
+                            s.set_opt(r['source1'],np.nan,np.nan)
+                    elif r['classification']==2:
+                        s.delete_source(r['source2'],'Deleted in dedupe')
+                    elif r['classification']==3:
+                        s.delete_source(r['source1'],'Deleted in dedupe')
+                    elif r['classification']==4:
+                        s.addzoom(r['source1'],'Flagged in dedupe')
+                        s.addzoom(r['source2'],'Flagged in dedupe')
+                    elif r['classification']==6:
+                        s.set_opt(r['source1'],np.nan,np.nan)
+                        s.set_opt(r['source2'],np.nan,np.nan)
+                    else:
+                        raise RuntimeError('unexpected classification')
+
+            else:
+                print('No duplicates table, hope this is ok')
     # finally sort out optical positions
     s.set_stage('Sorting optical positions')
     for source in tqdm(s.sd):
@@ -869,9 +929,12 @@ def make_structure(field,warn=False):
     optdecs=np.array(optdecs)
     with open('optical.pickle','w') as pf:
         pickle.dump((names,optras,optdecs),pf)
-
-    os.system('python ${LGZPATH}/dr2_catalogue/process_overlap.py')
-
+    path=os.environ['LGZPATH']
+    command=path+'/dr2_catalogue/process_overlap.py'
+    print('Running',command)
+    retval=os.system(command)
+    if retval!=0:
+        raise RuntimeError('Failed to run overlap code, return value is %i' % retval)
     with open('badlist.pickle') as pf:
         bad=pickle.load(pf)
     
@@ -954,6 +1017,7 @@ def generate_table(sd,columns,keep_deleted=False):
     cols=[]
     for c,default in columns:
         print(c,'... ',end='')
+        sys.stdout.flush()
         headers.append(c)
         column=[]
         for sn in sources:
@@ -1056,15 +1120,6 @@ def write_table(outname,sd,columns,rename=None):
 
 if __name__=='__main__':
 
-    dir=os.getcwd()
-    field=os.path.basename(dir)
-    print('field is',field)
-    s=make_structure(field)
-
-    print('*** Sanity checking *** ')
-    
-    sanity_check(s)
-
     # find existing version
     g=sorted(glob.glob('sources-v*.fits'))
     if len(g)>0:
@@ -1078,6 +1133,16 @@ if __name__=='__main__':
         for a in sys.argv[1:]:
             if a[0]=='v':
                 version=a
+
+    dir=os.getcwd()
+    field=os.path.basename(dir)
+
+    print('field is',field)
+    s=make_structure(field,version=version)
+
+    print('*** Sanity checking *** ')
+    
+    sanity_check(s)
     
     print('Constructing output table')
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',np.nan),('E_DEC',np.nan),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('NoID',0),('lr_fin',np.nan),('UID_L',""),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]

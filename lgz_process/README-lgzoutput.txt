@@ -20,3 +20,5 @@ the DR2 data.
 
 aggregate_lofgalzoo_dr2.py is the DR2 version of
 aggregate_lofgalzoo_deep.py designed to work on the LGZ/UNWISE catalogues.
+
+aggregate_lofgalzoo_dr2_hp_mp.py is a version of this greatly sped up by using Healpix decomposition of the optical catalogue and multiprocessing where possible.
