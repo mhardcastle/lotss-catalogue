@@ -21,6 +21,7 @@ import MySQLdb.cursors as mdbcursors
 from zoomprep_dr2 import tzi_sql
 from astropy_healpix import HEALPix
 from astropy import units as u
+import pyds9
 
 scale=3600.0 # units of catalogue are arcsec
 
@@ -166,6 +167,10 @@ if __name__=='__main__':
     print('Using structure',g[-1])
     s=Source.load(g[-1].replace('-sources.pickle',''))
 
+    zr={}
+    for source,reason in zip(s.zoomneeded,s.zoomreasons):
+        zr[source]=reason
+    
     print('Reading files')
 
     dynamic_opt=False
@@ -188,7 +193,16 @@ if __name__=='__main__':
     lt=ot[(ot['Total_flux']>0.005) & (ot['Maj']>10)]
     cwd=os.getcwd()
     os.chdir('zoom')
-
+    print('Make zoom components list')
+    g=glob.glob('ILT*.txt')
+    zl=[]
+    for f in g:
+        lines=open(f).readlines
+        for l in lines:
+            if 'ILT' in l:
+                zl.append(l.strip())
+    zs=set(zl)
+                
     mode='wise'
     quit=False
     ds9=False
@@ -221,7 +235,7 @@ if __name__=='__main__':
             record['complete']=1
             sql.set_object(sourcename,record)
             continue
-        if os.system('grep -q '+sourcename+' *.txt')==0:
+        if sourcename in zs:
             print(sourcename,'already exists as a zoom file component!')
             record['complete']=1
             sql.set_object(sourcename,record)
@@ -291,7 +305,9 @@ if __name__=='__main__':
                 rsize=size*scalefactor/np.cos(dec*np.pi/180.0)
                 dsize=size*scalefactor
                 if dynamic_opt:
-                    lhp=hp.lonlat_to_healpix(np.array([ra,ra-rsize,ra+rsize,ra-rsize,ra+rsize])*u.deg,np.array([dec,dec-dsize,dec-dsize,dec+dsize,dec+dsize])*u.deg)
+                    # do a cone search because looking at the corners may not work for large areas
+                    lhp=hp.cone_search_lonlat(ra*u.deg,dec*u.deg,radius=size*u.deg)
+                    #lhp=hp.lonlat_to_healpix(np.array([ra,ra-rsize,ra+rsize,ra-rsize,ra+rsize])*u.deg,np.array([dec,dec-dsize,dec-dsize,dec+dsize,dec+dsize])*u.deg)
                     lpix=sorted(list(set(lhp)))
                     print('Healpixes are',lpix)
                     tables=[]
@@ -370,12 +386,16 @@ if __name__=='__main__':
             stop=False
             while not(stop):
                 print('Source %s, %i sources remaining' % (sourcename,sql.get_remaining()))
+                if sourcename in zr:
+                    print('Zoom reason is:',zr[sourcename])
                 print('(d)rop source, (m)ark components (default), mark an (o)ptical ID,\n   mark a si(z)e, set (b)lend, save (f)its, go to (n)ext, (Z)oom out, \n   (i)nspect, (T)oggle galaxy overlay, change opt (I)mage,\n   (F)avourite, (s)ave and continue or save and (q)uit?',end=' ')
                 command=raw_input()
                 replot=False
                 if command=='s' or command=='q':
                     stop=True
                     I.write(sourcename)
+                    for c in I.components:
+                        zs.add(c)
                     if command=='q':
                         quit=True
                 if command=='d':

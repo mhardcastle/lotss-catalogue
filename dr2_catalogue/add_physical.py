@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 from astropy.table import Table
 from astropy.cosmology import FlatLambdaCDM
@@ -10,6 +11,16 @@ infile=sys.argv[1]
 
 t=Table.read(infile)
 
+# add resolved column using the Shimwell+ 21 criterion
+
+snr=t['Total_flux']/t['E_Total_flux']
+r999=0.42+(1.08/(1+(snr/96.57)**2.49))
+resolved=np.log(t['Total_flux']/t['Peak_flux'])>r999
+resolved|=(t['S_Code']=='Z')
+t['Resolved']=resolved
+asize=np.where(t['LGZ_Size']>0,t['LGZ_Size'],2*t['DC_Maj'])
+t['LAS']=asize
+
 zspec=np.where(t['zwarning_sdss']==0,t['zspec_sdss'],np.nan)
 zphot=np.where(t['flag_qual']==1,t['zphot'],np.nan)
 zbest=np.where(~np.isnan(zspec),zspec,zphot)
@@ -20,7 +31,6 @@ z=zbest
 ld=cosmo.luminosity_distance(z)
 lr=4*1e-29*np.pi*t['Total_flux']*ld.to(u.m)**2.0*(1+z)**(-0.3)
 angs=cosmo.kpc_proper_per_arcmin(z)*(u.arcmin/60.0)
-asize=np.where(t['LGZ_Size']>0,t['LGZ_Size'],2*t['DC_Maj'])
 size=angs*asize/u.kpc
 t['Size']=size
 t['L_144']=lr
@@ -53,12 +63,10 @@ hdu=fits.open(outname)
 nf=hdu[1].header['TFIELDS']
 for i in range(1,nf+1):
     c=hdu[1].header['TTYPE%i' %i]
-    hdu[1].header['TCOMM%i' %i]=t[c].description
-    hdu[1].header['TUNIT%i' %i]=t[c].units
+    try:
+        hdu[1].header['TCOMM%i' %i]=t[c].description
+        hdu[1].header['TUNIT%i' %i]=t[c].units
+    except AttributeError:
+        print(c,'has no units or description')
 
 hdu.writeto(outname,overwrite=True)
-
-                       
-
-
-        
