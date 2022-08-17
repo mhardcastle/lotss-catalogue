@@ -79,6 +79,8 @@ class Interactive(object):
                 self.optra=ra
                 self.optdec=dec
                 print('Optical ID at',ra,dec)
+                self.mode='m'
+                print('Switching back to mark components mode!')
                 self.redraw()
             elif self.mode=='m':
                 sep=separation(ra,dec,self.ots['RA'],self.ots['DEC'])
@@ -156,6 +158,9 @@ if __name__=='__main__':
 
     dir=os.getcwd()
     field=os.path.basename(dir)
+    print('Spawn a ds9')
+    pyds9.ds9_xpans()
+    ds9=pyds9.DS9('zoom')
     print('field is',field)
     table=field.replace('-','_')
     sql=tzi_sql(table)
@@ -197,19 +202,14 @@ if __name__=='__main__':
     g=glob.glob('ILT*.txt')
     zl=[]
     for f in g:
-        lines=open(f).readlines
+        lines=open(f).readlines()
         for l in lines:
             if 'ILT' in l:
                 zl.append(l.strip())
     zs=set(zl)
-                
     mode='wise'
     quit=False
-    ds9=False
     while not(quit):
-        if ds9:
-            os.system('killall ds9')
-            ds9=False
         sourcename=sql.get_next()
         if sourcename is None:
             break
@@ -320,14 +320,14 @@ if __name__=='__main__':
                             if newopt is not None:
                                 od[p]=newopt
                                 print('Dynamically loaded healpix',p)
+                                if 'RA' in newopt.colnames:
+                                    newopt['RA'].name='ra'
+                                if 'DEC' in newopt.colnames:
+                                    newopt['DEC'].name='dec'
                                 tables.append(newopt)
                             else:
                                 print('Healpix',p,'not found')
                     gals=vstack(tables)
-                    if 'RA' in gals.colnames:
-                        gals['RA'].name='ra'
-                    if 'DEC' in gals.colnames:
-                        gals['DEC'].name='dec'
 
                 pwg=gals[(np.abs(gals['ra']-ra)<rsize) & (np.abs(gals['dec']-dec)<dsize)]
             else:
@@ -358,7 +358,7 @@ if __name__=='__main__':
                 peak=None
 
             try:
-                f=show_overlay(lhdu,whdu,ra,dec,size*scalefactor/initfactor,coords_color='red',coords_ra=s.sd[sourcename]['RA'],coords_dec=s.sd[sourcename]['DEC'],coords_lw=3,lw=2,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,block=False,interactive=False,drlimit=8000,peak=peak,plotpos=[(pwg,'+')])
+                f=show_overlay(lhdu,whdu,ra,dec,size*scalefactor/initfactor,coords_color='red',coords_ra=s.sd[sourcename]['RA'],coords_dec=s.sd[sourcename]['DEC'],coords_lw=3,lw=2,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='cyan',title=title,block=False,interactive=False,drlimit=8000,peak=peak,plotpos=[(pwg,'+')],rotate_north=False)
             except Exception as e:
                 print('*** Error making image. Press RETURN to skip and continue ***')
                 print(e)
@@ -410,10 +410,11 @@ if __name__=='__main__':
                 if command=='p':
                     continue
                 if 'f' in command:
-                    lhdu.writeto(sourcename+'.fits',overwrite=True)
-                    print('Saved as',sourcename+'.fits')
-                    subprocess.Popen(['/soft/bin/ds9',sourcename+'.fits'])
-                    ds9=True
+                    ds9.set_pyfits(lhdu)
+                    #lhdu.writeto(sourcename+'.fits',overwrite=True)
+                    #print('Saved as',sourcename+'.fits')
+                    #subprocess.Popen(['/soft/bin/ds9',sourcename+'.fits'])
+                    #ds9=True
                 if command=='F':
                     with open(os.environ['HOME']+'/favourites.txt','a') as outfile:
                         print('Adding',sourcename,'to favourites')
@@ -449,8 +450,8 @@ if __name__=='__main__':
                 s.set_components(sourcename,I.components)
                 s.set_opt(sourcename,I.optra,I.optdec)
                 s.set_size(sourcename,I.size)
-                record['complete']=1
-                sql.set_object(sourcename,record)
+            record['complete']=1
+            sql.set_object(sourcename,record)
             
             if stop:
                 break # out of outer while for scalefactor reset

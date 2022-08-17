@@ -80,7 +80,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False,debug=False):
                 break
     return mean,noise,vmax
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid',logfile=None,sourcename=None,vmax_cap=None,cmap='jet',lofar_colorscale=False):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid',logfile=None,sourcename=None,vmax_cap=None,cmap='jet',lofar_colorscale=False,rotate_north=True):
     '''
     show_overlay: make an overlay using AplPY.
     lofarhdu: the LOFAR cutout to use for contours
@@ -174,7 +174,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
             vmax=vmax_cap
         rgbname='rgb_'+tempnam()+'.png'
         aplpy.make_rgb_image(hdu.filename(),rgbname,stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2],vmax_r=vmax,vmax_g=vmax,vmax_b=vmax)
-        f=aplpy.FITSFigure(rgbname,north=True)
+        f=aplpy.FITSFigure(rgbname,north=rotate_north)
         print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
         f.show_rgb()
@@ -184,7 +184,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
             logfile.write('%s %f %f %f %f %f %f %f\n' % mytuple)
     elif lofar_colorscale:
         print('Doing a LOFAR colour scale')
-        f = aplpy.FITSFigure(hdu,north=True)
+        f = aplpy.FITSFigure(hdu,north=rotate_north)
         print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
         f.show_colorscale(vmin=rms_use,vmax=lofarmax,stretch='log',cmap=cmap)
@@ -192,7 +192,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     else:
         mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
         print('Optical parameters are',mean,noise,vmax)
-        f = aplpy.FITSFigure(hdu,north=True)
+        f = aplpy.FITSFigure(hdu,north=rotate_north)
         print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
         f.show_colorscale(vmin=mean+noisethresh*noise,vmax=vmax,stretch='log',cmap=cmap)

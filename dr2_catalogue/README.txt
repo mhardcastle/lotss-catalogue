@@ -14,7 +14,9 @@ add_lsdr8_photoz.py -- merge in the photo-zs from Ken's tables. Relatively slow.
 
 add_physical.py -- Add physical quantities and column descriptions
 
-check_overlap.py -- For combined release make the source table
+##check_overlap.py -- For combined release make the source table
+
+make_joined.py -- Make the joined source table (Spring and Fall)
 
 joined_components.py -- For combined release make the components table
 (note there could be some overlap here)

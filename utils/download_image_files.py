@@ -93,9 +93,11 @@ def get_nvss(ra,dec,size=1000):
     hdu.writeto(filename)
     return filename
 
-def get_legacy(ra,dec,size=1000,pixscale=0.454,bands='r',ftype='fits'):
-    url = "http://legacysurvey.org/viewer/{}-cutout?ra={}&dec={}&size={}&layer=dr8&pixscale={}&bands={}".format(ftype,ra,dec,size,pixscale,bands)
+def get_legacy(ra,dec,size=1000,pixscale=0.454,bands='r',ftype='fits',debug=False):
+    url = "https://legacysurvey.org/viewer/{}-cutout?ra={}&dec={}&size={}&layer=dr8&pixscale={}&bands={}".format(ftype,ra,dec,size,pixscale,bands)
     outname='legacy-%s-%f-%f.fits' % (bands,ra,dec)
+    if debug:
+        print('Downloading %s to %s' % (url,outname))
     download_file(url,outname)
     return outname
     

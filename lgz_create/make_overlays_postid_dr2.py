@@ -36,8 +36,8 @@ if __name__=='__main__':
     lofarmaps=[l[1] for l in lines]
     wisemaps=[l[2] for l in lines]
  
-    version='v0.3'
-    wd='/beegfs/lofar/mjh/rgz/Spring-40-45'
+    version='v0.4'
+    wd='/beegfs/lofar/mjh/rgz/Spring'
     
     dir=os.getcwd()
     print 'Reading data...'

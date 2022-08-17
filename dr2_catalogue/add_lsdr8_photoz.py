@@ -150,10 +150,17 @@ for hemisphere in hemispheres:
             ls_joined = join(lofar_cat[lofar_subset], photoz,
                              keys='Legacy_ID', join_type='left')
 
-            ls_joined_all.append(ls_joined)
+            if ls_joined is not None:
+                ls_joined_all.append(ls_joined)
 
 
-    merged_all = vstack(ls_joined_all)
+    if not ls_joined_all:
+        continue
+    try:
+        merged_all = vstack(ls_joined_all)
+    except TypeError:
+        print('Failed on',ls_joined_all)
+        raise
     merged_all.sort('Source_Name')
 
     with_match = np.where(merged_all['ID_DEC'] > 0)[0]

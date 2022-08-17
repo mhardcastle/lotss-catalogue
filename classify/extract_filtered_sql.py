@@ -3,13 +3,13 @@ from astropy.table import Table
 import MySQLdb as mdb
 import MySQLdb.cursors as mdbcursors
 
-table='last'
+table='hetdex'
 
 con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorclass=mdbcursors.DictCursor)
 
 cur = con.cursor()
 
-t=Table.read('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_last.fits')
+t=Table.read('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_'+table+'.fits')
 
 command='select object,classification from %s' % (table)
 cur.execute(command)
@@ -30,10 +30,10 @@ print(len(classifications), len(t))
     
 t['Prefilter']=classifications
 
-t.write('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_last_classified.fits')
+t.write('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_'+table+'_classified.fits')
 
 tf=t[t['Prefilter']==1]
-tf.write('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_last_tolgz.fits')
+tf.write('LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_'+table+'_tolgz.fits')
 
 con.close()
 

@@ -4,7 +4,7 @@ import MySQLdb.cursors as mdbcursors
 import os
 import glob
 
-dir='/beegfs/lofar/mjh/rgz/Spring-40-45/postfilter'
+dir='/beegfs/lofar/mjh/rgz/Spring/large2' # was postfilter
 bits=dir.split('/')
 table='post_'+bits[-2].replace('-','_') # e.g. post-Fall
 
@@ -13,7 +13,7 @@ os.chdir(dir)
 con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorclass=mdbcursors.DictCursor)
 
 cur = con.cursor()
-cur.execute('create table %s like 8h' % table)
+#cur.execute('create table %s like 8h' % table)
 
 g=glob.glob('*.fits')
 assert(len(g)==1)

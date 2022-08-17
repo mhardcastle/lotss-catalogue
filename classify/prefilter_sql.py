@@ -29,7 +29,7 @@ def get_next():
     
 ##### edit the following lines to choose the sample and possible options
 
-table='last'
+table='hetdex'
 dir='/beegfs/lofar/mjh/flowchart-endpoints-dr2/%s-prefilter' % table
 os.chdir(dir)
 

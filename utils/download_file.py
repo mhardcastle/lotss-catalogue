@@ -18,7 +18,7 @@ def download_file(url,filename):
         connected=False
         while not connected:
             try:
-                response = requests.get(url, stream=True,timeout=60)
+                response = requests.get(url, stream=True,timeout=60,verify=False)
                 if response.status_code>=502 and response.status_code<=504:
                     print('Code %i -- retrying in 10 seconds!' % response.status_code)
                     sleep(10)

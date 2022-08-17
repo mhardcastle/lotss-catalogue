@@ -511,9 +511,9 @@ subjects = pd.read_csv(subjfile)
 problems = pd.read_csv(probfile)
 
 #sourcecat = "/data/lofar/mjh/dr2/0h/lotss_dr2_ra0inner_masked_v0.9.srl.fits"
-sourcecat='/data/lofar/DR2/catalogues/LoTSS_DR2_v100.srl.fits'
+#sourcecat='/data/lofar/DR2/catalogues/LoTSS_DR2_v100.srl.fits'
 #optcat='/beegfs/lofar/mjh/dr2/dr2_combined.fits' #  % (field_l,field_h)
-
+sourcecat='source_lr.fits' # has the a, b names
 # rather than having a single opt table we have dicts organized by healpix
 
 print('Read optical data')

@@ -309,7 +309,11 @@ class Source(object):
                         self.log(self.cd[comp])
                         self.delete_source(oldparent,'Reallocated (orphan)')
                     else:
-                        self.sd[oldparent]['Children'].remove(comp)
+                        try:
+                            self.sd[oldparent]['Children'].remove(comp)
+                        except ValueError:
+                            self.log('*** warning -- removing child not in list!')
+                            self.sd[oldparent]['Broken']='Removed child not in list'
                         if self.sd[oldparent]['Children']==[]:
                             # remove broken flag if source now has no children
                             if 'Broken' in self.sd[oldparent]:
@@ -421,6 +425,7 @@ def make_structure(field,warn=False,version=None):
     ct['lr_ra_fin']=np.where(ct['lr_ra_fin']>360,np.nan,ct['lr_ra_fin'])
     ct['lr_dec_fin']=np.where(ct['lr_dec_fin']>90,np.nan,ct['lr_dec_fin'])
     ct['lr'].name='lr_fin'
+    ct['FC_flag1'].name='FLAG_WORKFLOW'
     gt_outname=lgz_dir+'/edited_gaussians.fits'
     if os.path.isfile(gt_outname):
         gt=Table.read(gt_outname)
@@ -441,8 +446,9 @@ def make_structure(field,warn=False,version=None):
         
     preselect_dir=None
     blend_dirs=['blend']
-    noid_files=[]
-    ridgeline='allhosts.fits'
+    noid_files=None
+    postfilter_file='postfilter.txt'
+    ridgeline='ridgeline/rl_allhosts.fits'
     if version is None:
         logfilename='logfile.txt'
     else:
@@ -469,12 +475,17 @@ def make_structure(field,warn=False,version=None):
     s.set_stage('Create initial sources')
     artefacts=[]
     for component in tqdm(s.cd):
-        s.promote_component(component)
         if s.cd[component]['Prefilter']==4:
             s.addzoom(component,'Prefilter zoom required')
         if s.cd[component]['Prefilter']==5:
             artefacts.append(component)
-
+        if s.cd[component]['Prefilter']==3:
+            s.cd[component]['lr_ra_fin']=np.nan
+            s.cd[component]['lr_dec_fin']=np.nan
+        s.promote_component(component)
+        if s.cd[component]['Prefilter']==7:
+            s.sd[component]['Blend_prob']=1
+        
     print('Deleting',len(artefacts),'prefilter artefacts')
     for c in tqdm(artefacts):
         s.delete_source(c,'Artefact')
@@ -515,7 +526,7 @@ def make_structure(field,warn=False,version=None):
         '''
 
     # Blends
-    s.set_stage('Blend processing')
+    s.set_stage('Deblend')
 
     for bd in blend_dirs:
         patches=glob.glob(bd+'/ILT*.txt')
@@ -844,7 +855,6 @@ def make_structure(field,warn=False,version=None):
         if 'Deleted' in s.sd[source]:
             continue
         if 'optRA' in s.sd[source]:
-            # RH 'or' because we may have a TZI source with no opt ID
             s.sd[source]['Position_from']='Visual inspection'
         elif 'lr_ra_fin' in s.sd[source]:
             s.sd[source]['Position_from']='LR'
@@ -853,6 +863,28 @@ def make_structure(field,warn=False,version=None):
         else:
             s.sd[source]['Position_from']='None'
 
+    if postfilter_file is not None:
+        s.set_stage('Apply postfilter')
+        lines=open(postfilter_file).readlines()
+        for l in lines:
+            l=l.rstrip()
+            bits=l.split()
+            source=bits[0]
+            try:
+                classification=int(bits[1])
+            except ValueError:
+                classification=0
+            if source in s.sd and 'Deleted' not in s.sd[source]: # otherwise already removed e.g. by TZI
+                s.sd[source]['Postfilter']=classification
+                if classification==4:
+                    s.delete_source(source,'Postfilter artefact')
+                elif classification==5:
+                    # remove optical ID
+                    s.sd[source]['Position_from']='None'
+                    s.sd[source]['optRA']=np.nan
+                    s.sd[source]['optDec']=np.nan
+
+    # this code not used in DR2
     if noid_files is not None:
         s.set_stage('NoID')
         for noid_file in noid_files:
@@ -911,7 +943,9 @@ def make_structure(field,warn=False,version=None):
                     s.sd[name]['optDec']=r['optDEC_RLC']
                     s.sd[name]['Position_from']='Ridge line code'
                     s.sd[name]['lr_fin']=r['LRMagBoth']
-
+    else:
+        print('No ridgeline file, this may not be what you want')
+                    
     s.set_stage('Opt ID overlap check')
 
     names=[]
@@ -1145,7 +1179,7 @@ if __name__=='__main__':
     sanity_check(s)
     
     print('Constructing output table')
-    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',np.nan),('E_DEC',np.nan),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('NoID',0),('lr_fin',np.nan),('UID_L',""),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
+    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',np.nan),('E_DEC',np.nan),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('Postfilter',0),('lr_fin',np.nan),('UID_L',""),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Hostbroken_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
     write_table('sources-'+version+'.fits',s.sd,columns)
 
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Deblended_from',""),('Parent',None)]
