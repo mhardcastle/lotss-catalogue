@@ -1,3 +1,4 @@
+from __future__ import print_function
 from download_image_files import LofarMaps,get_legacy,get_first,get_wise
 from find_wise import WISE
 from astropy.table import Table
@@ -7,9 +8,9 @@ import os
 if __name__=='__main__':
     w=WISE()
     t=Table.read(sys.argv[1])
-    if 'ra' in t.colnames:
+    if 'ra' in t.colnames and 'RA' not in t.colnames:
         t['ra'].name='RA'
-    if 'dec' in t.colnames:
+    if 'dec' in t.colnames and 'DEC' not in t.colnames:
         t['dec'].name='DEC'
     outfilename=sys.argv[1].replace('.fits','-list.txt')
     if not(os.path.isfile(outfilename)):
@@ -25,15 +26,15 @@ if __name__=='__main__':
     os.chdir('downloads')
 
     for r in t[startpoint:]:
-        print r['Source_Name']
-        print r['RA'],r['DEC']
+        print(r['Source_Name'])
+        print(r['RA'],r['DEC'])
         lofarname=lm.find(r['RA'],r['DEC'])
         #legacyname=get_legacy(r['RA'],r['DEC'],bands='zrg')
         wisename=w.find_pos(r['RA'],r['DEC'])
         if wisename is None:
             wisename=get_wise(r['RA'],r['DEC'],1)
         #firstname=get_first(r['RA'],r['DEC'])
-        print >>outfile,r['Source_Name'],lofarname,wisename#,firstname
+        print(r['Source_Name'],lofarname,wisename,file=outfile)
         outfile.flush()
     outfile.close()
 

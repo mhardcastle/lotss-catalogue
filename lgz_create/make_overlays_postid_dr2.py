@@ -2,6 +2,7 @@
 
 # version that'll use the source and component catalogues already generated
 
+from __future__ import print_function
 import matplotlib
 matplotlib.use('Agg')
 from astropy.table import Table,vstack
@@ -36,11 +37,11 @@ if __name__=='__main__':
     lofarmaps=[l[1] for l in lines]
     wisemaps=[l[2] for l in lines]
  
-    version='v0.4'
+    version='v0.7'
     wd='/beegfs/lofar/mjh/rgz/Spring'
     
     dir=os.getcwd()
-    print 'Reading data...'
+    print('Reading data...')
     
 
     st=Table.read(wd+'/sources-'+version+'.fits')
@@ -65,7 +66,7 @@ if __name__=='__main__':
     for i in range(start,end):
 
         r=t[i]
-        print r
+        print(r)
         sourcename=r['Source_Name']
         # find components of this source
         cfilter=ot['Parent_Source']==sourcename
@@ -80,7 +81,7 @@ if __name__=='__main__':
         lofarfile=os.environ['IMAGEDIR']+'/'+lofarmaps[i]
         
         if os.path.isfile(simage):
-            print 'Selected output file exists already'
+            print('Selected output file exists already')
             continue
 
         ra,dec=r['RA'],r['DEC']
@@ -98,20 +99,20 @@ if __name__=='__main__':
             tcopy=lt
             tcopy['dist']=np.sqrt((np.cos(dec*np.pi/180.0)*(tcopy['RA']-ra))**2.0+(tcopy['DEC']-dec)**2.0)*3600.0
             tcopy=tcopy[tcopy['dist']<maxsize]
-            print 'Iter',iter,'found',len(tcopy),'neighbours'
+            print('Iter',iter,'found',len(tcopy),'neighbours')
 
             # make sure the original source is in there
             tcopy=vstack((tcopy,ctable))
-            print tcopy
+            print(tcopy)
             ra=np.mean(tcopy['RA'])
             dec=np.mean(tcopy['DEC'])
 
             if startra==ra and startdec==dec:
-                print 'converged in ra and dec'
+                print('converged in ra and dec')
                 
                 break
             iter+=1
-            print iter,len(tcopy)
+            print(iter,len(tcopy))
             if iter==10:
                 break
 
@@ -134,14 +135,14 @@ if __name__=='__main__':
         if size<minsize:
             size=minsize
         size=(int(0.5+size/10))*10
-        print 'size is',size
+        print('size is',size)
 
         size/=3600.0
 
         seps=separation(ra,dec,ot['RA'],ot['DEC'])
         ots=ot[seps<size]
-        print ra,dec
-        print ots['RA','DEC']
+        print(ra,dec)
+        print(ots['RA','DEC'])
 
         ls=[]
         cs=[]
@@ -160,7 +161,7 @@ if __name__=='__main__':
         try:
             shdu=extract_subim(wisefile,ra,dec,size)
         except RuntimeError as e:
-            print '*** extract_subim failed (%s) ***' % str(e)
+            print('*** extract_subim failed (%s) ***' % str(e))
             continue
         
         #ihdu.writeto(sourcename+'_i.fits',overwrite=True)
@@ -193,7 +194,7 @@ if __name__=='__main__':
             except (Exception, RuntimeError) as e:
                 error=True
             if error:
-                print '*** image build failed! (%s) ***' % str(e)
+                print('*** image build failed! (%s) ***' % str(e))
                 continue
             else:
                 os.system('mogrify -quality 90 -trim '+sourcename+'*.png')

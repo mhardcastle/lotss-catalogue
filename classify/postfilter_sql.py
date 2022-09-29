@@ -28,7 +28,7 @@ def get_next():
     
 ##### edit the following lines to choose the sample and possible options
 
-dir='/beegfs/lofar/mjh/rgz/Spring/postfilter'
+dir='/beegfs/lofar/mjh/rgz/Spring/badclick'
 bits=dir.split('/')
 table='post_'+bits[-2].replace('-','_') # e.g. post-Fall
 os.chdir(dir)
@@ -37,7 +37,7 @@ g=glob.glob('*.fits')
 assert(len(g)==1)
 sample=g[0]
 
-options=('OK', 'Needs inspection','Missing ID, to re-check','Artefact','Remove ID and keep')
+options=('OK', 'Needs inspection','Missing ID, to re-check','Artefact','Remove ID and keep','Flag as blend')
 user=os.getenv('USER')
 
 ##### don't change anything else

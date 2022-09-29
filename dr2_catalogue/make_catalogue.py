@@ -448,7 +448,7 @@ def make_structure(field,warn=False,version=None):
     blend_dirs=['blend']
     noid_files=None
     postfilter_file='postfilter.txt'
-    ridgeline='ridgeline/rl_allhosts.fits'
+    ridgeline='ridgeline/hp__allhosts.fits'
     if version is None:
         logfilename='logfile.txt'
     else:
@@ -883,6 +883,8 @@ def make_structure(field,warn=False,version=None):
                     s.sd[source]['Position_from']='None'
                     s.sd[source]['optRA']=np.nan
                     s.sd[source]['optDec']=np.nan
+                elif classification==6:
+                    s.sd[source]['Blend_prob']=1
 
     # this code not used in DR2
     if noid_files is not None:
@@ -938,7 +940,7 @@ def make_structure(field,warn=False,version=None):
             if name not in s.sd:
                 s.log('Warning: source %s in ridgeline file does not exist' % name)
             else:
-                if 'optRA' not in s.sd[name] or np.isnan(s.sd[name]['optRA']) or 'Position_from' not in s.sd[name] or s.sd[name]['Position_from']=='LR':
+                if ('Postfilter' not in s.sd[name] or s.sd[name]['Postfilter']!=5) and ('optRA' not in s.sd[name] or np.isnan(s.sd[name]['optRA']) or 'Position_from' not in s.sd[name] or s.sd[name]['Position_from']=='LR'):
                     s.sd[name]['optRA']=r['optRA_RLC']
                     s.sd[name]['optDec']=r['optDEC_RLC']
                     s.sd[name]['Position_from']='Ridge line code'

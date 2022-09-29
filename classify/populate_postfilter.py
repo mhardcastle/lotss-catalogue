@@ -4,7 +4,7 @@ import MySQLdb.cursors as mdbcursors
 import os
 import glob
 
-dir='/beegfs/lofar/mjh/rgz/Spring/large2' # was postfilter
+dir='/beegfs/lofar/mjh/rgz/Spring/badclick' # was postfilter
 bits=dir.split('/')
 table='post_'+bits[-2].replace('-','_') # e.g. post-Fall
 

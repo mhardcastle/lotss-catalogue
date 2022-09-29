@@ -36,7 +36,11 @@ verbose = True
 # work out what hemisphere(s) we're using
 
 t = Table.read(lofar_cat_path)
-critical_dec=32.275
+if field=='Fall':
+    critical_dec=36 # force use of South for all
+else:
+    critical_dec=32.275
+    
 
 hemispheres=[]
 
