@@ -2,7 +2,8 @@ import numpy as np
 from astropy.table import Table, join, Column, vstack
 
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/lr/'
+#path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/lr/'
+path = '/Users/w.williams/projects/lofar_surveys/DR2/fix_flowchart_lr_v110/lr/'
 
 for t in ['srl','gaus']:
     for h in ['13h']:#['0h','13h']:
