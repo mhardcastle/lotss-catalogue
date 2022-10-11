@@ -131,7 +131,7 @@ if __name__=='__main__':
     if mode.lower() != 'all':
         modes = [mode]
 
-    version ='v100'
+    version ='v110'
     
     path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
     #lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(h=h,version=version)

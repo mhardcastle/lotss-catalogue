@@ -236,7 +236,7 @@ if __name__=='__main__':
 
     path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
     
-    version ='v100'
+    version ='v110'
     
     if step == 1:
         # lr infor is in the catalogue - this makes things easier
