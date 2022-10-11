@@ -26,7 +26,7 @@ con=mdb.connect('127.0.0.1', 'prefilter_user', 'WQ98xePI', 'prefilter', cursorcl
 
 cur = con.cursor()
 
-t=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v100.srl_{h}.lr-full.fits'.format(h=h))
+t=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_{version}.srl_{h}.lr-full.fits'.format(version=version,h=h))
 
 cd={}
 for table in tables:
@@ -48,7 +48,7 @@ for r in t:
 t.add_column(Column(name='Prefilter', data=np.array(classifications)))
 t.keep_columns(['Source_Name','Prefilter'])
 
-t.write('/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_{h}.prefilter_outputs.fits'.format(h=h),overwrite=True)
+t.write('/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_{version}.srl_{h}.prefilter_outputs.fits'.format(version=version,h=h),overwrite=True)
 
 
 con.close()

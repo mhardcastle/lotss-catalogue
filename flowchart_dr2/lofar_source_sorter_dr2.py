@@ -234,7 +234,7 @@ if __name__=='__main__':
     ### Required INPUTS
     # lofar source catalogue, gaussian catalogue and ML catalogues for each
 
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+    path = '/Users/w.williams/projects/lofar_surveys/DR2/'
     
     version ='v110'
     

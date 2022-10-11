@@ -30,15 +30,15 @@ if h not in  ['0h','13h']:
     sys.exit(1)
     
     
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_file_srt = path+f'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step2_flux4.hdf5'
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+lofarcat_file_srt = path+f'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux4.hdf5'
 
 
 lofarcat = Table.read(lofarcat_file_srt)
 
 for priority in ['1']:
-    sel_file_lgz = path+f'lgz_selection_apr13/LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step2_flux4.lgz_weave_selection_{priority}.fits'
-    sel_file_pf = path+f'lgz_selection_apr13/LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_{priority}.fits'
+    sel_file_lgz = path+f'lgz_selection_apr13/LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux4.lgz_weave_selection_{priority}.fits'
+    sel_file_pf = path+f'lgz_selection_apr13/LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_{priority}.fits'
     
     sel_pri = (lofarcat['Complete_priority{i}'.format(i=priority)] == True)
         

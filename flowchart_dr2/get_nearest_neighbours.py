@@ -22,8 +22,8 @@ if __name__=='__main__':
     ### Required INPUTS
     # lofar source catalogue
 
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-    lofarcat_file = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
+    path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+    lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.hdf5'.format(version=version,h=h)
 
 
     # Source catalogue

@@ -21,8 +21,8 @@ fluxcut2 = 4.   #float(sys.argv[3])
 
 
 step=2
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-version ='v100'
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+version ='v110'
 
 cat0 = Table.read(path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step{st}_flux{ff:.0f}.hdf5'.format(h='0h',version=version,st=step,ff=fluxcut2))
 cat13 = Table.read(path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step{st}_flux{ff:.0f}.hdf5'.format(h='13h',version=version,st=step,ff=fluxcut2))

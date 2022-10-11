@@ -40,9 +40,9 @@ def make_polygon(ra1,ra2,dec1,dec2,delta=0.01):
     c = ac.SkyCoord(ras,decs,unit=u.deg,frame='icrs')
     return c
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
 
-version ='v100'
+version ='v110'
 
 h ='13h'
 

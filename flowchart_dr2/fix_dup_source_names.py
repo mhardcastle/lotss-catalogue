@@ -7,13 +7,13 @@ from astropy.table import Table, Column, vstack
 
 
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
 
-scat = Table.read (path+'lr/LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='srl'))
-gcat = Table.read (path+'lr/LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='gaus'))
+scat = Table.read (path+'lr/LoTSS_DR2_{version}.{t}_{h}.lr-full.fits'.format(h='13h',t='srl'))
+gcat = Table.read (path+'lr/LoTSS_DR2_{version}.{t}_{h}.lr-full.fits'.format(h='13h',t='gaus'))
 
 h='13h'
-#lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
+#lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.fits'.format(version=version,h=h)
 #scat = Table.read(lofarcat_file_srt)
 
 # manually down for now ... but could be determined from np.unique
@@ -87,6 +87,6 @@ for dup in dup_names:
     print(gcat[gi])
 
 
-#scat.write (path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h),overwrite=True)
-scat.write (path+'lr/LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='srl'),overwrite=True)
-gcat.write (path+'lr/LoTSS_DR2_v100.{t}_{h}.lr-full.fits'.format(h='13h',t='gaus'),overwrite=True)
+#scat.write (path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.fits'.format(version=version,h=h),overwrite=True)
+scat.write (path+'lr/LoTSS_DR2_{version}.{t}_{h}.lr-full.fits'.format(h='13h',t='srl'),overwrite=True)
+gcat.write (path+'lr/LoTSS_DR2_{version}.{t}_{h}.lr-full.fits'.format(h='13h',t='gaus'),overwrite=True)

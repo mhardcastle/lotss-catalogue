@@ -35,9 +35,9 @@ if h not in  ['0h','13h']:
     print('unknown field code (should be 0h or 13h)',h)
     sys.exit(1)
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
 
-version ='v100'
+version ='v110'
 
 lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.hdf5'.format(h=h,version=version)
 lofarcat_file_srt = lofarcat_file

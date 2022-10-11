@@ -86,6 +86,6 @@ for dup in dup_names:
     print(gcat[gi])
 
 
-#scat.write (path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h),overwrite=True)
+#scat.write (path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.fits'.format(version=version,h=h),overwrite=True)
 scat.write (scatfout,overwrite=True)
 gcat.write (gcatfout,overwrite=True)

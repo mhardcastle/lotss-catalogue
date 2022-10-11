@@ -133,7 +133,7 @@ if __name__=='__main__':
 
     version ='v110'
     
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+    path = '/Users/w.williams/projects/lofar_surveys/DR2/'
     #lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(h=h,version=version)
     lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1_flux{ff:.0f}.hdf5'.format(h=h,version=version,ff=fluxcut2)
 

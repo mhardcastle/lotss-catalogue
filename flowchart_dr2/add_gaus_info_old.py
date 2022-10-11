@@ -30,9 +30,9 @@ if __name__=='__main__':
     
     redo = True
 
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-    lofargcat_file = path+'lr/LoTSS_DR2_v100.gaus_{h}.lr-full.fits'.format(h=h)
-    lofarcat_file = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
+    path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+    lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(version=version,h=h)
+    lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.hdf5'.format(version=version,h=h)
 
     gaus_cols = ['Ng', 'G_max_sep', 'G_LR_max', 'Ng_LR_good','Ng_LR_good_unique','N_G_LR_matchsource','Flag_G_LR_problem']
 
