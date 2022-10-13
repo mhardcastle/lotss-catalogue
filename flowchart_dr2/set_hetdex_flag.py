@@ -12,7 +12,7 @@ import mocpy
 def inHETDEX(ra,dec):
     inside = np.zeros(len(ra), dtype=bool)
     
-    hvert = Table.read('/home/wwilliams/data2/projects/lofar_surveys/DR1/hetdex_vertices.fits')
+    hvert = Table.read('/Users/w.williams/projects/lofar_surveys/DR1/hetdex_vertices.fits')
     hra = hvert['HETDEX_RA'][0]
     hdec = hvert['HETDEX_DEC'][0]
     

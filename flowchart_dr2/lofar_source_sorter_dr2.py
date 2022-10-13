@@ -214,7 +214,7 @@ if __name__=='__main__':
         weave_pri = ''
     else:
         weave_pri = sys.argv[3]
-        if not weave_pri in ['1','2','12','3','123','all','dr1']:
+        if not weave_pri in ['1','2','12','3','123','mfix','all','dr1']:
             print('unknown weave priority', weave_pri)
             sys.exit()
     
@@ -355,6 +355,8 @@ if __name__=='__main__':
                 weave_sel = (lofarcat['WEAVE_priority3']==True)
             elif weave_pri == 'dr1':
                 weave_sel = (lofarcat['HETDEX']==True)
+            elif weave_pri == 'mfix':
+                weave_sel = (lofarcat['Mosaic_ID']=='P138+37')
             elif weave_pri == 'all':
                 weave_sel = np.isfinite(lofarcat['RA'])
             
@@ -1445,15 +1447,11 @@ if __name__=='__main__':
     i = 0
     for t in masterlist:
         if not t.has_children:
-            print(i, np.sum(lofarcat[fcflg][t.mask]==7))
             lofarcat[fcflg][t.mask] = i
-            print(i, np.sum(t.mask))
+            print(i, np.sum(lofarcat[fcflg][t.mask]==7), np.sum(t.mask))
             i += 1
             
-    print(fcflg,'count')
-    t,i = np.unique(lofarcat[fcflg], return_counts=True)
-    for tt,ii in zip(t,i): print(tt,ii)
-    
+            
 
 
     #sys.exit()
@@ -1539,7 +1537,7 @@ if __name__=='__main__':
     print(fcflg,'count')
     t,i = np.unique(lofarcat[fcflg], return_counts=True)
     for tt,ii in zip(t,i): print(tt,ii)
-
+    
 
     print('ID_flag count')
     t,i = np.unique(lofarcat['ID_flag'], return_counts=True)

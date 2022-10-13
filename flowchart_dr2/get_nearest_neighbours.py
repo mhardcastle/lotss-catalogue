@@ -12,6 +12,7 @@ if __name__=='__main__':
         print('E.g.: python get_nearest_neighbours.py 0 ')
         sys.exit(1)
         
+    version = 'v110'
     h = str(sys.argv[1])
     if 'h' not in h:
         h+='h'

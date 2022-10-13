@@ -33,6 +33,7 @@ if __name__=='__main__':
     ##s13h -> 0.328
     ##n13h -> 0.309  -- note, adopt this level for both N and S
 
+    version = 'v110'
     if h == '13h':
         lLR_thresh_n = 0.309            # LR threshold
         lLR_thresh_s = 0.328            # LR threshold
