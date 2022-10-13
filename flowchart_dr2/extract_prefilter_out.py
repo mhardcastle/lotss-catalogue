@@ -4,6 +4,7 @@ import numpy as np
 import MySQLdb as mdb
 import MySQLdb.cursors as mdbcursors
 
+version = 'v110'
     
 h = str(sys.argv[1])
 if 'h' not in h:
