@@ -18,8 +18,8 @@ if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
     print('unknown field code (should be 0h or 13h)',h)
     sys.exit(1)
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.fits'.format(version=version,h=h)
 
 cat = Table.read(lofarcat_file_srt)
 
@@ -57,7 +57,7 @@ if do_calc:
             
             print(i, 'RA:',ra-dra-pad, ra+dra+pad, 'DEC:',dec-ddec-pad, dec+ddec+pad, len(cat[selpad]),len(cat[sel]))
             
-            lofarcat_file_sub = path+'LoTSS_DR2_v100.srl_{h}_subcat{i:03d}.lr-full.presort.fits'.format(h=h,i=i)
+            lofarcat_file_sub = path+'LoTSS_DR2_{version}.srl_{h}_subcat{i:03d}.lr-full.presort.fits'.format(h=h,i=i)
             
             if not os.path.isfile(lofarcat_file_sub):
                 
@@ -80,7 +80,7 @@ for ra in rac:
         sel = (cat['RA'] > (ra-dra)) & (cat['RA'] <= (ra+dra)) & (cat['DEC'] > (dec-ddec)) & (cat['DEC'] <= (dec+ddec))
         cat['block'][sel] = i
         
-        lofarcat_file_sub = path+'LoTSS_DR2_v100.srl_{h}_subcat{i:03d}.lr-full.presort.fits'.format(h=h,i=i)
+        lofarcat_file_sub = path+'LoTSS_DR2_{version}.srl_{h}_subcat{i:03d}.lr-full.presort.fits'.format(h=h,i=i)
         print(i)
         
         if not os.path.isfile(lofarcat_file_sub):

@@ -33,15 +33,15 @@ if h not in  ['0h','13h']:
     print('unknown field code (should be 0h or 13h)',h)
     sys.exit(1)
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step2_flux4.hdf5'.format(h=h)
-#lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step2_flux4.hdf5'.format(version=version,h=h)
+#lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.hdf5'.format(version=version,h=h)
 
 
 
 #################################################################################
 # the following come from outputs from flow_python/extract_prefilter_out.py (run on herts)
-p_cat_file = path+'LoTSS_DR2_v100.srl_{h}.prefilter_outputs.fits'.format(h=h)
+p_cat_file = path+'LoTSS_DR2_{version}.srl_{h}.prefilter_outputs.fits'.format(version=version,h=h)
 p_cat = Table.read(p_cat_file)
 
 lofarcat = Table.read(lofarcat_file_srt)

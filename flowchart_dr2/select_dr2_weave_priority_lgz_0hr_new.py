@@ -22,10 +22,10 @@ priority = '1'
 selno = '2'
 
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-#lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step1.fits'.format(h=h)
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.hdf5'
-sel_file = path+'lgz_selection_nov18/LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.lgz_selection_{i}.fits'.format(i=selno)
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+#lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1.fits'.format(version=version,h=h)
+lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_0h.lr-full.sorted_step2_flux4.hdf5'
+sel_file = path+'lgz_selection_nov18/LoTSS_DR2_{version}.srl_0h.lr-full.sorted_step2_flux4.lgz_selection_{i}.fits'.format(i=selno)
 
 
 lofarcat = Table.read(lofarcat_file_srt)
@@ -57,7 +57,7 @@ lofarcat1 = lofarcat[sel]
 
 lofarcat1.write(sel_file, overwrite=True)
 
-sel_file = path+'lgz_selection_nov18/LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.prefilter_lgz_selection_{i}.fits'.format(i=selno)
+sel_file = path+'lgz_selection_nov18/LoTSS_DR2_{version}.srl_0h.lr-full.sorted_step2_flux4.prefilter_lgz_selection_{i}.fits'.format(i=selno)
 
 #sel = sel_pri & (
         #(lofarcat['FC_flag2'] == 6) |    # large  4<S<8 mJy, ML=LR

@@ -7,13 +7,13 @@ from astropy.table import Table, Column, vstack
 
 
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
 
 ml_cat_file = path+'GradientBoostingClassifier_M2_31504_17F_TT42_B1_rd_dc_opt_tlv_high/pred_thresholds_full_13h.csv'
 ml_cat = Table.read(ml_cat_file, format='csv')
 
 h='13h'
-#lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
+#lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.fits'.format(version=version,h=h)
 #scat = Table.read(lofarcat_file_srt)
 
 # manually down for now ... but could be determined from np.unique
@@ -36,5 +36,5 @@ for dup in dup_names:
     
 
 
-#scat.write (path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h),overwrite=True)
+#scat.write (path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.fits'.format(version=version,h=h),overwrite=True)
 ml_cat.write (path+'GradientBoostingClassifier_M2_31504_17F_TT42_B1_rd_dc_opt_tlv_high/pred_thresholds_full_13h_fixnames.fits',overwrite=True)

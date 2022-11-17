@@ -33,6 +33,7 @@ if __name__=='__main__':
     ##s13h -> 0.328
     ##n13h -> 0.309  -- note, adopt this level for both N and S
 
+    version = 'v110'
     if h == '13h':
         lLR_thresh_n = 0.309            # LR threshold
         lLR_thresh_s = 0.328            # LR threshold
@@ -47,9 +48,9 @@ if __name__=='__main__':
     
     redo = True
 
-    path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-    lofargcat_file = path+'lr/LoTSS_DR2_v100.gaus_{h}.lr-full.fits'.format(h=h)
-    lofarcat_file = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
+    path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+    lofargcat_file = path+'lr/LoTSS_DR2_{version}.gaus_{h}.lr-full.fits'.format(version=version,h=h)
+    lofarcat_file = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.hdf5'.format(version=version,h=h)
 
     gaus_cols = ['Ng', 'G_max_sep', 'G_LR_max', 'Ng_LR_good', 'Ng_LR_good_unique', 'N_G_LR_matchsource', 'Flag_G_LR_problem', 'G_LR_case1', 'G_LR_case2', 'G_LR_case3',                 'cLR', 'LR_threshold', 'LR_threshold10', 'LR', 'LR_name_wise', 'LR_name_l', 'LR_ra', 'LR_dec', 'gLR', 'gLR_name_wise','gLR_name_l','gLR_ra','gLR_dec']
     #gaus_cols = ['Ng', 'G_max_sep', 'G_LR_max', 'Ng_LR_good','Ng_LR_good_unique','N_G_LR_matchsource','Flag_G_LR_problem', 

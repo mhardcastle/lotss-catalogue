@@ -58,8 +58,8 @@ if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
     print('unknown field code (should be 0h or 13h)',h)
     sys.exit(1)
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_filepsrt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+lofarcat_filepsrt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.fits'.format(version=version,h=h)
 
 
 

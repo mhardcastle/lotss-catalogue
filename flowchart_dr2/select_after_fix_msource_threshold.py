@@ -28,7 +28,7 @@ path = '/data2/wwilliams/projects/lofar_surveys/DR2/'
 # run in this dir:
 #pathpre = '/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection'
 
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.hdf5'
+lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.hdf5'
 
 flist = sorted(glob.glob('*13h*selection*fits'))
 
@@ -52,7 +52,7 @@ for f in flist:
         sadd_lgz += s_not_in_pre
 
 
-sel_file = path+'LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.lgz_selection_thresholdfix.fits'
+sel_file = path+'LoTSS_DR2_{version}.srl_0h.lr-full.sorted_step2_flux4.lgz_selection_thresholdfix.fits'
 lofarcat = Table.read(lofarcat_file_srt)
 
 for i  in range(len(lofarcat)):
@@ -67,7 +67,7 @@ lofarcat1 = lofarcat[minds]
 lofarcat1.write(sel_file, overwrite=True)
 
 
-sel_file = path+'LoTSS_DR2_v100.srl_0h.lr-full.sorted_step2_flux4.prefilter_selection_thresholdfix.fits'
+sel_file = path+'LoTSS_DR2_{version}.srl_0h.lr-full.sorted_step2_flux4.prefilter_selection_thresholdfix.fits'
 lofarcat = Table.read(lofarcat_file_srt)
 minds = []
 for s in sadd_prefilter:
@@ -95,7 +95,7 @@ lofarcat1.write(sel_file, overwrite=True)
 
 #lofarcat1.write(sel_file, overwrite=True)
 
-#sel_file = path+'LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_{i}.fits'.format(i=priority)
+#sel_file = path+'LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_{i}.fits'.format(i=priority)
 
 #sel = sel_pri & (
         #(lofarcat['FC_flag2'] == 6) | \

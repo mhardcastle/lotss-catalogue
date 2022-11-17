@@ -1,17 +1,17 @@
 import numpy as np
 from astropy.table import Table, join, vstack
 
-#tpf = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_1.fits')
+#tpf = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_1.fits')
 #length=6249
-#told = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.fits')
+#told = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.fits')
 
-#tcopy = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/flowchart_sep22/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step1_flux4.fits')
+#tcopy = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/flowchart_sep22/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step1_flux4.fits')
 
 
-tsel_lgz1 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_1.fits')
-tsel_lgz2 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_2.fits')
-tsel_pf1 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_1.fits')
-tsel_pf2 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_2.fits')
+tsel_lgz1 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_1.fits')
+tsel_lgz2 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_2.fits')
+tsel_pf1 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_1.fits')
+tsel_pf2 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_2.fits')
 tsellgz = vstack((tsel_lgz1,tsel_lgz2))  #<Table masked=True length=7307>
 tselpf = vstack((tsel_pf1,tsel_pf2))  #<Table masked=True length=10943>
 
@@ -25,10 +25,10 @@ for tt,ii in zip(t,i): print(tt,ii)
 t,i = np.unique(tsel_pf2['FC_flag2'], return_counts=True)
 for tt,ii in zip(t,i): print(tt,ii)
 '''
-tsel_lgz1 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_1.fits')
-tsel_lgz2 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_2.fits')
-tsel_pf1 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_1.fits')
-tsel_pf2 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_2.fits')
+tsel_lgz1 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_1.fits')
+tsel_lgz2 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_2.fits')
+tsel_pf1 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_1.fits')
+tsel_pf2 = Table.read('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_2.fits')
 
 '''
 t,i = np.unique(tsel_lgz1['FC_flag2'], return_counts=True)
@@ -44,7 +44,7 @@ for tt,ii in zip(t,i): print(tt,ii)
 tsellgz_new = vstack((tsel_lgz1,tsel_lgz2))  #<Table masked=True length=7307>
 tselpf_new = vstack((tsel_pf1,tsel_pf2))  #<Table masked=True length=10943>
 
-pfout = Table.read('LoTSS_DR2_v100.srl_13h.prefilter_outputs.fits')
+pfout = Table.read('LoTSS_DR2_{version}.srl_13h.prefilter_outputs.fits')
 pfout = pfout[pfout['Prefilter']!=-99]      ## 10940
 
 missing_lgz = []
@@ -104,13 +104,13 @@ print ('There are ',len(tsellgz_newsel_notpflgz),' sources selected this time fo
 print ('There are ',len(tselpf_newsel),' sources selected this time for prefilter that were not selected before for prefilter - select these (will need pf flag)')
 print ('There are ',len(tselpf_newsel_notlgz),' sources selected this time for prefilter that were not selected before for either prefilter or lgz')
 
-tsellgz_newsel_notpflgz.write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_12_fix.fits', overwrite=True)
-tsellgz_newsel_notpflgz[tsellgz_newsel_notpflgz['WEAVE_priority1']==True].write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_1_fix.fits', overwrite=True)
-tsellgz_newsel_notpflgz[tsellgz_newsel_notpflgz['WEAVE_priority2']==True].write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_2_fix.fits', overwrite=True)
+tsellgz_newsel_notpflgz.write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_12_fix.fits', overwrite=True)
+tsellgz_newsel_notpflgz[tsellgz_newsel_notpflgz['WEAVE_priority1']==True].write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_1_fix.fits', overwrite=True)
+tsellgz_newsel_notpflgz[tsellgz_newsel_notpflgz['WEAVE_priority2']==True].write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_2_fix.fits', overwrite=True)
 
-tselpf_newsel.write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_12_fix.fits', overwrite=True)
-tselpf_newsel[tselpf_newsel['WEAVE_priority1']==True].write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_1_fix.fits', overwrite=True)
-tselpf_newsel[tselpf_newsel['WEAVE_priority2']==True].write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_2_fix.fits', overwrite=True)
+tselpf_newsel.write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_12_fix.fits', overwrite=True)
+tselpf_newsel[tselpf_newsel['WEAVE_priority1']==True].write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_1_fix.fits', overwrite=True)
+tselpf_newsel[tselpf_newsel['WEAVE_priority2']==True].write('/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection_nov18/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_2_fix.fits', overwrite=True)
 
 '''
 lgz 1/2 old

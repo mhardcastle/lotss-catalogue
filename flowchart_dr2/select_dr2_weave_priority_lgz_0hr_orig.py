@@ -23,9 +23,9 @@ selno = '1'
 
 
 path = '/data2/wwilliams/projects/lofar_surveys/DR2/lgz_selection/sent_to_martin_0hr/'
-#lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step1.fits'.format(h=h)
+#lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1.fits'.format(version=version,h=h)
 lofarcat_file_srt = path+'LoTSS_DR2_rolling.srl_0h.sorted_step3.fits'
-sel_file = path+'LoTSS_DR2_v100.srl_0h.lr-full.sorted_step3.lgz_selection_{i}.fits'.format(i=selno)
+sel_file = path+'LoTSS_DR2_{version}.srl_0h.lr-full.sorted_step3.lgz_selection_{i}.fits'.format(i=selno)
 
 
 lofarcat = Table.read(lofarcat_file_srt)

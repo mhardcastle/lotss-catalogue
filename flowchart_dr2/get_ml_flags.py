@@ -26,6 +26,8 @@ if len(sys.argv) == 1:
     print('E.g.: python get_ml_flags.py 0 ')
     sys.exit(1)
 
+version = 'v110'
+
 h = str(sys.argv[1])
 if 'h' not in h:
     h+='h'
@@ -33,9 +35,9 @@ if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
     print('unknown field code (should be 0h or 13h)',h)
     sys.exit(1)
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-#lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step1.fits'.format(h=h)
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.hdf5'.format(h=h)
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+#lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1.fits'.format(version=version,h=h)
+lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.hdf5'.format(version=version,h=h)
 
 
 
@@ -78,13 +80,18 @@ elif h == '13h':
         ml_cat['Source_Name'][i] = ml_cat['Source_Name'][i].strip()
 
     ml_cat.rename_column('0.12','ML_flag')  # 1 for LR, 0 for LGZ
-    tt = join(lofarcat, ml_cat, keys='Source_Name')
+    tt = join(lofarcat, ml_cat, keys='Source_Name',join_type='left')
     tt.sort('Source_Name')
     
+    hasmatch = ~tt['ML_flag'].mask
+    
     if 'ML_flag' in lofarcat.colnames:
-        lofarcat['ML_flag'] = tt['ML_flag']
+        lofarcat['ML_flag'][hasmatch] = tt['ML_flag'][hasmatch]
+        lofarcat['ML_flag'][~hasmatch] = 0   # no match defaults to LGZ (0)
     else:
-        lofarcat.add_column(tt['ML_flag'])
+        col = np.zeros(len(lofarcat))
+        col[hasmatch] = tt['ML_flag'][hasmatch]
+        lofarcat.add_column(Column(name='ML_flag',data=col))
 
 
     ## write output file

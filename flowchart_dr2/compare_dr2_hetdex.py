@@ -26,9 +26,9 @@ hetdex_fields = ['P10Hetdex', 'P11Hetdex12', 'P12Hetdex11', 'P14Hetdex04', 'P15H
 #priority = '2'
 
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-#lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.sorted_step1.fits'.format(h=h)
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.hdf5'
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+#lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1.fits'.format(version=version,h=h)
+lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.hdf5'
 
 
 dr1cat = Table.read('/data2/wwilliams/projects/lofar_surveys/LoTSS-DR1-July21-2017/LOFAR_HBA_T1_DR1_merge_ID_optical_f_v1.2b_restframe.fits')
@@ -43,7 +43,7 @@ for field in hetdex_fields:
 lofarcat = lofarcat[lofarcat['hetdex_field']>0]
 
 
-lofarcat.write(path+'LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.hetdex.fits', overwrite=True)
+lofarcat.write(path+'LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.hetdex.fits', overwrite=True)
 
 size_large = 15.           # in arcsec
 separation1 = 45.          # in arcsec
@@ -86,7 +86,7 @@ dr1compcat['Component_Name']
 
 sys.exit()
 for priority in ['hetdex','hetdex_missing','last','1','2','3']:
-    sel_file = path+'lgz_selection_sep9/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_{i}.fits'.format(i=priority)
+    sel_file = path+'lgz_selection_sep9/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.lgz_weave_selection_{i}.fits'.format(i=priority)
     if priority in ['1' , '2' , '1a', '3']:
         sel_pri = (lofarcat['WEAVE_priority{i}'.format(i=priority)] == True)
     elif priority == '1b':
@@ -113,7 +113,7 @@ for priority in ['hetdex','hetdex_missing','last','1','2','3']:
 
     lofarcat1.write(sel_file, overwrite=True)
 
-    sel_file = path+'lgz_selection_sep9/LoTSS_DR2_v100.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_{i}.fits'.format(i=priority)
+    sel_file = path+'lgz_selection_sep9/LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.prefilter_lgz_weave_selection_{i}.fits'.format(i=priority)
 
     sel = sel_pri & (
             (lofarcat['FC_flag2'] == 6) | \

@@ -59,8 +59,8 @@ if h not in  ['0h','13h','n0h','n13h','s0h','s13h']:
         print('not a subcat')
         sys.exit(1)
 
-path = '/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/'
-lofarcat_file_srt = path+'LoTSS_DR2_v100.srl_{h}.lr-full.presort.fits'.format(h=h)
+path = '/Users/w.williams/projects/lofar_surveys/DR2/'
+lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.presort.fits'.format(version=version,h=h)
 
 
 
@@ -173,7 +173,7 @@ if calculate_intersections:
         return cintersects, cencloses, cenclosed
 
     #lofarcat = Table.read('/home/wendy/projects/lba_bootes_deep/bootes_deep_lba.cat.fits')
-    #lofarcat = Table.read('/data2/wwilliams/projects/lofar_surveys/LoTSS-DR2-Feb2020/LoTSS_DR2_v100.srl_13h.lr-full.presort.fits')
+    #lofarcat = Table.read('/Users/w.williams/projects/lofar_surveys/DR2/LoTSS_DR2_{version}.srl_13h.lr-full.presort.fits')
 
 
     # work in degrees
