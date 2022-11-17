@@ -110,3 +110,8 @@ DR2 notes:
    earlier versions this mostly differs by better integration with ds9
    -- a ds9 is automatically started -- and a few extra options.
    
+-- new_blend_prep_dr2.py -- updates the 'second blend' database and
+   downloads images for blends. Should be run after zoom_dr2_sql.py to
+   catch objects flagged as blends there.
+
+-- new_blend_dr2.py -- the 'second blend' code.

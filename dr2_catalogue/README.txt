@@ -1,5 +1,8 @@
 The basic workflow here is:
 
+merge_prefilter.py -- get the SQL prefilter classifications in (Spring field).
+mv source_lr_prefilter.fits source_lr.fits
+
 make_catalogue.py -- creates a version of the radio+optical ID
 catalogue by merging the various input sources. By default the current
 largest numbered version is overwritten, specify v... on the command
@@ -13,8 +16,6 @@ merge_optical.py -- merge with the base optical catalogue to assign optical IDs.
 add_lsdr8_photoz.py -- merge in the photo-zs from Ken's tables. Relatively slow.
 
 add_physical.py -- Add physical quantities and column descriptions
-
-##check_overlap.py -- For combined release make the source table
 
 make_joined.py -- Make the joined source table (Spring and Fall)
 
