@@ -24,9 +24,8 @@ from astropy.table import Table
 import numpy as np
 
 def flatten_subject_info(subject_data):
-
-  result = subject_data.values()[0]
-  result.update({'id': subject_data.keys()[0]})
+  result = list(subject_data.values())[0]
+  result['id']=list(subject_data.keys())[0]
   return result
 
 try:

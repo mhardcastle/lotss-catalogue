@@ -4,7 +4,7 @@ import MySQLdb.cursors as mdbcursors
 import os
 import glob
 
-table='hetdex'
+table='missing'
 
 os.chdir('/beegfs/lofar/mjh/flowchart-endpoints-dr2/%s-prefilter' % table)
 

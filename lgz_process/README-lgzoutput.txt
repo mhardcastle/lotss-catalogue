@@ -28,3 +28,6 @@ multiprocessing where possible.
 preprocess_optical.py must be run to decompose the optical catalogue
 into healpixes before using aggregate_lofgalzoo_dr2_hp_mp.py .
 
+Note that for DR2 the mergeGZcats.py script needs to be run to allow
+the old LGZ classifications to be included.
+

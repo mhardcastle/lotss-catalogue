@@ -8,15 +8,25 @@ from astropy.table import Table
 from scipy.interpolate import interp1d
 from multiprocessing import Pool
 from tqdm import tqdm
+import sys
 
 hp = HEALPix(nside=256)
 
 print('HP pixels are',hp.npix)
 print('HP pixel area is',60*60*hp.pixel_area.value*(180/np.pi)**2,'sq arcmin')
 
-t=Table.read('source_lr.fits')
+# use a LOFAR file to work out the area of the catalogue. This used to
+# be the LGZ sources but can also be used to get the whole sky area.
 
-lhp=hp.lonlat_to_healpix(t['RA'],t['DEC'])
+try:
+    sourcefile=sys.argv[1]
+except:
+    sourcefile='source_lr.fits'
+
+t=Table.read(sourcefile)
+
+#lhp=hp.lonlat_to_healpix(t['RA']*u.deg,t['DEC']*u.deg) # remove if deg
+lhp=hp.lonlat_to_healpix(t['RA'],t['DEC']) # remove if deg
 
 lpix=sorted(list(set(lhp)))
 

@@ -3,7 +3,10 @@
 from __future__ import print_function
 import os
 from astropy.table import Table
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
 import numpy as np
 from astropy.coordinates import SkyCoord
 import astropy.units as u
@@ -30,7 +33,7 @@ def slice_multi(hpv):
     return (names[filt],optras[filt],optdecs[filt])
 
 print('*** process_overlap starting ***')
-with open('optical.pickle') as pf:
+with open('optical.pickle','rb') as pf:
     (names,optras,optdecs)=pickle.load(pf)
 
 hd={}
@@ -54,6 +57,6 @@ p.close()
 del(p)
 print(len(badlist),'duplicates found')
 
-with open('badlist.pickle','w') as pf:
+with open('badlist.pickle','wb') as pf:
     pickle.dump(badlist,pf)
     

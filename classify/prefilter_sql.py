@@ -29,11 +29,11 @@ def get_next():
     
 ##### edit the following lines to choose the sample and possible options
 
-table='hetdex'
+table='missing'
 dir='/beegfs/lofar/mjh/flowchart-endpoints-dr2/%s-prefilter' % table
 os.chdir(dir)
 
-g=glob.glob('LoTSS*fits')
+g=glob.glob('*.fits')
 assert(len(g)==1)
 sample=g[0]
 
@@ -57,6 +57,9 @@ results=list(cur.fetchall())
 i=len(results)
     
 t=Table.read(sample)
+if 'lr_1' in t.colnames:
+    t['lr_1'].name='LR'
+    t['LR']=np.where(t['LR']<0.3,np.nan,t['LR'])
 
 stdscr = curses.initscr()
 curses.start_color()

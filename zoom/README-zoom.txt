@@ -96,3 +96,17 @@ General principles are:
    connection to the database server times out if left alone. For me
    the matplotlib window doesn't survive an x2go session close and
    restart either.
+
+DR2 notes:
+
+* New codes:
+
+-- zoomprep_dr2.py updates the SQL database with the records for
+   sources that need zooms and downloads any images. Should be run
+   after a make_catalogue.py ... save run to create the latest input
+   files.
+
+-- zoom_dr2_sql.py uses this database to run the zooms. Relative to
+   earlier versions this mostly differs by better integration with ds9
+   -- a ds9 is automatically started -- and a few extra options.
+   

@@ -2,8 +2,10 @@ from __future__ import print_function
 from astropy.table import Table,vstack
 import glob
 
-fields=['Spring-40-45','Spring-60-65','Winter','Fall']
-versions=['v0.4','v0.8','v0.5','v0.6'] # matches version 0.1 source cat
+#fields=['Spring-40-45','Spring-60-65','Winter','Fall']
+#versions=['v0.4','v0.8','v0.5','v0.6'] # matches version 0.1 source cat
+fields=['Spring','Fall']
+versions=['v1.0','v1.1']
 tables=[]
 
 for f,v in zip(fields,versions):
@@ -14,5 +16,4 @@ for f,v in zip(fields,versions):
 
 t=vstack(tables)
 
-t.write('combined_components_v0.1.fits',overwrite=True)
-
+t.write('combined_components_v0.5.fits',overwrite=True)

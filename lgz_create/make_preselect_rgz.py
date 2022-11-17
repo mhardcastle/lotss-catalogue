@@ -50,8 +50,13 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # Annotated PyBDSF table
-    ot=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v100.srl_13h.lr-full.fits')
-    gt=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v100.gaus_13h.lr-full.fits')
+    ot=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v110.srl_13h.lr-full.fits')
+    ot['ra']=np.where(ot['ra']>360,np.nan,ot['ra'])
+    ot['dec']=np.where(ot['dec']>360,np.nan,ot['dec'])
+    
+    gt=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v110.gaus_13h.lr-full.fits')
+    gt['ra']=np.where(gt['ra']>360,np.nan,gt['ra'])
+    gt['dec']=np.where(gt['dec']>360,np.nan,gt['dec'])
     if 'Component_Name' in ot.colnames:
         cname='Component_Name'
     else:
