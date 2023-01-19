@@ -26,6 +26,8 @@ if len(sys.argv) == 1:
     print('E.g.: python get_ml_flags.py 0 ')
     sys.exit(1)
 
+version = 'v110'
+
 h = str(sys.argv[1])
 if 'h' not in h:
     h+='h'

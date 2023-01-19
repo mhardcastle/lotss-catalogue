@@ -26,7 +26,7 @@ hetdex_fields = ['P10Hetdex', 'P11Hetdex12', 'P12Hetdex11', 'P14Hetdex04', 'P15H
 
 path = '/Users/w.williams/projects/lofar_surveys/DR2/'
 #lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_{h}.lr-full.sorted_step1.fits'.format(version=version,h=h)
-lofarcat_file_srt = path+'LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.hdf5'
+lofarcat_file_srt = path+f'LoTSS_DR2_{version}.srl_13h.lr-full.sorted_step2_flux4.hdf5'
 
 
 lofarcat = Table.read(lofarcat_file_srt)

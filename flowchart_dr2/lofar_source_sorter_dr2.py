@@ -188,7 +188,15 @@ def Masks_disjoint_complete(masklist):
     
     return np.all(O) and np.all(~Z)
 
-
+def inHETDEXm(mid):
+    inside = np.zeros(len(mid), dtype=bool)
+    hetdex_fields = ['P10Hetdex', 'P11Hetdex12', 'P12Hetdex11', 'P14Hetdex04', 'P15Hetdex13', 'P164+55', 'P169+55', 'P16Hetdex13', 'P173+55', 'P178+55', 'P182+55', 'P187+55', 'P18Hetdex03', 'P191+55', 'P196+55', 'P19Hetdex17', 'P1Hetdex15', 'P200+55', 'P205+55', 'P206+50', 'P206+52', 'P209+55', 'P21', 'P210+47', 'P211+50', 'P213+47', 'P214+55', 'P217+47', 'P218+55', 'P219+50', 'P219+52', 'P221+47', 'P223+50', 'P223+52', 'P223+55', 'P225+47', 'P227+50', 'P227+53', 'P22Hetdex04', 'P23Hetdex20', 'P25Hetdex09', 'P26Hetdex03', 'P27Hetdex09', 'P29Hetdex19', 'P30Hetdex06', 'P33Hetdex08', 'P34Hetdex06', 'P35Hetdex10', 'P37Hetdex15', 'P38Hetdex07', 'P39Hetdex19', 'P3Hetdex16', 'P41Hetdex', 'P42Hetdex07', 'P4Hetdex16', 'P6', 'P7Hetdex11', 'P8Hetdex']
+    hetdex_fields.append(['P210+52', 'P214+52', 'P215+50', 'P31Hetdex19'])
+        
+    
+    for i in range(len(mid)):
+        inside[i] = mid[i] in hetdex_fields
+    return inside
 
 
 if __name__=='__main__':
@@ -276,6 +284,9 @@ if __name__=='__main__':
     Nlofarcat = len(lofarcat)
     
     
+    # update HETDEX flag
+    lofarcat['HETDEX2'] = inHETDEXm(lofarcat['Mosaic_ID'])
+    
     ## write output file
     #lofarcat.write(lofarcat_file_srt, overwrite=True)
     #sys.exit()
@@ -310,11 +321,12 @@ if __name__=='__main__':
         #for s in fixlist:
             #lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 2
     elif step == 3:
-        prefilter_outs = ('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend')
-        prefilter_cols = ('green', 'blue', 'red', 'seagreen1','gray','blue','yellowgreen')
-        prefilter_ids = (3, 1, 0, 7,-1,8,6)
-        prefilter_lgz_ids = (4, -1, -1, 6,-1,-1,5)
-        prefilter_lr_ids = (-1, 1, 0, -1,-1,-1,-1)
+        prefilter_outs = ('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend','missing')
+        prefilter_cols = ('green', 'blue', 'red', 'seagreen1','gray','blue','yellowgreen','orange')
+        prefilter_vals = (1, 2, 3, 4,5,6,7,-99)
+        prefilter_ids = (3, 1, 0, 7,-1,8,6,-99)
+        prefilter_lgz_ids = (4, -1, -1, 6,-1,-1,5,-99)
+        prefilter_lr_ids = (-1, 1, 0, -1,-1,-1,-1,-99)
         
         print('need Prefilter outputs')  
         print('prefilter has been run, now to give them the right ID flags')
@@ -721,7 +733,7 @@ if __name__=='__main__':
 
         for pf_i in range(len(prefilter_outs)):
             spfi = '{i}'.format(i=pf_i+1)
-            M_large_mid_faint_nmllgz_pfi = M_large_mid_faint_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+            M_large_mid_faint_nmllgz_pfi = M_large_mid_faint_nmllgz.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                             'pf {i}'.format(i=pf_i+1),
                             'no ml lgz',
                             edgelabel=spfi,
@@ -946,7 +958,7 @@ if __name__=='__main__':
         
             for pf_i in range(len(prefilter_outs)):
                 spfi = '{i}'.format(i=pf_i+1)
-                M_small_isol_nS_bright_prefilt_pfi = M_small_isol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                M_small_isol_nS_bright_prefilt_pfi = M_small_isol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                                 'pf {i}'.format(i=pf_i+1),
                                 'no ml lgz',
                                 edgelabel=spfi,
@@ -1044,7 +1056,7 @@ if __name__=='__main__':
 
             for pf_i in range(len(prefilter_outs)):
                 spfi = '{i}'.format(i=pf_i+1)
-                M_small_nisol_S_clustered_brightish_nmllgz_pfi = M_small_nisol_S_clustered_brightish_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                M_small_nisol_S_clustered_brightish_nmllgz_pfi = M_small_nisol_S_clustered_brightish_nmllgz.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                                 'pf {i}'.format(i=pf_i+1),
                                 'pf {i}'.format(i=pf_i+1),
                                 edgelabel=spfi,
@@ -1106,7 +1118,7 @@ if __name__=='__main__':
                             'not_ml_lgz',
                             edgelabel='N',
                             #color='orange',
-                            qlabel='Bright?\n(S>{f:.0f} mJy)'.format(f=fluxcut, s=size_large),
+                            qlabel='Brightish?\n(S>{f:.0f} mJy)'.format(f=fluxcut2, s=size_large),
                             masterlist=masterlist)
         
         M_small_nisol_nS = M_small_nisol_nS_nmllgz
@@ -1189,7 +1201,7 @@ if __name__=='__main__':
             
             for pf_i in range(len(prefilter_outs)):
                 spfi = '{i}'.format(i=pf_i+1)
-                M_small_nisol_nS_bright_prefilt_pfi = M_small_nisol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                M_small_nisol_nS_bright_prefilt_pfi = M_small_nisol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                                 'pf {i}'.format(i=pf_i+1),
                                 'no ml lgz',
                                 edgelabel=spfi,
@@ -1329,7 +1341,7 @@ if __name__=='__main__':
         
         for pf_i in range(len(prefilter_outs)):
             spfi = '{i}'.format(i=pf_i+1)
-            M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi = M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+            M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi = M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                             'pf {i}'.format(i=pf_i+1),
                             'pf {i}'.format(i=pf_i+1),
                             edgelabel=spfi,

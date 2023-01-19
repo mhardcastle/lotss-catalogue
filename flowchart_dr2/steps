@@ -16,7 +16,7 @@ python flowpython/handle_m_sources_dr2.py 0 1 all
 python flowpython/lofar_source_sorter_dr2.py 0 2 all
 python flowpython/lofar_source_sorter_dr2.py 0 2 1
 # on lofar: python flow_python/extract_prefilter_out.py 0, and copy over output...
-scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_0h.prefilter_outputs.fits .
+scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v110.srl_0h.prefilter_outputs.fits .
 python flowpython/get_prefilter_flags.py 0
 python flowpython/lofar_source_sorter_dr2.py 0 3 all
 python flowpython/lofar_source_sorter_dr2.py 0 3 1
@@ -40,8 +40,9 @@ python flowpython/lofar_source_sorter_dr2.py 13 2 2
 python flowpython/lofar_source_sorter_dr2.py 13 2 12
 python flowpython/lofar_source_sorter_dr2.py 13 2 3
 python flowpython/lofar_source_sorter_dr2.py 13 2 dr1
+python flowpython/lofar_source_sorter_dr2.py 13 2 mfix
 # on lofar: python flowpython/extract_prefilter_out.py 13, and copy over output...
-scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_13h.prefilter_outputs.fits .
+scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v110.srl_13h.prefilter_outputs.fits .
 python flowpython/get_prefilter_flags.py 13
 python flowpython/lofar_source_sorter_dr2.py 13 3 all
 python flowpython/lofar_source_sorter_dr2.py 13 3 dr1

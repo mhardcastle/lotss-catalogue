@@ -93,8 +93,8 @@ elif h =='0h':
         lofarcat.add_column(Column(data=np.zeros(len(lofarcat),dtype=bool), name='WEAVE_priority1'))
     
     c = ac.SkyCoord(lofarcat['RA'],lofarcat['DEC'])
-    legacy_moc_s = mocpy.MOC.from_fits('/data2/wwilliams/projects/lofar_surveys/DR2/mocs/legacy-south.moc') 
-    dr2_moc = mocpy.MOC.from_fits('/data2/wwilliams/projects/lofar_surveys/DR2/mocs/dr2-moc.moc') 
+    legacy_moc_s = mocpy.MOC.from_fits(path+'/mocs/legacy-south.moc')
+    dr2_moc = mocpy.MOC.from_fits(path+'/mocs/dr2-moc.moc') 
     
     ## do intersection in Aladin - gives area 1087 sq deg
     inlegacy = legacy_moc_s.contains(c.ra, c.dec)
