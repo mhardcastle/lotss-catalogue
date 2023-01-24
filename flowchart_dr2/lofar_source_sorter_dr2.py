@@ -741,6 +741,9 @@ if __name__=='__main__':
                             color=prefilter_cols[pf_i],
                             masterlist=masterlist)
         
+            # set Artefact_flag for prefilter artefacts
+            if prefilter_vals[pf_i] == 5:
+                lofarcat['Artefact_flag'][M_large_mid_faint_nmllgz_pfi.mask] == 1
             lofarcat['ID_flag'][M_large_mid_faint_nmllgz_pfi.mask] = prefilter_ids[pf_i]  #prefilter
             lofarcat['LGZ_flag'][M_large_mid_faint_nmllgz_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
     
@@ -968,8 +971,12 @@ if __name__=='__main__':
                                 qlabel=prefilter_outs[pf_i],
                                 color=prefilter_cols[pf_i],
                                 masterlist=masterlist)
-            
+                    
+                # set Artefact_flag for prefilter artefacts
+                if prefilter_vals[pf_i] == 5:
+                    lofarcat['Artefact_flag'][M_small_isol_nS_bright_prefilt_pfi.mask] == 1
                 lofarcat['ID_flag'][M_small_isol_nS_bright_prefilt_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+                lofarcat['LGZ_flag'][M_small_isol_nS_bright_prefilt_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
     
 
 
@@ -1068,8 +1075,12 @@ if __name__=='__main__':
                                 qlabel=prefilter_outs[pf_i],
                                 color=prefilter_cols[pf_i],
                                 masterlist=masterlist)
-            
+                                
+                # set Artefact_flag for prefilter artefacts
+                if prefilter_vals[pf_i] == 5:
+                    lofarcat['Artefact_flag'][M_small_nisol_S_clustered_brightish_nmllgz_pfi.mask] == 1
                 lofarcat['ID_flag'][M_small_nisol_S_clustered_brightish_nmllgz_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+                lofarcat['LGZ_flag'][M_small_nisol_S_clustered_brightish_nmllgz_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
     
             ## expand the M_small_nisol_S_clustered_brightish_nmllgz based on visual flags
         else:
@@ -1215,8 +1226,12 @@ if __name__=='__main__':
                                 qlabel=prefilter_outs[pf_i],
                                 color=prefilter_cols[pf_i],
                                 masterlist=masterlist)
-            
+                                            
+                # set Artefact_flag for prefilter artefacts
+                if prefilter_vals[pf_i] == 5:
+                    lofarcat['Artefact_flag'][M_small_nisol_nS_bright_prefilt_pfi.mask] == 1
                 lofarcat['ID_flag'][M_small_nisol_nS_bright_prefilt_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+                lofarcat['LGZ_flag'][M_small_nisol_nS_bright_prefilt_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
 
     # compact not isolated, nnsmall, nlr
     M_small_nisol_S_nclustered_nlr = M_small_nisol_S_nclustered.submask(lofarcat['LR_threshold'] == False,
@@ -1355,8 +1370,12 @@ if __name__=='__main__':
                             qlabel=prefilter_outs[pf_i],
                             color=prefilter_cols[pf_i],
                             masterlist=masterlist)
-        
+                                                    
+            # set Artefact_flag for prefilter artefacts
+            if prefilter_vals[pf_i] == 5:
+                lofarcat['Artefact_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi.mask] == 1
             lofarcat['ID_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+            lofarcat['LGZ_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
     
     
     
