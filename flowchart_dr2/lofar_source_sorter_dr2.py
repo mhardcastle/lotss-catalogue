@@ -316,10 +316,10 @@ if __name__=='__main__':
         
         #fixlist = ['ILTJ111611.15+493234.8', 'ILTJ121557.43+512418.5', 'ILTJ121956.33+473756.2', 'ILTJ124047.70+500956.4', 'ILTJ131951.11+531748.0', 'ILTJ135441.11+541646.4']
         #for s in fixlist:
-            #lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 1
+            #lofarcat['msource_flag1'][lofarcat['Source_Name']==s] = 1
         #fixlist = ['ILTJ140430.41+560657.9'] 
         #for s in fixlist:
-            #lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 2
+            #lofarcat['msource_flag1'][lofarcat['Source_Name']==s] = 2
     elif step == 3:
         prefilter_outs = ('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend','missing')
         prefilter_cols = ('green', 'blue', 'red', 'seagreen1','gray','blue','yellowgreen','orange')
@@ -829,7 +829,9 @@ if __name__=='__main__':
 
 
     ## 0hr fields was processed a bit differently here:
-    if h == '13h':
+    # update - now do them the smae
+    #if h == '13h':
+    if 1:
         # compact isolated nS
         M_small_isol_nS = M_small_isol.submask(lofarcat['S_Code'] != 'S',
                             'nS',
@@ -839,7 +841,8 @@ if __name__=='__main__':
                             masterlist=masterlist)
 
 
-    if h == '0h':
+    #update to run 0hr field like 13hr field as these were never done in lgz
+    if 0:
         # compact isolated nS
         M_small_isol_nS = M_small_isol.submask(lofarcat['S_Code'] != 'S',
                             'nS',
@@ -891,7 +894,7 @@ if __name__=='__main__':
     # we have msource outcomes
     if step >= 2:
         
-        ### msource1_flag
+        ### msource_flag1
         #0: no match
         #1: accept ML of the source
         #2: accept ML of the gaussian with highest ML
@@ -991,7 +994,9 @@ if __name__=='__main__':
 
 
     # ohr original LGZ decissions differ from 13h
-    if h == '13h':
+    # update: make them the same
+    #if h == '13h':
+    if 1:
         # compact not isolated, S, clustered
         M_small_nisol_S_clustered = M_small_nisol_S.submask((lofarcat['NN5_sep'] <= separation1),
                             'clustered',
@@ -1072,7 +1077,8 @@ if __name__=='__main__':
             pass
         
         
-    elif h == '0h':
+    #elif h == '0h':
+    elif 0:
         # compact not isolated, S, clustered
         M_small_nisol_S_clustered = M_small_nisol_S.submask((lofarcat['NN5_sep'] <= separation1),
                             'clustered',
@@ -1095,7 +1101,8 @@ if __name__=='__main__':
     
     
 
-    if h == '0h':
+    #update to run 0hr field like 13hr field
+    if 0:
         # compact not isolated, not S
         # 1000111
         M_small_nisol_nS = M_small_nisol.submask(lofarcat['S_Code'] != 'S',
@@ -1123,7 +1130,7 @@ if __name__=='__main__':
         
         M_small_nisol_nS = M_small_nisol_nS_nmllgz
         
-    elif h == '13h':
+    elif (h == '13h') or (h == '0h'):
         # compact not isolated, not S
         # 1000111
         M_small_nisol_nS = M_small_nisol.submask(lofarcat['S_Code'] != 'S',
