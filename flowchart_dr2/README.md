@@ -28,7 +28,7 @@ ID_flag
 *  1 - LR id or no id
 *  2 - large optical galaxy
 *  3 - LGZ
-*  4 - visual id / prefilter
+*  4 - visual id / prefilter (pending - should not exist after step3 after  all prefiltering is done)
 *  5 - tbd
 *  6 - deblend
 *  7 - too zoomed in after prefilter
@@ -69,6 +69,7 @@ Scripts need to be run in order:
 9. extract_prefilter_out.py 0  (run on lofar and copy over output... scp  lofar:/beegfs/lofar/wwilliams/lofar_surveys/DR2/LoTSS_DR2_v100.srl_0h.prefilter_outputs.fits . )
 10. get_prefilter_flags.py 0
 11. lofar_source_sorter_dr2.py 0 3 all
+
 Notes: 
 * 1-5 are initialisation steps that need to be run once
 * 2-5 can be swapped around
