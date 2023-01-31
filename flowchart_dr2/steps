@@ -62,7 +62,7 @@ topcat LoTSS_DR2_v100.srl_13h.lr-full.presort.fits
 
 python flowpython/conv_hdf5_fits.py LoTSS_DR2_v110.srl_13h.lr-full.sorted_step3_flux4.hdf5
 python flowpython/conv_hdf5_fits.py LoTSS_DR2_v110.srl_0h.lr-full.sorted_step3_flux4.hdf5
-
+python flowpython/stack_final.py
 
 # after step 2 and setting weave priorities again...
 python flowpython/select_dr2_complete_priority_lgz.py 0
@@ -71,3 +71,8 @@ python flowpython/select_dr2_complete_priority_lgz.py 13
 
 
 python flowpython/count_lgz_status.py 
+
+python flowpython/count_flags.py  LoTSS_DR2_v110.srl.lr-full.sorted_step3_flux4.fits ID_flag
+python flowpython/count_flags.py  LoTSS_DR2_v110.srl.lr-full.sorted_step3_flux4.fits msource_flag1
+python flowpython/count_flags.py  LoTSS_DR2_v110.srl.lr-full.sorted_step3_flux4.fits Artefact_flag
+python flowpython/count_flags.py  LoTSS_DR2_v110.srl.lr-full.sorted_step3_flux4.fits Prefilter

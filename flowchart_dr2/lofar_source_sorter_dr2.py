@@ -324,7 +324,7 @@ if __name__=='__main__':
         prefilter_outs = ('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend','missing')
         prefilter_cols = ('green', 'blue', 'red', 'seagreen1','gray','blue','yellowgreen','orange')
         prefilter_vals = (1, 2, 3, 4,5,6,7,-99)
-        prefilter_ids = (3, 1, 0, 7,-1,8,6,-99)
+        prefilter_ids = (3, 1, 0, 7,-1,8,6,4)
         prefilter_lgz_ids = (4, -1, -1, 6,-1,-1,5,-99)
         prefilter_lr_ids = (-1, 1, 0, -1,-1,-1,-1,-99)
         
@@ -376,7 +376,9 @@ if __name__=='__main__':
             if weave_pri == '1':
                 weave_sel = (lofarcat['WEAVE_priority1']==True)
             elif weave_pri == 'all':
-                weave_sel = np.isfinite(lofarcat['RA'])
+                weave_sel = (lofarcat['WEAVE_priority1']==True)
+                # 0h field - only 1 weave priority, never fdo the non-legacy coverage
+                #weave_sel = np.isfinite(lofarcat['RA'])
 
 
     # this is easy to run...
@@ -484,7 +486,7 @@ if __name__=='__main__':
     1 - LR
     2 - large optical galaxy
     3 - LGZ
-    4 - visual id / prefilter
+    4 - visual id / prefilter pending
     5 - tbd
     6 - deblend
     7 - too zoomed in after prefilter
@@ -497,9 +499,11 @@ if __name__=='__main__':
         lofarcat.add_column(Column(-99*np.ones(Nlofarcat,dtype=int),'LR_flag'))
     if 'LGZ_flag' not in lofarcat.colnames:
         lofarcat.add_column(Column(-99*np.ones(Nlofarcat,dtype=int),'LGZ_flag'))
-    lofarcat['ID_flag'][weave_sel] = -99
-    lofarcat['LR_flag'][weave_sel] = -99
-    lofarcat['LGZ_flag'][weave_sel] = -99
+        
+    # none of these should be left
+    lofarcat['ID_flag'][weave_sel] = -9999
+    lofarcat['LR_flag'][weave_sel] = -9999
+    lofarcat['LGZ_flag'][weave_sel] = -9999
         
     
 
@@ -589,7 +593,7 @@ if __name__=='__main__':
                         edgelabel='N',
                         color='gray',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_all_noweave.mask] = -1
+    lofarcat['ID_flag'][M_all_noweave.mask] = -99
 
 
     # sources 
@@ -611,6 +615,7 @@ if __name__=='__main__':
                         color='gray',
                         masterlist=masterlist)
     lofarcat['ID_flag'][M_all_artefact.mask] = -1
+    lofarcat['Artefact_flag'][M_all_artefact.mask] = 1
 
 
     # sources - clean
