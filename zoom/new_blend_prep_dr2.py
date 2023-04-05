@@ -4,6 +4,8 @@
 # Note that this way we mark a list of sources for zooming by adding
 # to the sql database.
 
+# Adapted version for the new_blend workflow
+
 from __future__ import print_function
 import glob
 import sys
@@ -45,13 +47,13 @@ class prefilter_sql(object):
         close(self)
         
 
-class tzi_sql(object):
+class blend_sql(object):
     def __init__(self,table):
         self.con=mdb.connect('192.168.2.249', 'tzi_user', 'IK34daKG', 'tzi', cursorclass=mdbcursors.DictCursor, autocommit=True)
         self.cur = self.con.cursor()
         self.execute=self.cur.execute
         self.fetchall=self.cur.fetchall
-        self.table=table
+        self.table=table+'_blend'
         self.user=os.getenv('USER')
         sortorder=os.getenv('SORT')
         if sortorder is None:
@@ -104,7 +106,7 @@ if __name__=='__main__':
 
     field=os.getcwd().split('/')[-1].replace('-','_')
     table=field
-    sql=tzi_sql(table)
+    sql=blend_sql(table)
 
     fname=sorted(glob.glob('structure-v*-sources.pickle'))[-1].replace('-sources.pickle','')
     
@@ -120,9 +122,7 @@ if __name__=='__main__':
         for sourcename in s.sd:
             if 'Deleted' in s.sd[sourcename]:
                 continue
-            if ( ('Zoom_prob' in s.sd[sourcename] and s.sd[sourcename]['Zoom_prob']>0.5) or
-                 ('Imagemissing_prob' in s.sd[sourcename] and s.sd[sourcename]['Imagemissing_prob']>0.5)):
-            
+            if 'Blend_prob' in s.sd[sourcename] and s.sd[sourcename]['Blend_prob']>0.5:
                 sourcelist.append(sourcename)
         print('Starting from an auto-generated source list of length',len(sourcelist))
     else:
@@ -139,59 +139,22 @@ if __name__=='__main__':
 
         # check whether any of these sources have zoom files already
         for source in sourcelist:
-            if source not in s.sd:
-                print(source,'does not exist!')
-                continue
-            zoomfile=s.sd[source].get('Zoomfile')
+            zoomfile=s.sd[source].get('Blend_file')
             if zoomfile:
-                print(source,'has a zoom file already')
-                if not os.path.isdir('old_zoom'):
-                    os.mkdir('old_zoom')
-                os.rename(zoomfile,'old_zoom/'+os.path.basename(zoomfile))
+                print(source,'has a blend file already')
+                if not os.path.isdir('old_blend'):
+                    os.mkdir('old_blend')
+                os.rename(zoomfile,'old_blend/'+os.path.basename(zoomfile))
             record=sql.get_object(source,create=False)
             if record is not None:
                 print(source,': clearing existing SQL record')
                 sql.execute('update '+sql.table+' set complete=NULL where object="%s"' % source)
                 sql.execute('update '+sql.table+' set user=NULL where object="%s"' % source)
             
-
-    renamed={}
-    for ts in s.sd:
-        if 'Renamed_from' in s.sd[ts]:
-            renamed[s.sd[ts]['Renamed_from']]=ts
-                
-    # zoomneeded sources may have been renamed
-    print('Processing zoomneeded list of length',len(s.zoomneeded))
-    for source in s.zoomneeded:
-        if source in s.sd:
-            if 'Zoomfile' in s.sd[source]: continue
-            sourcelist.append(source)
-        elif source in renamed:
-            rsource=renamed[source]
-            if rsource not in s.sd: continue
-            if 'Zoomfile' in s.sd[rsource]: continue
-            sourcelist.append(rsource)
-        else:
-            print('Zoomneeded source',source,'does not exist')
-
-    table='post_'+field.replace('-','_')
-    print('Extracting required sources from postfilter table',table)
-
-    postf=prefilter_sql(table)
-    postfilter=postf.get_objects(2)
-                
-    if postfilter is not None:
-        print('Adding',len(postfilter),'sources')
-        for source in postfilter:
-            if source in s.sd and 'Zoomfile' not in s.sd[source]:
-                sourcelist.append(source)
-    else:
-        print('No postfilter, hope this is what you want')
-    
     sourcelist=list(set(sourcelist))
     print('Processing',len(sourcelist),'sources')
 
-    os.chdir('zoom')
+    os.chdir('new_blend')
     # now download any images we need!
     wd=os.getcwd() # the zoom directory
     lm=LofarMaps(stay_in_imagedir=True)
@@ -201,18 +164,16 @@ if __name__=='__main__':
     os.chdir('downloads')
     
     for sourcename in sourcelist:
-        print('Doing',sourcename)
+        print(sourcename)
+        record=sql.get_object(sourcename,create=True)
+        if 'legacyfile' in record and record['legacyfile'] is not None:
+            continue
         if sourcename not in s.sd:
             print('Skipping source',sourcename,'with no record')
             continue
-        if 'Deleted' in s.sd[sourcename]:
-            print('Skipping deleted source',sourcename)
         if 'RA' not in s.sd[sourcename]:
             print('Skipping source',sourcename,'with no RA in record: record follows')
             print(s.sd[sourcename])
-            continue
-        record=sql.get_object(sourcename,create=True)
-        if 'legacyfile' in record and record['legacyfile'] is not None:
             continue
         ra=s.sd[sourcename]['RA']
         dec=s.sd[sourcename]['DEC']

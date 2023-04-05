@@ -589,7 +589,11 @@ def process_source(src,verbose=False,save_cutouts=False):
         catinc=compcat[mask]
         dcatexc=compcat[mask2]
         if verbose: print("Lengths of included and excluded comps before filter are:",len(catinc),len(dcatexc))
-        assert(len(catinc))
+        if not len(catinc):
+            print('Failed to find components for source',name,'!!!')
+            return {'Source_Name':name,'RA':ra,'DEC':dec,'Total_flux_LoTSS':influx,'New_flux':-1,'Maj_LoTSS':maj,'LGZ_Size_LoTSS':lgz,'New_size':-1}
+
+            
         catexc=dfilt(dcatexc,ra,dec,1.5*size)
         if verbose: print("Lengths of included and excluded comps are:",len(catinc),len(catexc))
 
@@ -641,7 +645,7 @@ if __name__=='__main__':
 
     # Loop through rows, making cutout for each source, generating floodmask and then measuring size and flux
 
-    pool=Pool(16)
+    pool=Pool(32)
     outcat=pool.map(process_source,incat)
         
     write_fits_out(['Source_Name','RA','DEC','Total_flux_LoTSS','New_flux','Maj_LoTSS','LGZ_Size_LoTSS','New_size'],outcat,'LM-size-flux.fits')

@@ -30,7 +30,8 @@ if __name__=='__main__':
         lofarname=lm.find(r['RA'],r['DEC'])
         legacyname=get_legacy(r['RA'],r['DEC'],bands='zrg')
         wisename=w.find_pos(r['RA'],r['DEC'])
-        #firstname=get_first(r['RA'],r['DEC'])
+        if wisename is None:
+            wisename=get_wise(r['RA'],r['DEC'],1)
         print(r['Source_Name'],lofarname,legacyname,wisename,file=outfile)
         outfile.flush()
     outfile.close()

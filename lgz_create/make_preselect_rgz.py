@@ -50,11 +50,11 @@ if __name__=='__main__':
     lname=sys.argv[1].replace('.fits','-list.txt')
     t=Table.read(tname)
     # Annotated PyBDSF table
-    ot=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v110.srl_13h.lr-full.fits')
+    ot=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v110.srl_0h.lr-full.fits')
     ot['ra']=np.where(ot['ra']>360,np.nan,ot['ra'])
     ot['dec']=np.where(ot['dec']>360,np.nan,ot['dec'])
     
-    gt=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v110.gaus_13h.lr-full.fits')
+    gt=Table.read('/beegfs/lofar/wwilliams/lofar_surveys/DR2/lr/LoTSS_DR2_v110.gaus_0h.lr-full.fits')
     gt['ra']=np.where(gt['ra']>360,np.nan,gt['ra'])
     gt['dec']=np.where(gt['dec']>360,np.nan,gt['dec'])
     if 'Component_Name' in ot.colnames:
@@ -69,7 +69,7 @@ if __name__=='__main__':
     filt&=ot['Peak_flux']>2*ot['Isl_rms']
     lt=ot[filt]
 
-    gals=Table.read('/beegfs/lofar/mjh/dr2/dr2_13h_north_withid.fits')
+    gals=Table.read('/beegfs/lofar/mjh/dr2/dr2_0h_south_withid.fits')
     gals['RA'].name='ra'
     gals['DEC'].name='dec'
     
@@ -104,6 +104,7 @@ if __name__=='__main__':
         psimage=sourcename+'_PS.png'
         pspimage=sourcename+'_PSp.png'
         joinedname=sourcename+'_j.png'
+        
         #print lofarmaps[i],psmaps[i]
 
         try:
@@ -282,6 +283,8 @@ if __name__=='__main__':
 
         optfile=imagedir+'/downloads/'+psmaps[i]
         print 'Using optical image',optfile
+        if psmaps[i]=="None":
+            continue
         pshdu=fits.open(optfile)
         if pshdu[0].header['NAXIS']==0:
             print '*** No optical image! ***'
@@ -298,6 +301,10 @@ if __name__=='__main__':
         print('********** prepare overlay **************')
         tt=ot[ot['Source_Name']==r['Source_Name']]
 
+        if len(tt)==0:
+            print('Source name',r['Source_Name'],'not found in table!')
+            raise RuntimeError('Source not found')
+        
         print 'LR ra is',tt[0]['ra'],'and dec is',tt[0]['dec']
         
         gaussians=gt[gt['Source_Name']==r['Source_Name']]

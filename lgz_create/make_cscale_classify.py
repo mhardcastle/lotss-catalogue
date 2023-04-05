@@ -2,6 +2,7 @@
 
 # version that'll use the source and component catalogues already generated
 
+from __future__ import print_function
 import matplotlib
 matplotlib.use('Agg')
 from astropy.table import Table,vstack
@@ -19,6 +20,7 @@ from read_maps import ReadMaps
 import subprocess
 import montage_wrapper
 from download_image_files import LofarMaps
+import glob
 
 scale=3600.0 # scaling factor for region sizes
 
@@ -30,14 +32,14 @@ def mogrify(filename):
 
 if __name__=='__main__':
 
-    t=Table.read('sources_2arcmin.fits')
-    ot=Table.read('components_2arcmin.fits')
+    t=Table.read(glob.glob('sources_*.fits')[0])
+    ot=Table.read(glob.glob('components_*.fits')[0])
     lm=LofarMaps(stay_in_imagedir=False)
     
     for i in range(0,len(t)):
 
         r=t[i]
-        print r
+        print(r)
         lofarfile=os.environ['IMAGEDIR']+'/'+lm.find(r['RA'],r['DEC'])
         sourcename=r['Source_Name']
         # find components of this source
@@ -50,7 +52,7 @@ if __name__=='__main__':
         cpimage=sourcename+'_Cp.png'
 
         if os.path.isfile(cimage):
-            print 'Selected output file exists already'
+            print('Selected output file exists already')
             continue
 
         ra,dec=r['RA'],r['DEC']
@@ -70,7 +72,7 @@ if __name__=='__main__':
             dec=r['DEC']
             size=csize
 
-        print 'size is',size
+        print('size is',size)
 
         size/=3600.0
 
@@ -109,7 +111,7 @@ if __name__=='__main__':
             except (Exception, RuntimeError) as e:
                 error=True
             if error:
-                print '*** image build failed! (%s) ***' % str(e)
+                print('*** image build failed! (%s) ***' % str(e))
                 continue
             else:
                 os.system('mogrify -quality 90 -trim '+sourcename+'*.png')

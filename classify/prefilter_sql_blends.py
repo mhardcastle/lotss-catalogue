@@ -16,7 +16,7 @@ sys.stdout.write("\x1b]2;Classify\x07")
 
 def get_next():
     cur.execute('lock table %s write' % table)
-    cur.execute('select object from %s where user is NULL order by object limit 1' % table )
+    cur.execute('select * from %s where user is NULL order by object limit 1' % table )
     res=cur.fetchall()
     if len(res)==0:
         object=None
@@ -24,20 +24,20 @@ def get_next():
         object=res[0]['object']
         cur.execute('update %s set user="%s" where object="%s"' % (table,user,object))
     cur.execute('unlock tables')
-    return object
+    return res[0]
                     
     
 ##### edit the following lines to choose the sample and possible options
 
-table='missing2'
-dir='/beegfs/lofar/mjh/flowchart-endpoints-dr2/%s-prefilter' % table
+table='blend_filter_Spring'
+dir='/beegfs/lofar/mjh/rgz/Spring/ngp_prefilter/'  #%s-prefilter' % table
 os.chdir(dir)
 
 g=glob.glob('*.fits')
 assert(len(g)==1)
 sample=g[0]
 
-options=('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend')
+options=('Drop all IDs', 'Accept main ID and discard others', 'Accept main ID but split off Gaussians with plausible ID', 'Split up into all Gaussians with IDs','Send to blend','Artefact')
 user=os.getenv('USER')
 
 ##### don't change anything else
@@ -57,9 +57,9 @@ results=list(cur.fetchall())
 i=len(results)
     
 t=Table.read(sample)
-if 'lr_1' in t.colnames:
-    t['lr_1'].name='LR'
-    t['LR']=np.where(t['LR']<0.3,np.nan,t['LR'])
+if 'ra' in t.colnames:
+    t['ra'].name='optRA'
+    t['dec'].name='optDec'
 
 stdscr = curses.initscr()
 curses.start_color()
@@ -74,11 +74,14 @@ while True:
         # we are looking back at an old one
         name=results[i]['object']
         classification=results[i]['classification']
+        gaussian_ids=results[i]['gaussian_ids']
     else:
         # need a new target
-        name=get_next()
+        result=get_next()
+        name=result['object']
         if name is None:
             break
+        gaussian_ids=result['gaussian_ids']
         classification=None
     r=t[t['Source_Name']==name][0]
     stdscr.keypad(1)
@@ -106,14 +109,17 @@ while True:
         desc='Unclassified'
     else:
         desc=options[classification-1]
-    instructions=[str(name),'LR '+str(r['LR']),'(%i done, %i to do)' % (i, remaining),desc,'']
+    instructions=[str(name),'(%i done, %i to do)' % (i, remaining),desc,'']
     instructions+=['(%i) %s' % (j+1,s) for j,s in enumerate(options)]
     instructions+=['','LEFT: back one','RIGHT: forward one', 'Q: quit','',"Your choice:"]
-    attrs=[curses.color_pair(1)]*4+[None,]*(len(instructions)-4)
+    attrs=[curses.color_pair(1)]*4+[curses.A_BOLD]*len(options)+[None,]*6
     lrvalid=True
-    if np.isnan(r['LR']) or r['LR']==0.0:
-        attrs[6]=curses.A_REVERSE
+    if np.isnan(r['optRA']):
+        attrs[5]=None
+        attrs[6]=None
         lrvalid=False
+    if gaussian_ids==0:
+        attrs[7]=None
     for j in range(len(instructions)):
         l=instructions[j]
         a=attrs[j]
@@ -132,25 +138,28 @@ while True:
             quit=True
         elif key>ord('0') and key<=ord('9'):
             res=key-ord('0')
-            if res==2 and lrvalid==False:
+            if (res==2 or res==3) and lrvalid==False:
+                valid=False
+                continue
+            if (res==4 and gaussian_ids==0):
                 valid=False
                 continue
             if res>len(options):
                 valid=False
                 continue
             if i==len(results):
-                results.append({'object':name,'classification':res})
+                results.append({'object':name,'classification':res,'gaussian_ids':gaussian_ids})
             else:
                 results[i]['classification']=res
             cur.execute('update %s set classification=%i where object="%s"' % (table,res,name))
             i+=1
         elif key==curses.KEY_LEFT and i>0:
             if i==len(results):
-                results.append({'object':name,'classification':None})
+                results.append({'object':name,'classification':None,'gaussian_ids':gaussian_ids})
             i-=1
         elif key==curses.KEY_RIGHT:
             if i==len(results):
-                results.append({'object':name,'classification':None})
+                results.append({'object':name,'classification':None,'gaussian_ids':gaussian_ids})
             i+=1
         else:
             valid=False

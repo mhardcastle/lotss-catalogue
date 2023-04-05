@@ -214,6 +214,12 @@ if __name__=='__main__':
         if sourcename is None:
             break
         record=sql.get_object(sourcename)
+        if sourcename not in s.sd:
+            print('Source',sourcename,'does not exist!')
+            record['complete']=1
+            sql.set_object(sourcename,record)
+            continue
+
         s.sd[sourcename]['lofarfile']=os.environ['IMAGEDIR']+'/'+record['lofarfile']
         if record['legacyfile'] is not None:
             s.sd[sourcename]['legacyfile']=os.environ['IMAGEDIR']+'/downloads/'+record['legacyfile']
@@ -372,7 +378,7 @@ if __name__=='__main__':
             notcomponents=[]
             for r in ots:
                 name=r['Source_Name']
-                if name in s.cd and s.cd['Parent']!=sourcename:
+                if name in s.cd and ('Parent' not in s.cd or s.cd['Parent']!=sourcename):
                     notcomponents.append(name)
             
             # notcomponents=s.get_ncomps(sourcename) # list of all components in other sources -- this is too big
@@ -450,8 +456,8 @@ if __name__=='__main__':
                 s.set_components(sourcename,I.components)
                 s.set_opt(sourcename,I.optra,I.optdec)
                 s.set_size(sourcename,I.size)
-            record['complete']=1
-            sql.set_object(sourcename,record)
+                record['complete']=1
+                sql.set_object(sourcename,record)
             
             if stop:
                 break # out of outer while for scalefactor reset

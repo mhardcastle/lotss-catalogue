@@ -38,15 +38,18 @@ if __name__=='__main__':
     wisemaps=[l[2] for l in lines]
  
     version='v0.7'
-    wd='/beegfs/lofar/mjh/rgz/Spring'
+    wd='/beegfs/lofar/mjh/rgz'
     
     dir=os.getcwd()
     print('Reading data...')
     
+    st=Table.read(wd+'/combined-release-'+version+'.fits')
+    ot=Table.read(wd+'/combined_components-'+version+'.fits')
 
-    st=Table.read(wd+'/sources-'+version+'.fits')
-    ot=Table.read(wd+'/components-'+version+'.fits')
+    #st=Table.read(wd+'/sources-'+version+'.fits')
+    #ot=Table.read(wd+'/components-'+version+'.fits')
 
+    
     # read in the big files that have all the data
     #gals=Table.read(wd+'/optical.fits')
     

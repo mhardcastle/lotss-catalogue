@@ -40,4 +40,9 @@ galzoo_export_dr2.py Spring.csv or Fall.csv
 
 aggregate_lofgalzoo_dr2_hp_mp.py
 
+generate weights with user_quality_stats.py
+
+aggregate_lofgalzoo_dr2_hp_mp_weights.py
+
 If necessary move Fall processed data and run mergeGZcats.py
+

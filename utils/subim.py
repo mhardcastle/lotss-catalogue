@@ -121,7 +121,7 @@ def extract_subim(filename,ra,dec,size,hduid=0,verbose=True):
     x=imc[0][0]
     y=imc[0][1]
     if verbose:
-        print('Extracting sub-image')
+        print('Extracting sub-image centred on',x,y)
     hdu=flatten(orighdu,ra,dec,x,y,psize,hduid=hduid,verbose=verbose)
     '''
     del(hdu[hduid].header['PC1_1'])

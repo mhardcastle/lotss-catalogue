@@ -17,7 +17,7 @@ sys.stdout.write("\x1b]2;Classify\x07")
     
 ##### edit the following lines to choose the sample and possible options
 
-dir='/beegfs/lofar/mjh/classify-v2'
+dir='/beegfs/lofar/mjh/classify-v3'
 bits=dir.split('/')
 table=bits[-1].replace('-','_')
 os.chdir(dir)

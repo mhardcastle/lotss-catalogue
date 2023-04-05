@@ -3,7 +3,7 @@ import glob
 from astropy.table import Table
 import numpy as np
 
-infile=sorted(glob.glob('sources-v*.fits'))[-1]
+infile=sorted(glob.glob('../sources-v*.fits'))[-1]
 print('Reading',infile)
 t=Table.read(infile)
 

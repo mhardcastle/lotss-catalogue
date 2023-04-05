@@ -26,7 +26,7 @@ infile=g[-1]
 print('Processing',infile)
 
 lofar_cat_path = infile
-version_number = '0.2' # photoz merge version counter
+version_number = '0.3' # photoz merge version counter
 
 spec_sep = 1.5 # arcsec - matching radius for spec-zs
 xray_sep = 3 # arcsec - matching radius for X-ray cross-IDs
@@ -73,6 +73,7 @@ for hemisphere in hemispheres:
 
     sdss_gal_path = '{0}/{1}'.format(ancillary_data, 'specObj-dr16.fits')
     sdss_qso_path = '{0}/{1}'.format(ancillary_data, 'DR16Q_v4.fits')
+    hetdex_path = '/beegfs/lofar/mjh/rgz/hetdex_sc1_v3.2.ecsv'
     xray_2rxs_path = '{0}/{1}'.format(ancillary_data, '2RXS_AllWISE_catalog_paper_2017May26.fits')
     xray_xmmsl2_path = '{0}/{1}'.format(ancillary_data, 'XMMSL2_AllWISE_catalog_paper_2017JUN09.fits')
     bricks_path = '{0}/{1}'.format(ancillary_data, 'survey-bricks.fits')
@@ -197,6 +198,7 @@ for hemisphere in hemispheres:
     sdss_fiberid[with_match[match_gal]] = sdss_gal['FIBERID'][id_sdss[match_gal]]
 
     sdss_qso = Table.read(sdss_qso_path)
+    sdss_qso=sdss_qso[sdss_qso['Z']<5.0] # Remove high-z QSO per Ken advice
     sdss_qso_coord = SkyCoord(sdss_qso['RA'], sdss_qso['DEC'], unit='deg')
 
     id_sdss_qso, d2d, _ = opt_coord[with_match].match_to_catalog_sky(sdss_qso_coord)
@@ -219,6 +221,30 @@ for hemisphere in hemispheres:
     merged_all.add_column(MaskedColumn(name= 'fiberid_sdss', data=sdss_fiberid,
                                        mask=(sdss_fiberid == -1), dtype=sdss_gal['FIBERID'].dtype))
 
+    """
+    Merge HETDEX
+    """
+    print('Merging HETDEX spectra')
+    
+    hetdex=Table.read(hetdex_path,format='ascii.ecsv')
+    hetdex=hetdex[hetdex['z_hetdex']>0]
+    hetdex_coord = SkyCoord(hetdex['RA'].data, hetdex['DEC'].data, unit='deg')
+
+    id_hetdex, d2d, _ = opt_coord[with_match].match_to_catalog_sky(hetdex_coord)
+    match_gal = (d2d < spec_sep*u.arcsec)
+
+    hetdex_z = np.ones(len(merged_all)) * np.nan
+    hetdex_zconf = np.ones(len(merged_all)) * np.nan
+    hetdex_sourceid = np.ones(len(merged_all), dtype='int') * -1
+    
+    hetdex_z[with_match[match_gal]] = hetdex['z_hetdex'][id_hetdex[match_gal]]
+    hetdex_zconf[with_match[match_gal]] = hetdex['z_hetdex_conf'][id_hetdex[match_gal]]
+    hetdex_sourceid[with_match[match_gal]] = hetdex['source_id'][id_hetdex[match_gal]]
+
+    merged_all.add_column(MaskedColumn(name='z_hetdex', data=hetdex_z,mask=(hetdex_z == np.nan), dtype=hetdex['z_hetdex'].dtype))
+    merged_all.add_column(MaskedColumn(name='z_hetdex_conf', data=hetdex_zconf,mask=(hetdex_zconf == np.nan), dtype=hetdex['z_hetdex_conf'].dtype))
+    merged_all.add_column(MaskedColumn(name='hetdex_sourceid', data=hetdex_sourceid,mask=(hetdex_sourceid == -1), dtype=hetdex['source_id'].dtype))
+                                                                 
     """
     X-ray Matching
     """

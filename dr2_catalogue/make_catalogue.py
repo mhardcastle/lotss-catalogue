@@ -124,12 +124,12 @@ def assemble_source(clist):
     r['Mosaic_ID']=clist[0]['Mosaic_ID']
     r['Isl_rms']=np.mean(clist['Isl_rms'])
     ms=Make_Shape(clist)
-    r['LGZ_Size']=ms.length()
+    r['Composite_Size']=ms.length()
     #if r['LGZ_Size']>1000:
     #    print(clist['Source_Name'])
     #    print('Unreasonable source size detected')
-    r['LGZ_Width']=ms.width()
-    r['LGZ_PA']=ms.pa()
+    r['Composite_Width']=ms.width()
+    r['Composite_PA']=ms.pa()
     for k in ['Maj','Min','PA','E_Maj','E_Min','E_PA','DC_Maj','DC_Min','DC_PA']:
         r[k]=np.nan
     return r
@@ -203,6 +203,7 @@ def parse_blend_file(name,s,f,gt):
     s.sd[name]['Blend_prob']=0
     s.sd[name]['Imagemissing_prob']=0
     s.sd[name]['Blend_file']=f
+    s.sd[name]['ID_flag']=10
     lines=[l.rstrip() for l in open(f).readlines()]
     # parse the file
     if lines[0]=='## Flagged':
@@ -297,12 +298,11 @@ def parse_blend_file(name,s,f,gt):
                             s.cd[parent]['Deleted']='Removed by blend file (single)'
                         else:
                             s.log('Not deleting parent',parent)
-                        s.cd[gname]=deepcopy(s.gd[gname])
-                        s.cd[gname]['Created']='Promoted from single Gaussian'
-                        s.cd[gname]['Children']=[gname]
-                        s.gd[gname]['Parent']=gname
+                        s.promote_gaussian(gname)
                         s.promote_component(gname)
                         sname=gname
+                        s.sd[sname]['ID_flag']=10
+                        s.sd[sname]['ID_Qual']=1.0
                     else:
                         s.log('Assembling several Gaussians to component and source')
                         # Several Gaussians need to be
@@ -333,6 +333,7 @@ def parse_blend_file(name,s,f,gt):
                         r['Blend_prob']=0
                         r['Created']='Deblend'
                         r['Blend_file']=f
+                        r['ID_flag']=10
                         r['Children']=gaussians
                         s.log('Creating source',sname,'with children',gaussians)
                         #print(clist['Source_Name'])
@@ -347,14 +348,11 @@ def parse_blend_file(name,s,f,gt):
                             parent=s.gd[g]['Parent']
                             if 'Promoted' not in s.cd[parent]['Created']:
                                 s.log(g,'has parent',parent,' -- marking deleted')
-                                s.cd[parent]['Deleted']='Removed by blend file (multiple)'
+                                s.delete_component(parent,'Removed by blend file (multiple)',descend=False)
                             else:
                                 s.log('Not deleting parent',parent)
-                            s.cd[g]=deepcopy(s.gd[g])
-                            s.cd[g]['Created']='Promoted from Gaussian'
+                            s.promote_gaussian(g)
                             s.cd[g]['Deblended_from']=name
-                            s.gd[g]['Parent']=g
-                            s.cd[g]['Children']=[g]
                             s.cd[g]['Parent']=sname
 
                     s.sd[sname]['lr_ra_fin']=np.nan
@@ -439,19 +437,31 @@ def parse_new_blend_file(name,s,f):
                     pname=s.cd[parent]['Parent']
                     s.delete_component(parent,'Removed by blend file (new blend)',descend=False)
                 for gc in children:
-                    s.cd[gc]=deepcopy(s.gd[gc])
-                    s.cd[gc]['Created']='Promoted from Gaussian'
+                    s.promote_gaussian(gc)
                     s.cd[gc]['Deblended_from']=name
-                    s.gd[gc]['Parent']=gc
-                    s.cd[gc]['Children']=[gc]
-                    s.cd[gc]['Parent']=pname
                     promoted_list.append(gc)
-        # from here on in we don't need to worry about source type
-        #-- remove any components or promoted Gaussians that have source ID 0 -- these must be artefacts.
+            elif ttype=='C':
+                s.remove_component(g,'New_blend file')
+                # separates from parents and
+                # destroys them if they have no
+                # children -- parent unset
+
+        #from here on in we don't need to worry about source type --
+        # remove any components or promoted Gaussians that have source
+        # ID 0 -- these must be artefacts.
 
         for c,_,sn in clist:
             if sn==0:
                 s.delete_component(c,'Removed by blend file (artefact)')
+            if c in promoted_list:
+                promoted_list.remove(c)
+
+        # everything in promoted_list is now a Gaussian and now a
+        # component that was not assigned to any source. Promote these
+        # individually to sources otherwise they will show up as errors
+
+        for c in promoted_list:
+            s.promote_component(c)
                 
         #-- remove original source -- something must have happened to
         #-- it or it would be unchanged. But check if it exists, since
@@ -500,6 +510,7 @@ def parse_new_blend_file(name,s,f):
             r['ID_Qual']=1
             r['Blend_prob']=0
             r['Blend_file']=f
+            r['ID_flag']=11
 
             s.sd[sname]=r
             s.set_components(sname,components)
@@ -571,6 +582,13 @@ class Source(object):
         self.cd[n]['Parent']=n
         self.sd[n]['Created']=self.stage
 
+    def promote_gaussian(self,n):
+        self.cd[n]=deepcopy(self.gd[n])
+        self.cd[n]['Created']='Promoted from single Gaussian'
+        self.cd[n]['S_Code']='S'
+        self.cd[n]['Children']=[n]
+        self.gd[n]['Parent']=n
+
     def delete_source(self,n,reason,descend=True):
         self.log('Deleting source',n,'for reason',reason)
         self.sd[n]['Deleted']=reason
@@ -604,18 +622,7 @@ class Source(object):
                         self.gd[gchild]['Deleted']=reason
                     else:
                         self.log('Not deleting Gaussian child',gchild,'as parent mismatch')
-        if 'Parent' in self.cd[n]:
-            parent=self.cd[n]['Parent']
-            if parent:
-                if 'Children' in self.sd[parent]:
-                    if n in self.sd[parent]['Children']:
-                        self.sd[parent]['Children'].remove(n)
-                    if len(self.sd[parent]['Children'])==0:
-                        self.delete_source(parent,reason)
-                else:
-                     self.delete_source(parent,reason)
-        else:
-            self.log('Component',n,'has no parent?')
+        self.remove_component(n,reason)
                  
     def delete_gaussian(self,n,reason):
         self.log('Deleting Gaussian',n,'for reason',reason)
@@ -628,6 +635,23 @@ class Source(object):
                     self.delete_component(parent,reason)
             else:
                 self.delete_component(parent,reason)
+
+    def remove_component(self,n,reason):
+        self.log('Removing component',n,'from previous parent')
+        if 'Parent' in self.cd[n]:
+            parent=self.cd[n]['Parent']
+            if parent:
+                if 'Children' in self.sd[parent]:
+                    if n in self.sd[parent]['Children']:
+                        self.sd[parent]['Children'].remove(n)
+                    if len(self.sd[parent]['Children'])==0:
+                        self.delete_source(parent,reason)
+                else:
+                     self.delete_source(parent,reason)
+        else:
+            self.log('Component',n,'has no parent?')
+        self.cd[n]['Parent']=''
+            
                 
     # methods for the zoom code
 
@@ -657,7 +681,8 @@ class Source(object):
         self.zoomreasons.append(reason)
     
     def set_components(self,sourcename,componentlist,flag_removals=False):
-        self.log('setting components of',sourcename,'to',componentlist)
+        componentlist=list(set(componentlist))
+        self.log('Setting components of',sourcename,'to',componentlist)
         if 'Children' in self.sd[sourcename]:
             orphans=list(set(self.sd[sourcename]['Children'])-set(componentlist))
         else:
@@ -669,7 +694,9 @@ class Source(object):
             # do these components have other parents?
             if 'Parent' in self.cd[comp] and self.cd[comp]['Parent']!='':
                 oldparent=self.cd[comp]['Parent']
-                if oldparent!=sourcename and 'Deleted' not in self.sd[oldparent]: # parent has changed
+                if oldparent not in self.sd:
+                    self.log('*** warning: old parent of',comp,'is',oldparent,'but this does not exist')
+                elif oldparent!=sourcename and 'Deleted' not in self.sd[oldparent]: # parent has changed
                     if flag_removals and oldparent!=comp:
                         # must be a previous LGZ source
                         self.addzoom(oldparent,'set_components parent changed')
@@ -679,6 +706,7 @@ class Source(object):
                         self.delete_source(oldparent,'Reallocated (orphan)')
                     else:
                         try:
+                            self.log('Removing child',comp,'from old parent',oldparent)
                             self.sd[oldparent]['Children'].remove(comp)
                         except ValueError:
                             self.log('*** warning -- removing child not in list!')
@@ -698,6 +726,9 @@ class Source(object):
             #over-ride component deletion if a zoom file specifies it
             if 'Deleted' in self.cd[comp]:
                 del(self.cd[comp]['Deleted'])
+                for gaussian in self.cd[comp]['Children']:
+                    if 'Deleted' in self.gd[gaussian]:
+                        del(self.gd[gaussian]['Deleted'])
 
         '''
             # skip check of all sources
@@ -713,7 +744,7 @@ class Source(object):
         for comp in orphans:
             if comp in self.cd:
                 self.log('*** Creating orphan %s' % comp)
-                self.cd[comp]['Parent']=''
+                self.delete_component(comp,'Orphaned')
             
     def set_opt(self,sourcename,ra,dec):
         self.sd[sourcename]['optRA']=ra
@@ -785,7 +816,54 @@ def warn_or_die(warn,s):
         print('*** WARNING: '+s)
     else:
         raise RuntimeError(s)
-        
+
+
+def promote_several_gaussians(gaussians,s):
+
+    posd={}
+    for g in gaussians:
+        pos=(s.gd[g]['ra'],s.gd[g]['dec'])
+        if pos in posd:
+            posd[pos].append(g)
+        else:
+            posd[pos]=[g]
+
+    for p in posd:
+        glist=posd[p]
+        if len(glist)==1:
+            g=glist[0]
+            s.log('Promoting single Gaussian',g,'with position',s.gd[g]['ra'],s.gd[g]['dec'])
+            s.promote_gaussian(g)
+            s.promote_component(g)
+            s.sd[g]['ID_flag']=9 
+            # rename keys
+            s.sd[g]['lr_fin']=s.sd[g].pop('lr')
+            s.sd[g]['lr_ra_fin']=s.sd[g].pop('ra')
+            s.sd[g]['lr_dec_fin']=s.sd[g].pop('dec')
+        else:
+            s.log('Dealing with multiple Gaussians with the same position:',str(glist),'at',str(p))
+            meanra=0
+            meandec=0
+            for g in glist:
+                s.log('Promoting single Gaussian',g,'with position',s.gd[g]['ra'],s.gd[g]['dec'])
+                s.promote_gaussian(g)
+                s.cd[g]['Parent']=''
+                meanra+=s.cd[g]['RA']
+                meandec+=s.cd[g]['DEC']
+            meanra/=len(glist)
+            meandec/=len(glist)
+            sname=sourcename(meanra,meandec)
+            s.create_source(sname,{'Source_Name':sname})
+            s.sd[sname]['Children']=[]
+            s.sd[sname]['LGZ_assembly_required']=True
+            # make a component table
+            s.set_components(sname,glist,flag_removals=False)
+            s.sd[sname]['lr_fin']=s.gd[glist[0]]['lr']
+            s.sd[sname]['lr_ra_fin']=p[0]
+            s.sd[sname]['lr_dec_fin']=p[1]
+            s.sd[sname]['Created']='Deblend reassembly'
+            s.sd[sname]['ID_flag']=9
+    
 def make_structure(field,warn=False,version=None):
     print('Reading data...')
 
@@ -816,7 +894,9 @@ def make_structure(field,warn=False,version=None):
         gt['Gaus_id']=list(range(len(gt)))
         print('Writing amended file')
         gt.write(gt_outname)
-        
+
+    gt['ra']=np.where(gt['ra']>360,np.nan,gt['ra'])
+    gt['dec']=np.where(gt['dec']>360,np.nan,gt['dec'])
     preselect_dir=None
     blend_dirs=['blend']
     noid_files=None
@@ -846,28 +926,66 @@ def make_structure(field,warn=False,version=None):
         s.cd[cname]['Children'].append(name)
 
     s.set_stage('Create initial sources')
+    # here we handle blend prefilter, msource_flag and other guidance on how sources should be handled from the source_lr table.
     artefacts=[]
+    splits=[]
+    keep_main=[] # Blend_prefilter==3 -- TBD
+    
     for component in tqdm(s.cd):
         if s.cd[component]['Prefilter']==4:
+            # send to zoom workflow
             s.addzoom(component,'Prefilter zoom required')
-        if s.cd[component]['Prefilter']==5:
+        if s.cd[component]['Blend_prefilter']==3:
+            keep_main.append(component)
+        if s.cd[component]['Blend_prefilter']==4 or (s.cd[component]['Blend_prefilter']==0 and s.cd[component]['ID_flag']==6 and s.cd[component]['msource_flag1']==3):
+            # split into all component Gaussians
+            splits.append(component)
+        if (s.cd[component]['Prefilter']==5 or s.cd[component]['Blend_prefilter']==6):
+            # mark as artefact
             artefacts.append(component)
-        if s.cd[component]['Prefilter']==3:
-            s.cd[component]['lr_ra_fin']=np.nan
+        if s.cd[component]['Prefilter']==3 or s.cd[component]['Blend_prefilter']==1:
+            # drop the ID
+            s.cd[component]['lr_ra_fin']=np.nan 
             s.cd[component]['lr_dec_fin']=np.nan
+        if s.cd[component]['ID_flag']==6 and s.cd[component]['msource_flag1']==2:
+            # go through the children of the source and look for the highest LR, replacing the current one
+            maxlr=-1
+            ra=np.nan
+            dec=np.nan
+            for g in s.cd[component]['Children']:
+                if s.gd[g]['lr']>maxlr:
+                    ra=s.gd[g]['ra']
+                    dec=s.gd[g]['dec']
+                    maxlr=s.gd[g]['lr']
+            if maxlr>0:
+                s.cd[component]['lr_ra_fin']=ra
+                s.cd[component]['lr_dec_fin']=dec
+                s.cd[component]['lr_fin']=maxlr
         s.promote_component(component)
-        if s.cd[component]['Prefilter']==7:
+        if s.cd[component]['Prefilter']==7 or s.cd[component]['Blend_prefilter']==5:
+            # send to blend workflow
             s.sd[component]['Blend_prob']=1
-        
-    print('Deleting',len(artefacts),'prefilter artefacts')
-    for c in tqdm(artefacts):
-        s.delete_source(c,'Artefact')
             
-    s.set_stage('Ingest LGZ')
-    lgz_source=Table.read(lgz_dir+'/LGZ-cat.fits')
+    # we don't act on any of this till we have ingested LGZ
+            
+    s.set_stage('Ingest RGZL')
+    if os.path.isfile('weighted-LGZ-cat.fits'):
+        lgz_source=Table.read(lgz_dir+'/weighted-LGZ-cat.fits')
+        lgz_comps=Table.read(lgz_dir+'/weighted-LGZ-comps.fits')
+    else:
+        lgz_source=Table.read(lgz_dir+'/LGZ-cat.fits')
+        lgz_comps=Table.read(lgz_dir+'/LGZ-comps.fits')
     lgz_source['Dec'].name='DEC'
-    lgz_comps=Table.read(lgz_dir+'/LGZ-comps.fits')
     # create LGZ entries
+    cd={}
+    print('Make dictionary')
+    for r in tqdm(lgz_comps):
+        if r['Source_Name'] in cd:
+            cd[r['Source_Name']].append(r['Comp_Name'])
+        else:
+            cd[r['Source_Name']]=[r['Comp_Name']]
+            
+    print('Generate sources')
     for r in tqdm(lgz_source):
         sname=r['Source_Name']
         s.create_source(sname,r) # will add to what's on record for
@@ -879,25 +997,55 @@ def make_structure(field,warn=False,version=None):
             s.sd[sname]['old_dec']=s.sd[sname]['lr_dec_fin']
         s.sd[sname]['lr_ra_fin']=np.nan
         s.sd[sname]['lr_dec_fin']=np.nan
+        s.sd[sname]['ID_flag']=3 # mark as LGZ
         s.sd[sname]['Children']=[]
         # Mark this source for LGZ assembly, which we'll do after TZI
         s.sd[sname]['LGZ_assembly_required']=True
         # make a component table
-        source_comps=lgz_comps[lgz_comps['Source_Name']==sname]
-        s.set_components(sname,list(source_comps['Comp_Name']),flag_removals=True)
-        '''
-    for r in lgz_comps:
-        name=r['Comp_Name']
-        sname=r['Source_Name']
-        if name not in s.cd:
-            raise RuntimeError('Component %s from source %s in LGZ does not exist in table' % (name,sname))
-        s.sd[sname]['Children'].append(name)
-        s.cd[name]['Parent']=sname
-        if r['Assoc']!=0:
-            # remove sources that are now part of an association
-            s.delete_source(name,'LGZ association',descend=False)
-        '''
+        s.set_components(sname,cd[sname],flag_removals=True)
 
+    s.set_stage('Process flowchart blends')
+
+    print('Deleting',len(artefacts),'prefilter artefacts')
+    for c in tqdm(artefacts):
+        if s.cd[c]['Parent']!=c or 'Blend_prefilter' not in s.cd[c]:
+            s.log('Skipping',c,'which is now part of an LGZ source')
+            continue
+        s.delete_source(c,'Prefilter artefact')
+    
+    print('Splitting',len(splits),'N-component blends')
+    for c in tqdm(splits):
+        # if this source is now part of an LGZ association, ignore it
+        if s.cd[c]['Parent']!=c or 'Blend_prefilter' not in s.cd[c]:
+            s.log('Skipping',c,'which is now part of an LGZ source')
+            continue
+        
+        s.log('Deleting source',c,'with blend_prefilter',s.cd[c]['Blend_prefilter'],'ID_flag',s.cd[c]['ID_flag'],'and msource_flag1',s.cd[c]['msource_flag1'])
+        s.delete_source(c,'N-component blend',descend=False)
+        gaussians=s.cd[c]['Children']
+        s.delete_component(c,'N-component blend',descend=False)
+        # because we may have a few of these with duplicate Gaussian IDs, make a list...
+
+        promote_several_gaussians(gaussians,s)
+        
+    print('Removing IDed sources from',len(keep_main),'blends with main id')
+    for c in tqdm(keep_main):
+        if s.cd[c]['Parent']!=c:
+            s.log('Skipping',c,'which is now part of an LGZ source')
+            continue
+
+        ra=s.sd[c]['lr_ra_fin']
+        dec=s.sd[c]['lr_dec_fin']
+        children=s.cd[c]['Children']
+        gaussians=[]
+        for g in children:
+            if ~np.isnan(s.gd[g]['ra']):
+                dist=3600*separation(ra,dec,s.gd[g]['ra'],s.gd[g]['dec'])
+                if dist>6:
+                    gaussians.append(g)
+
+        promote_several_gaussians(gaussians,s)
+        
     # Blends
     s.set_stage('Deblend')
 
@@ -922,6 +1070,7 @@ def make_structure(field,warn=False,version=None):
         s.sd[source]['Created']='Too zoomed in'
         s.sd[source]['Zoomfile']=f
         s.sd[source]['LGZ_assembly_required']=True
+        s.sd[source]['ID_flag']=12
 
     # component table won't now change, so generate it so it can be
     # passed to assemble_source
@@ -973,8 +1122,17 @@ def make_structure(field,warn=False,version=None):
                 r=assemble_source(clist)
                 if 'Manual_Size' in s.sd[name]:
                     s.log('Adding manual size measurement')
-                    r['LGZ_Size']=s.sd[name]['Manual_Size']
+                    r['Composite_Size']=s.sd[name]['Manual_Size']
                 sname=r['Source_Name']
+                if sname!=name:
+                    while sname in s.sd:
+                        if sname[-1].isdigit():
+                            sname=sname+'a'
+                        else:
+                            sname=sname[:-1]+chr(ord(sname[-1])+1)
+                        r['Source_Name']=sname
+                        s.log('Trying new source name',sname)
+
                 if sname!=name:
                     s.log('Renaming old source',name,'created by',s.sd[name]['Created'],'to',sname)
                     r['Renamed_from']=name
@@ -1001,7 +1159,7 @@ def make_structure(field,warn=False,version=None):
                 if 'Deleted' in s.sd[sname]:
                     del(s.sd[sname]['Deleted'])
                 if 'Art_prob' in s.sd[sname] and s.sd[sname]['Art_prob']>0.5:
-                    s.delete_source(sname,'LGZ artefact')
+                    s.delete_source(sname,'RGZL artefact')
                 del s.sd[sname]['LGZ_assembly_required']
         if assembly_stage==1:
             s.set_stage('Duplicates')
@@ -1024,19 +1182,21 @@ def make_structure(field,warn=False,version=None):
                     # 4. pass to TZI
                     # 5. drop optical ID (for both) and merge
                     # 6. drop optical ID (for both)  and don't merge
-                    if r['source1'] not in s.sd:
+                    if r['source1'] not in s.sd or 'Deleted' in s.sd[r['source1']]:
                         s.log('%s does not exist in dedupe!' % r['source1'])
                         continue
-                    if r['source2'] not in s.sd:
+                    if r['source2'] not in s.sd or 'Deleted' in s.sd[r['source2']]:
                         s.log('%s does not exist in dedupe!' % r['source2'])
                         continue
                     if r['classification']==1 or r['classification']==5:
+                        s.log('Merging',r['source1'],'and',r['source2'])
                         # merger
                         # we take all components from source 2 and add them to source 1,
                         # then delete source 2 and mark source 1 as needing assembly.
                         s.set_components(r['source1'],s.sd[r['source1']]['Children']+s.sd[r['source2']]['Children'])
                         s.sd[r['source1']]['Created']='Deduplicate'
                         s.sd[r['source1']]['LGZ_assembly_required']=True
+                        s.sd[r['source1']]['ID_flag']=14
                         if r['classification']==5:
                             s.set_opt(r['source1'],np.nan,np.nan)
                     elif r['classification']==2:
@@ -1049,12 +1209,13 @@ def make_structure(field,warn=False,version=None):
                     elif r['classification']==6:
                         s.set_opt(r['source1'],np.nan,np.nan)
                         s.set_opt(r['source2'],np.nan,np.nan)
+                        s.sd[r['source1']]['ID_flag']=14
                     else:
                         raise RuntimeError('unexpected classification')
             else:
                 print('No duplicates table, hope this is ok')
 
-            s.set_stage('Second blend')
+            s.set_stage('New_blend')
             # This also runs on the first pass and will mark a new set
             # of sources for assembly
             if os.path.isdir('new_blend'):
@@ -1063,6 +1224,34 @@ def make_structure(field,warn=False,version=None):
                     s.log('New blend file',f)
                     source=f.replace('.txt','').replace(lgz_dir+'/new_blend/','')
                     parse_new_blend_file(source,s,f)
+
+    # no new sources created from this point, so rationalize naming
+
+    s.set_stage('Rationalizing')
+
+    for source in list(s.sd.keys()):
+        if 'Deleted' in s.sd[source]:
+            del(s.sd[source])
+
+    dl={}
+    for source in s.sd:
+        if source.endswith('a'):
+            name=source[:-1]
+            if name not in s.sd:
+                dl[source]=name
+        if source.endswith('b'):
+            name=source[:-1]
+            if name not in s.sd and name+'a' not in s.sd:
+                dl[source]=name
+
+    for source in dl:
+        name=dl[source]
+        s.sd[name]=deepcopy(s.sd[source])
+        s.sd[name]['Source_Name']=name
+        for c in s.sd[source]['Children']:
+            s.cd[c]['Parent']=name
+        del(s.sd[source])    
+
                     
     # finally sort out optical positions
     s.set_stage('Sorting optical positions')
@@ -1098,52 +1287,8 @@ def make_structure(field,warn=False,version=None):
                     s.sd[source]['Position_from']='None'
                     s.sd[source]['optRA']=np.nan
                     s.sd[source]['optDec']=np.nan
-                elif classification==6:
+                elif classification==6 and s.sd[source]['Created']!='New_blend' and 'Blend_file' not in s.sd[source]:
                     s.sd[source]['Blend_prob']=1
-
-    # this code not used in DR2
-    if noid_files is not None:
-        s.set_stage('NoID')
-        for noid_file in noid_files:
-            lines=open(noid_file).readlines()
-            group=[]
-            source=[]
-            for l in lines:
-                l=l.rstrip()
-                bits=l.split(',')
-                group.append(int(bits[0]))
-                source.append(bits[1])
-            for sname,g in zip(source,group):
-                if sname not in s.sd:
-                    s.log('Source',name,'already deleted, skipping')
-                    continue
-                #if 'optRA' in s.sd[sname] and not np.isnan(s.sd[sname]['optRA']):
-                #    print 'Source',sname,'in noid list but has id, skipping'
-                #    continue 
-                s.sd[sname]['NoID']=g
-                if g==6:
-                    s.delete_source(sname,'Artefact') # Artefact
-                elif g==8:
-                    if 'Zoomfile' not in s.sd[sname]:
-                        if 'Renamed_from' in s.sd[sname]:
-                            name=s.sd[sname]['Renamed_from']
-                        else:
-                            name=sname
-                        s.log('Adding',name,'to zoom list')
-                        s.addzoom(name,'NoID file required zoom')
-                    else:
-                        s.sd[sname]['NoID']=3
-                elif g==7 or g==9:
-                    if 'Zoomfile' not in s.sd[sname]:
-                        if 'LGZ' in s.sd[sname]['Created']:
-                            if 'Renamed_from' in s.sd[sname]:
-                                name=s.sd[sname]['Renamed_from']
-                            else:
-                                name=sname
-                            s.log('Adding',name,'to zoom list')
-                            s.addzoom(name,'NoID file required zoom (2)')
-                    else:
-                        s.sd[sname]['NoID']=3
 
     s.set_stage('Ridge line ingest')
     if ridgeline is not None and os.path.isfile(ridgeline):
@@ -1155,11 +1300,12 @@ def make_structure(field,warn=False,version=None):
             if name not in s.sd:
                 s.log('Warning: source %s in ridgeline file does not exist' % name)
             else:
-                if ('Postfilter' not in s.sd[name] or s.sd[name]['Postfilter']!=5) and ('optRA' not in s.sd[name] or np.isnan(s.sd[name]['optRA']) or 'Position_from' not in s.sd[name] or s.sd[name]['Position_from']=='LR'):
+                if (s.sd[name]['Created']!='New_blend') and ('Postfilter' not in s.sd[name] or s.sd[name]['Postfilter']!=5) and ('optRA' not in s.sd[name] or np.isnan(s.sd[name]['optRA']) or 'Position_from' not in s.sd[name] or s.sd[name]['Position_from']=='LR'):
                     s.sd[name]['optRA']=r['optRA_RLC']
                     s.sd[name]['optDec']=r['optDEC_RLC']
                     s.sd[name]['Position_from']='Ridge line code'
                     s.sd[name]['lr_fin']=r['LRMagBoth']
+                    s.sd[name]['ID_flag']=9
     else:
         print('No ridgeline file, this may not be what you want')
                     
@@ -1191,16 +1337,24 @@ def make_structure(field,warn=False,version=None):
     
     badlist=[]
     badzoom=[]
+    badblend=[]
+    fcblend=[]
     print('Processing bad sources')
     for sname in tqdm(bad):
         s.log('Checking duplicate ID source',sname,s.sd[sname]['Created'])
-        if 'Zoomfile' not in s.sd[sname]:
-            s.log('Adding',sname,'to zoom list')
-            badlist.append(sname)
-        else:
+        if 'Zoomfile' in s.sd[sname]:
             s.log('*** problem -- source',sname,'with zoom file',s.sd[sname]['Zoomfile'],'has duplicate ID')
             badzoom.append((sname,s.sd[sname]['Zoomfile']))
-                    
+        elif s.sd[sname]['Created']=='New_blend':
+            s.log('*** problem -- source',sname,'with blend file',s.sd[sname]['Blend_file'],'has duplicate ID')
+            badblend.append((sname,s.sd[sname]['Blend_file']))
+        elif s.sd[sname]['Created']=='Process flowchart blends' or s.sd[sname]['Created']=='Deblend reassembly':
+            fcblend.append(sname)
+            s.log('Adding',sname,'to blend list')
+            s.sd[sname]['Blend_prob']=1.0 # force new_blend workflow
+        else:
+            s.log('Adding',sname,'to zoom list')
+            badlist.append(sname)
 
     badlist=list(set(badlist))
     print('Adding',len(badlist),'unique duplicate non-zoom sources to zoom list')
@@ -1210,6 +1364,11 @@ def make_structure(field,warn=False,version=None):
     print('Writing list of bad zoom sources to text file for you -- check zoom files manually')
     with open('badzoom.txt','w') as f:
         for source,zoomfile in badzoom:
+            f.write('%s %s\n' % (source,zoomfile))
+
+    print('Writing list of bad blend sources to text file for you -- check blend files manually')
+    with open('badblend.txt','w') as f:
+        for source,zoomfile in badblend:
             f.write('%s %s\n' % (source,zoomfile))
 
     print('Now writing you a list of sources you have broken with excessive zoom files, some may be the same ones!')
@@ -1232,6 +1391,9 @@ def make_structure(field,warn=False,version=None):
                 cname=bits[0]
                 if cname not in s.cd:
                     raise RuntimeError('Failed to find rescued component')
+                if 'Deleted' in s.cd:
+                    s.log('Component',cname,'on rescue list is deleted')
+                    continue
                 sname=s.cd[cname]['Parent']
                 if sname=='':
                     s.log('Component',cname,'on rescue list is orphan')
@@ -1240,7 +1402,7 @@ def make_structure(field,warn=False,version=None):
                 else:
                     if 'Zoomfile' not in s.sd[sname]:
                         name=sname
-                        if 'LGZ' in s.sd[sname]['Created']:
+                        if 'GZ' in s.sd[sname]['Created']:
                             if 'Renamed_from' in s.sd[sname]:
                                 name=s.sd[sname]['Renamed_from']
                         s.log('Adding',name,'(component',cname,') to zoom list')
@@ -1358,7 +1520,15 @@ def sanity_check(s):
 
     for gaussian in tqdm(s.gd,desc='Gaussians '):
         if 'Deleted' not in s.gd[gaussian] and 'Checked' not in s.gd[gaussian]:
-            s.log('Gaussian',gaussian,'neither deleted nor part of a source (alleged parent is',s.gd[gaussian]['Parent'],')')
+            parent=s.gd[gaussian]['Parent']
+            s.log('Gaussian',gaussian,'neither deleted nor part of a source (alleged parent is',parent,')')
+            if parent in s.cd and 'Deleted' in s.cd[parent]:
+                s.log('Parent is deleted for reason',s.cd[parent]['Deleted'])
+            elif parent not in s.cd:
+                s.log('Parent',parent,'does not exist')
+            else:
+                s.log('Parent properties are',s.cd[parent])
+
             errors+=1
 
     print('Total errors',errors)
@@ -1396,12 +1566,12 @@ if __name__=='__main__':
     s.set_stage('Sanity checking')
     
     sanity_check(s)
-    
+        
     print('Constructing output table')
-    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',np.nan),('E_DEC',np.nan),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('Prefilter',0),('Postfilter',0),('lr_fin',np.nan),('UID_L',""),('optRA',np.nan),('optDec',np.nan),('LGZ_Size',np.nan),('LGZ_Width',np.nan),('LGZ_PA',np.nan),('Assoc',0),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Other_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
+    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',np.nan),('E_DEC',np.nan),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('ID_flag',-1),('Prefilter',0),('Postfilter',0),('lr_fin',np.nan),('UID_L',""),('optRA',np.nan),('optDec',np.nan),('Composite_Size',np.nan),('Composite_Width',np.nan),('Composite_PA',np.nan),('Assoc',0),('ID_Qual',np.nan),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Other_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
     write_table('sources-'+version+'.fits',s.sd,columns)
 
-    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Created',None),('Deblended_from',""),('Parent',None)]
+    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('ID_flag',-1),('Created',None),('Deblended_from',""),('Parent',None)]
     rename=[('Source_Name','Component_Name'),('Parent','Parent_Source')]
     write_table('components-'+version+'.fits',s.cd,columns,rename=rename)
 
