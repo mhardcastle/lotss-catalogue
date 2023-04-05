@@ -188,7 +188,15 @@ def Masks_disjoint_complete(masklist):
     
     return np.all(O) and np.all(~Z)
 
-
+def inHETDEXm(mid):
+    inside = np.zeros(len(mid), dtype=bool)
+    hetdex_fields = ['P10Hetdex', 'P11Hetdex12', 'P12Hetdex11', 'P14Hetdex04', 'P15Hetdex13', 'P164+55', 'P169+55', 'P16Hetdex13', 'P173+55', 'P178+55', 'P182+55', 'P187+55', 'P18Hetdex03', 'P191+55', 'P196+55', 'P19Hetdex17', 'P1Hetdex15', 'P200+55', 'P205+55', 'P206+50', 'P206+52', 'P209+55', 'P21', 'P210+47', 'P211+50', 'P213+47', 'P214+55', 'P217+47', 'P218+55', 'P219+50', 'P219+52', 'P221+47', 'P223+50', 'P223+52', 'P223+55', 'P225+47', 'P227+50', 'P227+53', 'P22Hetdex04', 'P23Hetdex20', 'P25Hetdex09', 'P26Hetdex03', 'P27Hetdex09', 'P29Hetdex19', 'P30Hetdex06', 'P33Hetdex08', 'P34Hetdex06', 'P35Hetdex10', 'P37Hetdex15', 'P38Hetdex07', 'P39Hetdex19', 'P3Hetdex16', 'P41Hetdex', 'P42Hetdex07', 'P4Hetdex16', 'P6', 'P7Hetdex11', 'P8Hetdex']
+    hetdex_fields.append(['P210+52', 'P214+52', 'P215+50', 'P31Hetdex19'])
+        
+    
+    for i in range(len(mid)):
+        inside[i] = mid[i] in hetdex_fields
+    return inside
 
 
 if __name__=='__main__':
@@ -276,6 +284,9 @@ if __name__=='__main__':
     Nlofarcat = len(lofarcat)
     
     
+    # update HETDEX flag
+    lofarcat['HETDEX2'] = inHETDEXm(lofarcat['Mosaic_ID'])
+    
     ## write output file
     #lofarcat.write(lofarcat_file_srt, overwrite=True)
     #sys.exit()
@@ -305,16 +316,17 @@ if __name__=='__main__':
         
         #fixlist = ['ILTJ111611.15+493234.8', 'ILTJ121557.43+512418.5', 'ILTJ121956.33+473756.2', 'ILTJ124047.70+500956.4', 'ILTJ131951.11+531748.0', 'ILTJ135441.11+541646.4']
         #for s in fixlist:
-            #lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 1
+            #lofarcat['msource_flag1'][lofarcat['Source_Name']==s] = 1
         #fixlist = ['ILTJ140430.41+560657.9'] 
         #for s in fixlist:
-            #lofarcat['msource1_flag'][lofarcat['Source_Name']==s] = 2
+            #lofarcat['msource_flag1'][lofarcat['Source_Name']==s] = 2
     elif step == 3:
-        prefilter_outs = ('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend')
-        prefilter_cols = ('green', 'blue', 'red', 'seagreen1','gray','blue','yellowgreen')
-        prefilter_ids = (3, 1, 0, 7,-1,8,6)
-        prefilter_lgz_ids = (4, -1, -1, 6,-1,-1,5)
-        prefilter_lr_ids = (-1, 1, 0, -1,-1,-1,-1)
+        prefilter_outs = ('Send to LGZ', 'Accept ML match', 'No good match', 'Too zoomed in','Artefact','Uncatalogued host','Blend','missing')
+        prefilter_cols = ('green', 'blue', 'red', 'seagreen1','gray','blue','yellowgreen','orange')
+        prefilter_vals = (1, 2, 3, 4,5,6,7,-99)
+        prefilter_ids = (3, 1, 0, 7,-1,8,6,4)
+        prefilter_lgz_ids = (4, -1, -1, 6,-1,-1,5,-99)
+        prefilter_lr_ids = (-1, 1, 0, -1,-1,-1,-1,-99)
         
         print('need Prefilter outputs')  
         print('prefilter has been run, now to give them the right ID flags')
@@ -364,7 +376,9 @@ if __name__=='__main__':
             if weave_pri == '1':
                 weave_sel = (lofarcat['WEAVE_priority1']==True)
             elif weave_pri == 'all':
-                weave_sel = np.isfinite(lofarcat['RA'])
+                weave_sel = (lofarcat['WEAVE_priority1']==True)
+                # 0h field - only 1 weave priority, never fdo the non-legacy coverage
+                #weave_sel = np.isfinite(lofarcat['RA'])
 
 
     # this is easy to run...
@@ -472,7 +486,7 @@ if __name__=='__main__':
     1 - LR
     2 - large optical galaxy
     3 - LGZ
-    4 - visual id / prefilter
+    4 - visual id / prefilter pending
     5 - tbd
     6 - deblend
     7 - too zoomed in after prefilter
@@ -485,9 +499,11 @@ if __name__=='__main__':
         lofarcat.add_column(Column(-99*np.ones(Nlofarcat,dtype=int),'LR_flag'))
     if 'LGZ_flag' not in lofarcat.colnames:
         lofarcat.add_column(Column(-99*np.ones(Nlofarcat,dtype=int),'LGZ_flag'))
-    lofarcat['ID_flag'][weave_sel] = -99
-    lofarcat['LR_flag'][weave_sel] = -99
-    lofarcat['LGZ_flag'][weave_sel] = -99
+        
+    # none of these should be left
+    lofarcat['ID_flag'][weave_sel] = -9999
+    lofarcat['LR_flag'][weave_sel] = -9999
+    lofarcat['LGZ_flag'][weave_sel] = -9999
         
     
 
@@ -577,7 +593,7 @@ if __name__=='__main__':
                         edgelabel='N',
                         color='gray',
                         masterlist=masterlist)
-    lofarcat['ID_flag'][M_all_noweave.mask] = -1
+    lofarcat['ID_flag'][M_all_noweave.mask] = -99
 
 
     # sources 
@@ -599,6 +615,7 @@ if __name__=='__main__':
                         color='gray',
                         masterlist=masterlist)
     lofarcat['ID_flag'][M_all_artefact.mask] = -1
+    lofarcat['Artefact_flag'][M_all_artefact.mask] = 1
 
 
     # sources - clean
@@ -721,7 +738,7 @@ if __name__=='__main__':
 
         for pf_i in range(len(prefilter_outs)):
             spfi = '{i}'.format(i=pf_i+1)
-            M_large_mid_faint_nmllgz_pfi = M_large_mid_faint_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+            M_large_mid_faint_nmllgz_pfi = M_large_mid_faint_nmllgz.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                             'pf {i}'.format(i=pf_i+1),
                             'no ml lgz',
                             edgelabel=spfi,
@@ -729,6 +746,9 @@ if __name__=='__main__':
                             color=prefilter_cols[pf_i],
                             masterlist=masterlist)
         
+            # set Artefact_flag for prefilter artefacts
+            if prefilter_vals[pf_i] == 5:
+                lofarcat['Artefact_flag'][M_large_mid_faint_nmllgz_pfi.mask] == 1
             lofarcat['ID_flag'][M_large_mid_faint_nmllgz_pfi.mask] = prefilter_ids[pf_i]  #prefilter
             lofarcat['LGZ_flag'][M_large_mid_faint_nmllgz_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
     
@@ -817,7 +837,9 @@ if __name__=='__main__':
 
 
     ## 0hr fields was processed a bit differently here:
-    if h == '13h':
+    # update - now do them the smae
+    #if h == '13h':
+    if 1:
         # compact isolated nS
         M_small_isol_nS = M_small_isol.submask(lofarcat['S_Code'] != 'S',
                             'nS',
@@ -827,7 +849,8 @@ if __name__=='__main__':
                             masterlist=masterlist)
 
 
-    if h == '0h':
+    #update to run 0hr field like 13hr field as these were never done in lgz
+    if 0:
         # compact isolated nS
         M_small_isol_nS = M_small_isol.submask(lofarcat['S_Code'] != 'S',
                             'nS',
@@ -879,7 +902,7 @@ if __name__=='__main__':
     # we have msource outcomes
     if step >= 2:
         
-        ### msource1_flag
+        ### msource_flag1
         #0: no match
         #1: accept ML of the source
         #2: accept ML of the gaussian with highest ML
@@ -946,15 +969,19 @@ if __name__=='__main__':
         
             for pf_i in range(len(prefilter_outs)):
                 spfi = '{i}'.format(i=pf_i+1)
-                M_small_isol_nS_bright_prefilt_pfi = M_small_isol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                M_small_isol_nS_bright_prefilt_pfi = M_small_isol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                                 'pf {i}'.format(i=pf_i+1),
                                 'no ml lgz',
                                 edgelabel=spfi,
                                 qlabel=prefilter_outs[pf_i],
                                 color=prefilter_cols[pf_i],
                                 masterlist=masterlist)
-            
+                    
+                # set Artefact_flag for prefilter artefacts
+                if prefilter_vals[pf_i] == 5:
+                    lofarcat['Artefact_flag'][M_small_isol_nS_bright_prefilt_pfi.mask] == 1
                 lofarcat['ID_flag'][M_small_isol_nS_bright_prefilt_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+                lofarcat['LGZ_flag'][M_small_isol_nS_bright_prefilt_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
     
 
 
@@ -979,7 +1006,9 @@ if __name__=='__main__':
 
 
     # ohr original LGZ decissions differ from 13h
-    if h == '13h':
+    # update: make them the same
+    #if h == '13h':
+    if 1:
         # compact not isolated, S, clustered
         M_small_nisol_S_clustered = M_small_nisol_S.submask((lofarcat['NN5_sep'] <= separation1),
                             'clustered',
@@ -1044,15 +1073,19 @@ if __name__=='__main__':
 
             for pf_i in range(len(prefilter_outs)):
                 spfi = '{i}'.format(i=pf_i+1)
-                M_small_nisol_S_clustered_brightish_nmllgz_pfi = M_small_nisol_S_clustered_brightish_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                M_small_nisol_S_clustered_brightish_nmllgz_pfi = M_small_nisol_S_clustered_brightish_nmllgz.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                                 'pf {i}'.format(i=pf_i+1),
                                 'pf {i}'.format(i=pf_i+1),
                                 edgelabel=spfi,
                                 qlabel=prefilter_outs[pf_i],
                                 color=prefilter_cols[pf_i],
                                 masterlist=masterlist)
-            
+                                
+                # set Artefact_flag for prefilter artefacts
+                if prefilter_vals[pf_i] == 5:
+                    lofarcat['Artefact_flag'][M_small_nisol_S_clustered_brightish_nmllgz_pfi.mask] == 1
                 lofarcat['ID_flag'][M_small_nisol_S_clustered_brightish_nmllgz_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+                lofarcat['LGZ_flag'][M_small_nisol_S_clustered_brightish_nmllgz_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
     
             ## expand the M_small_nisol_S_clustered_brightish_nmllgz based on visual flags
         else:
@@ -1060,7 +1093,8 @@ if __name__=='__main__':
             pass
         
         
-    elif h == '0h':
+    #elif h == '0h':
+    elif 0:
         # compact not isolated, S, clustered
         M_small_nisol_S_clustered = M_small_nisol_S.submask((lofarcat['NN5_sep'] <= separation1),
                             'clustered',
@@ -1083,7 +1117,8 @@ if __name__=='__main__':
     
     
 
-    if h == '0h':
+    #update to run 0hr field like 13hr field
+    if 0:
         # compact not isolated, not S
         # 1000111
         M_small_nisol_nS = M_small_nisol.submask(lofarcat['S_Code'] != 'S',
@@ -1106,12 +1141,12 @@ if __name__=='__main__':
                             'not_ml_lgz',
                             edgelabel='N',
                             #color='orange',
-                            qlabel='Bright?\n(S>{f:.0f} mJy)'.format(f=fluxcut, s=size_large),
+                            qlabel='Brightish?\n(S>{f:.0f} mJy)'.format(f=fluxcut2, s=size_large),
                             masterlist=masterlist)
         
         M_small_nisol_nS = M_small_nisol_nS_nmllgz
         
-    elif h == '13h':
+    elif (h == '13h') or (h == '0h'):
         # compact not isolated, not S
         # 1000111
         M_small_nisol_nS = M_small_nisol.submask(lofarcat['S_Code'] != 'S',
@@ -1189,15 +1224,19 @@ if __name__=='__main__':
             
             for pf_i in range(len(prefilter_outs)):
                 spfi = '{i}'.format(i=pf_i+1)
-                M_small_nisol_nS_bright_prefilt_pfi = M_small_nisol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+                M_small_nisol_nS_bright_prefilt_pfi = M_small_nisol_nS_bright_prefilt.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                                 'pf {i}'.format(i=pf_i+1),
                                 'no ml lgz',
                                 edgelabel=spfi,
                                 qlabel=prefilter_outs[pf_i],
                                 color=prefilter_cols[pf_i],
                                 masterlist=masterlist)
-            
+                                            
+                # set Artefact_flag for prefilter artefacts
+                if prefilter_vals[pf_i] == 5:
+                    lofarcat['Artefact_flag'][M_small_nisol_nS_bright_prefilt_pfi.mask] == 1
                 lofarcat['ID_flag'][M_small_nisol_nS_bright_prefilt_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+                lofarcat['LGZ_flag'][M_small_nisol_nS_bright_prefilt_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
 
     # compact not isolated, nnsmall, nlr
     M_small_nisol_S_nclustered_nlr = M_small_nisol_S_nclustered.submask(lofarcat['LR_threshold'] == False,
@@ -1329,15 +1368,19 @@ if __name__=='__main__':
         
         for pf_i in range(len(prefilter_outs)):
             spfi = '{i}'.format(i=pf_i+1)
-            M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi = M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz.submask((lofarcat['Prefilter'] ==(pf_i+1)),
+            M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi = M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz.submask((lofarcat['Prefilter'] ==prefilter_vals[pf_i]),
                             'pf {i}'.format(i=pf_i+1),
                             'pf {i}'.format(i=pf_i+1),
                             edgelabel=spfi,
                             qlabel=prefilter_outs[pf_i],
                             color=prefilter_cols[pf_i],
                             masterlist=masterlist)
-        
+                                                    
+            # set Artefact_flag for prefilter artefacts
+            if prefilter_vals[pf_i] == 5:
+                lofarcat['Artefact_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi.mask] == 1
             lofarcat['ID_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi.mask] = prefilter_ids[pf_i]  #prefilter
+            lofarcat['LGZ_flag'][M_small_nisol_S_nclustered_nlr_NNnlr_simflux_sep_bright_nmllgz_pfi.mask] = prefilter_lgz_ids[pf_i]  #prefilter
     
     
     

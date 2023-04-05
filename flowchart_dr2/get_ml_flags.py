@@ -69,10 +69,14 @@ if h == '0h':
 elif h == '13h':
     
     # concat in topcat and keep only 0.12 col
-    ml_cat_file = path+'GradientBoostingClassifier_M2_31504_17F_TT42_B1_rd_dc_opt_tlv_high/pred_thresholds_full_13h_fixnames.fits'
+    ml_cat_file = path+'GradientBoostingClassifier_M2_31504_17F_TT42_B1_rd_dc_opt_tlv_high/pred_thresholds_full_13h_fixnames_v110.fits'
     ml_cat = Table.read(ml_cat_file)
 
     lofarcat = Table.read(lofarcat_file_srt)
+    
+    if 'ML_flag' in lofarcat.colnames:
+        lofarcat.remove_column('ML_flag')
+    
     lofarcat.sort('Source_Name')
     for i in range(len(lofarcat)):
         lofarcat['Source_Name'][i] = lofarcat['Source_Name'][i].strip()
@@ -83,15 +87,17 @@ elif h == '13h':
     tt = join(lofarcat, ml_cat, keys='Source_Name',join_type='left')
     tt.sort('Source_Name')
     
-    hasmatch = ~tt['ML_flag'].mask
+    #hasmatch = ~tt['ML_flag'].mask
     
     if 'ML_flag' in lofarcat.colnames:
-        lofarcat['ML_flag'][hasmatch] = tt['ML_flag'][hasmatch]
-        lofarcat['ML_flag'][~hasmatch] = 0   # no match defaults to LGZ (0)
+        #lofarcat['ML_flag'][hasmatch] = tt['ML_flag'][hasmatch]
+        lofarcat['ML_flag'] = tt['ML_flag']
+        #lofarcat['ML_flag'][~hasmatch] = -1   # this should not happen
     else:
-        col = np.zeros(len(lofarcat))
-        col[hasmatch] = tt['ML_flag'][hasmatch]
-        lofarcat.add_column(Column(name='ML_flag',data=col))
+        #col = np.zeros(len(lofarcat))
+        #col[hasmatch] = tt['ML_flag'][hasmatch]
+        #lofarcat.add_column(Column(name='ML_flag',data=col))
+        lofarcat.add_column(Column(name='ML_flag',data=tt['ML_flag']))
 
 
     ## write output file
