@@ -21,6 +21,7 @@ resolved|=(t['S_Code']=='Z')
 t['Resolved']=resolved
 asize=np.where(t['Composite_Size']>0,t['Composite_Size'],2*t['DC_Maj'])
 t['LAS']=asize
+t['Size_from']=np.where(t['Composite_Size']>0,t['Size_from'],"Gaussian")
 
 zphot=t['zphot']
 zphot=np.where(zphot>5,np.nan,zphot)
@@ -29,6 +30,9 @@ zphot=np.where(zphot>5,np.nan,zphot)
 
 zspec_t=np.where(t['zwarning_sdss']==0,t['zspec_sdss'],np.nan)
 zsource=np.where(~np.isnan(zspec_t),"SDSS","")
+zspec=np.where(np.isnan(zspec_t) & ~np.isnan(t['z_desi']),t['z_desi'],zspec_t)
+zsource=np.where(np.isnan(zspec_t) & ~np.isnan(t['z_desi']),"DESI",zsource)
+zspec_t=zspec
 zspec=np.where(np.isnan(zspec_t) & ~np.isnan(t['z_hetdex']),t['z_hetdex'],zspec_t)
 zsource=np.where(np.isnan(zspec_t) & ~np.isnan(t['z_hetdex']),"HETDEX",zsource)
 zphot=np.where(t['flag_qual']==1,zphot,np.nan)
@@ -55,8 +59,8 @@ ld=cosmo.luminosity_distance(z)
 lr=4*1e-29*np.pi*t['Total_flux']*ld.to(u.m)**2.0*(1+z)**(-0.3)
 angs=cosmo.kpc_proper_per_arcmin(z)*(u.arcmin/60.0)
 size=angs*asize/u.kpc
-t['Size']=size
-t['L_144']=lr
+t['Size']=np.where(np.isnan(zbest),np.nan,size)
+t['L_144']=np.where(np.isnan(zbest),np.nan,lr)
 
 # Add some column descriptions
 
@@ -75,8 +79,9 @@ for l in lines:
         u=bits[2].lstrip().rstrip()
         d=bits[3].lstrip().rstrip()
         if c[0]==':': continue
-        t[c].description=d
-        t[c].units=u
+        if c in t.colnames:
+            t[c].description=d
+            t[c].units=u
 
 outname=infile.replace('.fits','-physical.fits')
 t.write(outname,overwrite=True)

@@ -9,9 +9,9 @@ from surveys_db import SurveysDB
 # merge in legacy coverage and component tables
 
 fields=['Spring','Fall']
-versions=['v2.0','v2.1']
+versions=['v2.3','v2.5']
 pzname=['v0.3_joined','v0.3_south']
-outversion='v0.95'
+outversion='v1.1'
 tables=[]
 
 print('reading tables')
@@ -24,6 +24,9 @@ for f,v,p in zip(fields,versions,pzname):
 print('stacking and sorting')
 t=vstack(tables)
 t.sort('RA')
+
+print('temp fix for ID_flag')
+t['ID_flag']=np.where(t['Position_from']=='Ridge line code',13,t['ID_flag'])
 
 print('add legacy coverage flag')
 

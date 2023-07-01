@@ -130,6 +130,7 @@ def assemble_source(clist):
     #    print('Unreasonable source size detected')
     r['Composite_Width']=ms.width()
     r['Composite_PA']=ms.pa()
+    r['Size_from']='Composite'
     for k in ['Maj','Min','PA','E_Maj','E_Min','E_PA','DC_Maj','DC_Min','DC_PA']:
         r[k]=np.nan
     return r
@@ -1123,6 +1124,7 @@ def make_structure(field,warn=False,version=None):
                 if 'Manual_Size' in s.sd[name]:
                     s.log('Adding manual size measurement')
                     r['Composite_Size']=s.sd[name]['Manual_Size']
+                    r['Size_from']='Manual'
                 sname=r['Source_Name']
                 if sname!=name:
                     while sname in s.sd:
@@ -1305,7 +1307,7 @@ def make_structure(field,warn=False,version=None):
                     s.sd[name]['optDec']=r['optDEC_RLC']
                     s.sd[name]['Position_from']='Ridge line code'
                     s.sd[name]['lr_fin']=r['LRMagBoth']
-                    s.sd[name]['ID_flag']=9
+                    s.sd[name]['ID_flag']=13
     else:
         print('No ridgeline file, this may not be what you want')
                     
@@ -1568,7 +1570,7 @@ if __name__=='__main__':
     sanity_check(s)
         
     print('Constructing output table')
-    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',np.nan),('E_DEC',np.nan),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('ID_flag',-1),('Prefilter',0),('Postfilter',0),('lr_fin',np.nan),('UID_L',""),('optRA',np.nan),('optDec',np.nan),('Composite_Size',np.nan),('Composite_Width',np.nan),('Composite_PA',np.nan),('Assoc',0),('ID_Qual',np.nan),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Other_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
+    columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',np.nan),('E_DEC',np.nan),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('Isl_rms',np.nan),('FLAG_WORKFLOW',-1),('ID_flag',-1),('Prefilter',0),('Postfilter',0),('lr_fin',np.nan),('UID_L',""),('optRA',np.nan),('optDec',np.nan),('Composite_Size',np.nan),('Composite_Width',np.nan),('Composite_PA',np.nan),('Size_from',""),('Assoc',0),('ID_Qual',np.nan),('Assoc_Qual',np.nan),('Art_prob',np.nan),('Blend_prob',np.nan),('Imagemissing_prob',np.nan),('Zoom_prob',np.nan),('Other_prob',np.nan),('Created',None),('Position_from',None),('Renamed_from',"")]
     write_table('sources-'+version+'.fits',s.sd,columns)
 
     columns=[('Source_Name',None),('RA',None),('DEC',None),('E_RA',None),('E_DEC',None),('Total_flux',None),('E_Total_flux',None),('Peak_flux',None),('E_Peak_flux',None),('S_Code',None),('Mosaic_ID',None),('Maj',np.nan),('Min',np.nan),('PA',np.nan),('E_Maj',np.nan),('E_Min',np.nan),('E_PA',np.nan),('DC_Maj',np.nan),('DC_Min',np.nan),('DC_PA',np.nan),('ID_flag',-1),('Created',None),('Deblended_from',""),('Parent',None)]

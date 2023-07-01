@@ -39,7 +39,7 @@ t = Table.read(lofar_cat_path)
 if field=='Fall':
     critical_dec=36 # force use of South for all
 else:
-    critical_dec=32.275
+    critical_dec=32.375 # 32.275
     
 
 hemispheres=[]
@@ -74,6 +74,7 @@ for hemisphere in hemispheres:
     sdss_gal_path = '{0}/{1}'.format(ancillary_data, 'specObj-dr16.fits')
     sdss_qso_path = '{0}/{1}'.format(ancillary_data, 'DR16Q_v4.fits')
     hetdex_path = '/beegfs/lofar/mjh/rgz/hetdex_sc1_v3.2.ecsv'
+    desi_path='/beegfs/lofar/mjh/rgz/zall-pix-fuji.fits'
     xray_2rxs_path = '{0}/{1}'.format(ancillary_data, '2RXS_AllWISE_catalog_paper_2017May26.fits')
     xray_xmmsl2_path = '{0}/{1}'.format(ancillary_data, 'XMMSL2_AllWISE_catalog_paper_2017JUN09.fits')
     bricks_path = '{0}/{1}'.format(ancillary_data, 'survey-bricks.fits')
@@ -128,11 +129,11 @@ for hemisphere in hemispheres:
         if verbose:
             print(hpx)
         lofar_subset = (lofar_hpx_opt == hpx)
-        hpx_opt = healpy.ang2pix(2**3, lofar_cat['ID_RA'][with_match*lofar_subset],
-                                       lofar_cat['ID_DEC'][with_match*lofar_subset],
-                                       lonlat=True)
+        #hpx_opt = healpy.ang2pix(2**3, lofar_cat['ID_RA'][with_match*lofar_subset],
+        #                               lofar_cat['ID_DEC'][with_match*lofar_subset],
+        #                               lonlat=True)
 
-        opt_hpx_unq = np.unique(lofar_hpx_opt)
+        opt_hpx_unq = lofar_hpx_unique # np.unique(lofar_hpx_opt)
         hpx_list = np.append(hpx, healpy.get_all_neighbours(2**3, hpx))
         hpx_list = hpx_list[np.in1d(hpx_list, opt_hpx_unq)] # Crop surplus neighbours
         #print(opt_hpx_unq)
@@ -244,6 +245,32 @@ for hemisphere in hemispheres:
     merged_all.add_column(MaskedColumn(name='z_hetdex', data=hetdex_z,mask=(hetdex_z == np.nan), dtype=hetdex['z_hetdex'].dtype))
     merged_all.add_column(MaskedColumn(name='z_hetdex_conf', data=hetdex_zconf,mask=(hetdex_zconf == np.nan), dtype=hetdex['z_hetdex_conf'].dtype))
     merged_all.add_column(MaskedColumn(name='hetdex_sourceid', data=hetdex_sourceid,mask=(hetdex_sourceid == -1), dtype=hetdex['source_id'].dtype))
+                                                                 
+
+    """
+    Merge DESI
+    """
+    print('Merging DESI spectra')
+    
+    desi=Table.read(desi_path)
+    filt=desi['ZCAT_PRIMARY'] & (desi['ZWARN']==0)
+    desi=desi[filt]
+    desi_coord = SkyCoord(desi['TARGET_RA'].data, desi['TARGET_DEC'].data, unit='deg')
+
+    id_desi, d2d, _ = opt_coord[with_match].match_to_catalog_sky(desi_coord)
+    match_gal = (d2d < spec_sep*u.arcsec)
+
+    desi_z = np.ones(len(merged_all)) * np.nan
+    desi_zconf = np.ones(len(merged_all)) * np.nan
+    desi_sourceid = np.ones(len(merged_all), dtype='int') * -1
+    
+    desi_z[with_match[match_gal]] = desi['Z'][id_desi[match_gal]]
+    desi_zconf[with_match[match_gal]] = desi['ZERR'][id_desi[match_gal]]
+    desi_sourceid[with_match[match_gal]] = desi['TARGETID'][id_desi[match_gal]]
+
+    merged_all.add_column(MaskedColumn(name='z_desi', data=desi_z,mask=(desi_z == np.nan), dtype=desi['Z'].dtype))
+    merged_all.add_column(MaskedColumn(name='z_desi_err', data=desi_zconf,mask=(desi_zconf == np.nan), dtype=desi['ZERR'].dtype))
+    merged_all.add_column(MaskedColumn(name='desi_sourceid', data=desi_sourceid,mask=(desi_sourceid == -1), dtype=desi['TARGETID'].dtype))
                                                                  
     """
     X-ray Matching

@@ -190,12 +190,15 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         f.show_colorscale(vmin=rms_use,vmax=lofarmax,stretch='log',cmap=cmap)
    
     else:
-        mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
-        print('Optical parameters are',mean,noise,vmax)
         f = aplpy.FITSFigure(hdu,north=rotate_north)
         print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
-        f.show_colorscale(vmin=mean+noisethresh*noise,vmax=vmax,stretch='log',cmap=cmap)
+        mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
+        if not np.isnan(mean) and not np.isnan(vmax) and not np.isnan(noise):
+            print('Optical parameters are',mean,noise,vmax)
+            f.show_colorscale(vmin=mean+noisethresh*noise,vmax=vmax,stretch='log',cmap=cmap)
+        else:
+            print('*** Warning -- cannot show optical image, nans present ***')
         #f.show_colorscale(stretch='log')
 
     if bmaj is not None:

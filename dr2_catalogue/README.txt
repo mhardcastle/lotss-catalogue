@@ -1,6 +1,10 @@
 The basic workflow here is:
 
+In the main directory:
+
 filter_classifications_XXXX.py -- start from the flowchart output and RGZ stuff and create source_lr.fits, gaussian_lr.fits
+
+In the field directory:
 
 Then see ../lgz-process/README-lgzoutput.txt for (RL)GZ
 processing.
@@ -37,5 +41,10 @@ add_lsdr8_photoz.py -- merge in the photo-zs from Ken's tables. Relatively slow.
 
 add_physical.py -- Add physical quantities and column descriptions
 
+In the parent directory:
+
 make_joined.py -- Make the joined source table (Spring and Fall) and components table.
 
+merge_sizeflux.py -- Merge in the LM sizes and fluxes
+
+merge_mass_catalogue.py

@@ -139,12 +139,18 @@ if __name__=='__main__':
 
         # check whether any of these sources have zoom files already
         for source in sourcelist:
+            if source not in s.sd:
+                print(source,'does not exist in source table!!')
+                continue
             zoomfile=s.sd[source].get('Blend_file')
-            if zoomfile:
-                print(source,'has a blend file already')
+            if zoomfile and 'new_blend' in zoomfile:
+                print(source,'has a blend file already:',zoomfile)
                 if not os.path.isdir('old_blend'):
                     os.mkdir('old_blend')
-                os.rename(zoomfile,'old_blend/'+os.path.basename(zoomfile))
+                try:
+                    os.rename(zoomfile,'old_blend/'+os.path.basename(zoomfile))
+                except OSError:
+                    print('... rename failed, maybe you already removed it?')
             record=sql.get_object(source,create=False)
             if record is not None:
                 print(source,': clearing existing SQL record')

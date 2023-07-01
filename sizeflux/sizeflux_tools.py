@@ -10,7 +10,7 @@ Rewrite with class instead of global dict to allow routines to be imported
 from __future__ import print_function
 from astropy.io import fits
 from astropy.wcs import WCS
-from astropy.table import Table
+from astropy.table import Table,vstack
 import astropy.units as u
 from collections import defaultdict
 import pyregion
@@ -27,6 +27,8 @@ import sys
 import os
 from multiprocessing import Pool
 from tqdm import tqdm
+from astropy_healpix import HEALPix
+import astropy.units as u
 
 def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
     """ 
@@ -107,7 +109,7 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
     if verbose:
         print(slice)
 
-    hdu=fits.PrimaryHDU(f[hduid].data[slice],header)
+    hdu=fits.PrimaryHDU(f[hduid].data[tuple(slice)],header)
     copy=('EQUINOX','EPOCH','BMAJ','BMIN','BPA')
     for k in copy:
         r=f[hduid].header.get(k)
@@ -176,14 +178,18 @@ def extract_subim(filename,ra,dec,size,hduid=0,verbose=False):
 
 class Flood(object):
     def __init__(self,compcat):
+        self.hp=HEALPix(nside=32)
+        hp=self.hp
         self.t=compcat
+        hpix=hp.lonlat_to_healpix(compcat['RA']*u.deg,compcat['DEC']*u.deg)
+        self.t['HP']=hpix
         self.fluxdict={}
         self.sizedict={}
         self.mindict={}
         self.padict={}
         self.coordsdict=defaultdict(list)
         print('Populating dictionaries:')
-        for asrc in tqdm(compcat):
+        for i,asrc in tqdm(enumerate(compcat),total=len(compcat)):
             sourcename=asrc['Component_Name']
             newname=sourcename.rstrip()
             sourcera=float(asrc['RA'])
@@ -192,24 +198,37 @@ class Flood(object):
             majsize=float(asrc['Maj']/3600.0) # to degrees
             minsize=float(asrc['Min']/3600.0)
             posang=float(asrc['PA'])
-
             self.coordsdict[newname]=(sourcera,sourcedec)
             self.fluxdict[newname]=flux
             self.sizedict[newname]=majsize
             self.mindict[newname]=minsize
             self.padict[newname]=posang
+        hps=list(set(hpix))
+        self.hpdict={}
+        for hp in tqdm(hps):
+            self.hpdict[hp]=self.t[self.t['HP']==hp]
+                 
 
     def select(self, name, ra, dec, size, verbose=False):
         if verbose:
             print('Selecting around',name,'with size',size,'degrees')
+        hpixes=self.hp.cone_search_lonlat(ra*u.deg, dec*u.deg, radius=size*u.deg)
+        if verbose: print('hpixes are',hpixes)
         # select included and excluded sources
-        compcat=self.t
+        tables=[]
+        for hpix in hpixes:
+            tables.append(self.hpdict[hpix])
+        compcat=vstack(tables)
+        compcat=dfilt(compcat,ra,dec,1.5*size)
+        #compcat=self.t
+        #mask=np.zeros_like(self.t,dtype=bool)
+        #mask[self.sldict[name]]=True
         mask=compcat['Parent_Source']==name
         mask2=~mask
         catinc=compcat[mask]
         dcatexc=compcat[mask2]
-        catexc=dfilt(dcatexc,ra,dec,1.5*size)
-        return catinc, catexc
+        if verbose: print('cat lengths:',len(compcat),len(catinc),len(dcatexc))
+        return catinc, dcatexc
             
     def mask(self,source_name, cinc, cexc, hdu,rmsthres,verbose=False):
     
@@ -220,8 +239,8 @@ class Flood(object):
             flux_array[flux_array<rmsthres] = np.nan
             if verbose: print("Thresholding image at "+str(rmsthres))
 
-        mtest=np.nanmax(flux_array)
-        if verbose: print("Floodmask: max val of thresholded array is: "+str(mtest))
+        #mtest=np.nanmax(flux_array)
+        #if verbose: print("Floodmask: max val of thresholded array is: "+str(mtest))
 
         flooded_array = flux_array.copy() # equivalent to thresholded npy arrays
 
@@ -551,7 +570,7 @@ def dfilt(cat,ra,dec,thres):
 
 #MAIN
 
-def process_source(src,verbose=False,save_cutouts=False):
+def process_source(src,verbose=False,save_cutouts=False,save_floodim=False):
     ra=src['RA']
     dec=src['DEC']
     # Hopefully for DR2 can get mosaic from cat?
@@ -563,7 +582,29 @@ def process_source(src,verbose=False,save_cutouts=False):
     name=sname.rstrip()
 
     rms=src['Isl_rms']/1000 # deep fields version - check units of im and cat
-    lgz=src['LGZ_Size']
+
+    # try to guess a size
+    success=False
+    try:
+        lgz=src['LAS']
+        success=True
+    except:
+        pass
+    if not success:
+        try:
+            lgz=src['Composite_Size']
+            success=True
+        except:
+            pass
+    if not success:
+        try:
+            lgz=src['LGZ_Size']
+            success=True
+        except:
+            pass
+    if not success:
+        lgz=np.nan
+        
     influx=src['Total_flux']/1000
     peak=src['Peak_flux']/1000
 
@@ -587,11 +628,11 @@ def process_source(src,verbose=False,save_cutouts=False):
     cutout,ff=extract_subim(imfile,ra,dec,size)
 
     # locate optical ID -- for Leon
-    id_ra=src['ID_RA']
-    id_dec=src['ID_DEC']
-    w=WCS(cutout[0].header)
-    opt_x,opt_y=w.wcs_world2pix(id_ra,id_dec,0)
-    if verbose: print('Optical position is',opt_x,opt_y)
+    #id_ra=src['ID_RA']
+    #id_dec=src['ID_DEC']
+    #w=WCS(cutout[0].header)
+    #opt_x,opt_y=w.wcs_world2pix(id_ra,id_dec,0)
+    #if verbose: print('Optical position is',opt_x,opt_y)
     
     if ff==0:
         if save_cutouts: cutout.writeto('cutouts/'+name+'.fits',overwrite=True)
@@ -613,12 +654,16 @@ def process_source(src,verbose=False,save_cutouts=False):
         # Generate mask by first masking in source components then excluding others
         if verbose: print("Extracting cats for source",name)
         if verbose: print("Size is",size)
-        catinc, catexc=ffo.select(name,ra,dec,size)
+        catinc, catexc=ffo.select(name,ra,dec,size,verbose=verbose)
         assert(len(catinc))
         if verbose: print("Lengths of included and excluded comps are:",len(catinc),len(catexc))
 
         floodmask,floodim=ffo.mask(name,catinc,catexc,cutout,rthres,verbose=verbose)
 
+        if save_floodim:
+            cutout[0].data=floodim
+            cutout.writeto('floodim/'+name+'.fits',overwrite=True)
+        
         # Calculate flux and size
         if verbose: print('Get flux and size')
         #np.save(sname+'.npy',floodim)
@@ -626,21 +671,40 @@ def process_source(src,verbose=False,save_cutouts=False):
         if verbose: print('Size is',sz,'pixels')
 
         totflux=fl/beamarea
+        badf=(totflux<badflux)
+
+        # check the total number of pixels with neighbours
+        a=floodim
+        up=np.ones_like(a)*np.nan
+        down=np.ones_like(a)*np.nan
+        left=np.ones_like(a)*np.nan
+        right=np.ones_like(a)*np.nan
+        up[1:,:]=a[0:-1,:]
+        down[0:-1,:]=a[1:,:]
+        left[:,0:-1]=a[:,1:]
+        right[:,1:]=a[:,0:-1]
+        avg=(4*a+up+down+left+right)/4 # retaining orig average though not needed
+        badi=(np.sum(avg>0)<5)
+            
         totsize=(sz*pdel)*3600.0
 
-        return {'Source_Name':name,'RA':ra,'DEC':dec,'Total_flux_LoTSS':influx,'New_flux':totflux,'Maj_LoTSS':maj,'LGZ_Size_LoTSS':lgz,'New_size':totsize}
+        return {'Source_Name':name,'RA':ra,'DEC':dec,'Total_flux_LoTSS':influx,'New_flux':totflux,'Maj_LoTSS':maj,'Size_LoTSS':lgz,'New_size':totsize,'Bad_flux':badf,'Bad_image':badi}
 
 if __name__=='__main__':
 
     # Read in catalogues
 
     incat=Table.read(sys.argv[1])
+    badflux=1e-3*np.min(incat['Total_flux'])/2.0
+    print('Bad flux cut is',badflux,'Jy')
     compcat=Table.read(sys.argv[2])
     #imfile=sys.argv[3]
     mpath='/data/lofar/DR2/mosaics/'
     
     if not os.path.isdir('cutouts'):
         os.mkdir('cutouts')
+    if not os.path.isdir('floodim'):
+        os.mkdir('floodim')
 
     print("Lengths of cats are ",len(incat),len(compcat))
 
@@ -651,8 +715,13 @@ if __name__=='__main__':
     # Loop through rows, making cutout for each source, generating floodmask and then measuring size and flux
 
     print('Processing:')
-    pool=Pool(16)
-    for result in tqdm(pool.map(process_source,incat),total=len(incat)):
+    pool=Pool(96)
+    for result in tqdm(pool.imap(process_source,incat),total=len(incat)):
         outcat.append(result)
+    pool.close()
 
-    write_fits_out(['Source_Name','RA','DEC','Total_flux_LoTSS','New_flux','Maj_LoTSS','LGZ_Size_LoTSS','New_size'],outcat,'LM-size-flux.fits')
+    # single thread for testing:
+    #for r in incat:
+    #    outcat.append(process_source(r,verbose=True))
+        
+    write_fits_out(['Source_Name','RA','DEC','Total_flux_LoTSS','New_flux','Maj_LoTSS','Size_LoTSS','New_size','Bad_flux','Bad_image'],outcat,'LM-size-flux.fits')

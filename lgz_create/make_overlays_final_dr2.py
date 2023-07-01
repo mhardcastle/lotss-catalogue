@@ -37,7 +37,7 @@ if __name__=='__main__':
     lofarmaps=[l[1] for l in lines]
     wisemaps=[l[2] for l in lines]
  
-    version='v0.8'
+    version='v1.0'
     wd='/beegfs/lofar/mjh/rgz'
     
     dir=os.getcwd()
@@ -89,7 +89,7 @@ if __name__=='__main__':
         marker_ra=None
         marker_dec=None
         title=None
-        maxsize=300
+        maxsize=3000
         minsize=60
 
         size=r['LAS']*1.5
