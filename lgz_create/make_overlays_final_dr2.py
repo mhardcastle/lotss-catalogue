@@ -35,9 +35,9 @@ if __name__=='__main__':
     lname=tname.replace('.fits','-list.txt')
     lines=[l.rstrip().split() for l in open(lname).readlines()]
     lofarmaps=[l[1] for l in lines]
-    wisemaps=[l[2] for l in lines]
+    wisemaps=[l[3] for l in lines]
  
-    version='v1.0'
+    version='v1.1'
     wd='/beegfs/lofar/mjh/rgz'
     
     dir=os.getcwd()

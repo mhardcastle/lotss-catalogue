@@ -60,7 +60,7 @@ if __name__=='__main__':
         marker_ra=None
         marker_dec=None
         title=None
-        csize=r['LGZ_Size']*1.5
+        csize=r['LAS']*1.5
         if np.isnan(csize):
             csize=r['DC_Maj']*2*1.5
         

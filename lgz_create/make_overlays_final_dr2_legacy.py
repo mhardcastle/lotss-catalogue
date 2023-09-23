@@ -37,13 +37,13 @@ if __name__=='__main__':
     lofarmaps=[l[1] for l in lines]
     psmaps=[l[2] for l in lines]
  
-    version='v0.7'
+    version='v1.1'
     wd='/beegfs/lofar/mjh/rgz'
     
     dir=os.getcwd()
     print('Reading data...')
     
-    ot=Table.read(wd+'/combined_components-'+version+'.fits')
+    ot=Table.read(wd+'/combined-components-'+version+'.fits')
 
     #st=Table.read(wd+'/sources-'+version+'.fits')
     #ot=Table.read(wd+'/components-'+version+'.fits')

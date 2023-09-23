@@ -62,6 +62,7 @@ size=angs*asize/u.kpc
 t['Size']=np.where(np.isnan(zbest),np.nan,size)
 t['L_144']=np.where(np.isnan(zbest),np.nan,lr)
 
+'''
 # Add some column descriptions
 
 lines=open('../README.md').readlines()
@@ -82,10 +83,12 @@ for l in lines:
         if c in t.colnames:
             t[c].description=d
             t[c].units=u
+'''
 
 outname=infile.replace('.fits','-physical.fits')
 t.write(outname,overwrite=True)
 
+'''
 # Now work round astropy's inability to write comments into FITS tables, sigh
 
 hdu=fits.open(outname)
@@ -100,3 +103,5 @@ for i in range(1,nf+1):
         print(c,'has no units or description')
 
 hdu.writeto(outname,overwrite=True)
+'''
+

@@ -25,26 +25,32 @@ def download_file(url,filename):
                     continue
                 if response.status_code!=200:
                     raise RuntimeError('Code was %i' % response.status_code)
-                esize=int(response.headers['Content-Length'])
+                try:
+                    esize=int(response.headers['Content-Length'])
+                except KeyError:
+                    esize=None
             except (requests.exceptions.ConnectionError,requests.exceptions.Timeout,requests.exceptions.ReadTimeout):
                 print('Connection error! sleeping 30 seconds before retry...')
                 sleep(30)
             else:
                 connected=True
         try:
-            print('Downloading %i bytes' % esize)
+            if esize is not None:
+                print('Downloading %i bytes' % esize)
+            else:
+                print('Downloading file of unknown length')
             starttime=time()
             with open(filename, 'wb') as fd:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
                         fd.write(chunk)
             fsize=os.path.getsize(filename)
-            if esize!=fsize:
+            if esize!=fsize and esize is not None:
                 print('Download incomplete (expected %i, got %i)! Retrying' % (esize, fsize))
             else:
                 endtime=time()
                 dt=endtime-starttime
-                print('Download successful, %i of %i bytes received in %.2f seconds (%.2f MB/s)' % (fsize, esize, dt, fsize/(dt*1024*1024)))
+                print('Download successful, %i of %s bytes received in %.2f seconds (%.2f MB/s)' % (fsize, str(esize) if esize is not None else 'unknown', dt, fsize/(dt*1024*1024)))
                 downloaded=True
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, requests.exceptions.ChunkedEncodingError):

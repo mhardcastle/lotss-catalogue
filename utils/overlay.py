@@ -80,7 +80,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False,debug=False):
                 break
     return mean,noise,vmax
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid',logfile=None,sourcename=None,vmax_cap=None,cmap='jet',lofar_colorscale=False,rotate_north=True,figure=None):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,contour_color='yellow',first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,minimum=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid',logfile=None,sourcename=None,vmax_cap=None,cmap='jet',lofar_colorscale=False,rotate_north=True,figure=None,figsize=None):
     '''
     show_overlay: make an overlay using AplPY.
     lofarhdu: the LOFAR cutout to use for contours
@@ -115,14 +115,18 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     lofarlevel: lowest LOFAR contour (units sigma)
     first_color: colour for FIRST contours
     vlass_color: colour for VLASS contours
-    drlimit: dynamic range limit for LOFAR data
+    drlimit: dynamic range limit for LOFAR data, default 500
     interactive_handler: function to call for clicks on an interactive map
     peak: use this LOFAR flux density as the peak value; if None, calculate from the map
+    minimum: use this LOFAR flux density as the minimum contour level, over-riding DR limitations; if None, only use drlimit or lofarlevel
     ellipse_color: colour for the ellipses in overlay_cat: either a string or a list with entries for each ellipse
     lw_ellipse: line width for the ellipses; either a string or a list with entries for each ellipse
     ellipse_style: line style for the ellipses; either a string or a list with entries for each ellipse
 
     '''
+    kwargs={}
+    if figsize is not None:
+        kwargs['figsize']=figsize
     if lofarhdu is None:
         print('LOFAR HDU is missing, not showing it')
         show_lofar=False
@@ -133,8 +137,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     except:
         print('Cannot hide warnings')
 
-    print('========== Doing overlay at',ra,dec,'with size',size,'===========')
-    print('========== Title is',title,'==========')
+    print('===== Doing overlay at',ra,dec,'with size',size,'=====')
+    print('===== Title is',title,'=====')
     
     if coords_ra is None:
         coords_ra=ra
@@ -143,14 +147,21 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     if show_lofar or lofar_colorscale:
         if peak is None:
             lofarmax=np.nanmax(lofarhdu[0].data)
+            print('Local maximum flux density is',lofarmax)
         else:
             print('Using user-specified peak flux of',peak)
             lofarmax=peak
         if rms_use is None:
             rms_use=find_noise_area(lofarhdu,ra,dec,size)[1]
             print('Using LOFAR rms',rms_use)
-        print(lofarmax/drlimit,rms_use*lofarlevel)
-        minlevel=max([lofarmax/drlimit,rms_use*lofarlevel])
+        dr_minimum=lofarmax/drlimit
+        print('Dynamic range minimum flux density is',dr_minimum,'with DR limit',drlimit)
+        rms_minimum=rms_use*lofarlevel
+        print('RMS range minimum flux density is',rms_minimum,'at',lofarlevel,'sigma')
+        if minimum<dr_minimum:
+            dr_minimum=minimum # override e.g. if there is a faint source near a bright one
+            
+        minlevel=max([dr_minimum,rms_minimum])
         print('Using minimum level',minlevel)
         if peak is not None and peak/minlevel<10:
             lofarmax=np.nanmax(lofarhdu[0].data) # revert
@@ -174,7 +185,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
             vmax=vmax_cap
         rgbname='rgb_'+tempnam()+'.png'
         aplpy.make_rgb_image(hdu.filename(),rgbname,stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2],vmax_r=vmax,vmax_g=vmax,vmax_b=vmax)
-        f=aplpy.FITSFigure(rgbname,north=rotate_north)
+        f=aplpy.FITSFigure(rgbname,north=rotate_north,**kwargs)
         print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
         f.show_rgb()
@@ -184,13 +195,13 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
             logfile.write('%s %f %f %f %f %f %f %f\n' % mytuple)
     elif lofar_colorscale:
         print('Doing a LOFAR colour scale')
-        f = aplpy.FITSFigure(hdu,north=rotate_north)
+        f = aplpy.FITSFigure(hdu,north=rotate_north,**kwargs)
         print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
         f.show_colorscale(vmin=rms_use,vmax=lofarmax,stretch='log',cmap=cmap)
    
     else:
-        f = aplpy.FITSFigure(hdu,north=rotate_north)
+        f = aplpy.FITSFigure(hdu,north=rotate_north,**kwargs)
         print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
         mean,noise,vmax=find_noise_area(hdu,ra,dec,size)
@@ -206,7 +217,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         f._header['BMIN']=bmin
         f._header['BPA']=bpa
 
-    if show_lofar: f.show_contour(lofarhdu,colors='yellow',linewidths=lw, levels=levels)
+    if show_lofar: f.show_contour(lofarhdu,colors=contour_color,linewidths=lw, levels=levels)
 
     if firsthdu is not None:
         firstrms=find_noise_area(firsthdu,ra,dec,size)[1]
