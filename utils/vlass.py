@@ -118,6 +118,8 @@ def mosaic_vlass(ra,dec,size=1000,outname=None,overwrite=False):
         print('Output file %s  exists, skipping!' % outname)
         return False
     files=get_vlass(ra,dec)
+    if len(files)==0:
+        raise RuntimeError('No VLASS files for this position!')
     hdus=[]
     for f in files:
         hdu=fits.open(f)
