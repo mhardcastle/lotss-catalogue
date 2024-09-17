@@ -119,6 +119,7 @@ if __name__=='__main__':
 
         lhdu=extract_subim(lofarfile,ra,dec,size)
         pshdu=fits.open(optfile)
+        pshdu.writeto(sourcename+'_Legacy.fits',overwrite=True)
         if pshdu[0].header['NAXIS']==0:
             print('*** No optical image! ***')
             logfile.write('*** No optical %s %f %f ***\n' % (sourcename,r['RA'],r['DEC']))
@@ -160,4 +161,4 @@ if __name__=='__main__':
                 print('*** image build failed! (%s) ***' % str(e))
                 continue
             else:
-                os.system('mogrify -quality 90 -trim '+sourcename+'*.png')
+                os.system('mogrify -quality 90 -trim '+simage)

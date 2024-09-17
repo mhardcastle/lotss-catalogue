@@ -70,9 +70,41 @@ def get_vlass_tiles(ra,dec):
             results.append((bits[0],bits[5]))
     return results
 
-def get_vlass(ra,dec):
+class VLT(object):
+    # object version to cache
+    def __init__(self,download_to=None):
+        self.page=requests.get('https://archive-new.nrao.edu/vlass/VLASS_dyn_summary.php')
+        self.lines=self.page.text.split('\n')
+        self.cache={}
+        self.download_to=download_to
+    def get_tiles(self,ra,dec):
+        results=[]
+        for l in self.lines[3:]:
+            if not l: continue
+            bits=l.split()
+            dec_min=float(bits[1])
+            dec_max=float(bits[2])
+            ra_min=float(bits[3])*15
+            ra_max=float(bits[4])*15
+            if ra>=ra_min and ra<=ra_max and dec>dec_min and dec<dec_max and 'imaged' in l:
+                results.append((bits[0],bits[5]))
+        return results
+    def get_url(self,urlbase):
+        if urlbase in self.cache:
+            return self.cache[urlbase]
+        else:
+            print('Checking',urlbase)
+            page=requests.get(urlbase)
+            lines=page.text.split('\n')
+            self.cache[urlbase]=lines
+            return lines
+
+def get_vlass(ra,dec,v=None):
     files=[]
-    tiles=get_vlass_tiles(ra,dec)
+    if v is not None:
+        tiles=v.get_tiles(ra,dec)
+    else:
+        tiles=get_vlass_tiles(ra,dec)
     if len(tiles)==0:
         raise RuntimeError('No VLASS coverage of this position')
     for tile,epoch in tiles:
@@ -80,9 +112,12 @@ def get_vlass(ra,dec):
         if epoch.startswith('VLASS1'):
             epoch+='v2'
         urlbase='https://archive-new.nrao.edu/vlass/quicklook/'+epoch+'/'+tile
-        print('Checking',urlbase)
-        page=requests.get(urlbase)
-        lines=page.text.split('\n')
+        if v is not None:
+            lines=v.get_url(urlbase)
+        else:
+            print('Checking',urlbase)
+            page=requests.get(urlbase)
+            lines=page.text.split('\n')
         wanted_fields=[]
         for l in lines:
             if '<td>' in l: # a table line
@@ -106,18 +141,23 @@ def get_vlass(ra,dec):
 
         for field in wanted_fields:
             filename=field.replace('/','.I.iter1.image.pbcor.tt0.subim.fits')
-            download_file(urlbase+'/'+field+filename,filename)
-            files.append(filename)
+            if v is not None and v.download_to is not None:
+                dlfilename=v.download_to+'/'+filename
+            else:
+                dlfilename=filename
+            print(urlbase+'/'+field+filename)
+            download_file(urlbase+'/'+field+filename,dlfilename)
+            files.append(dlfilename)
 
     return files
 
-def mosaic_vlass(ra,dec,size=1000,outname=None,overwrite=False):
+def mosaic_vlass(ra,dec,size=1000,outname=None,overwrite=False,v=None):
     if outname is None:
         outname='VLASS-mosaic-%.2f_%.2f.fits' % (ra,dec)
     if os.path.isfile(outname) and not overwrite:
         print('Output file %s  exists, skipping!' % outname)
         return False
-    files=get_vlass(ra,dec)
+    files=get_vlass(ra,dec,v=v)
     if len(files)==0:
         raise RuntimeError('No VLASS files for this position!')
     hdus=[]

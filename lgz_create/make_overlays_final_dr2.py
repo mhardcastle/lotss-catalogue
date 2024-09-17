@@ -128,8 +128,8 @@ if __name__=='__main__':
             print('*** extract_subim failed (%s) ***' % str(e))
             continue
         
-        #ihdu.writeto(sourcename+'_i.fits',overwrite=True)
-        #shdu.writeto(sourcename+'_s.fits',overwrite=True)
+        lhdu.writeto(sourcename+'_LOFAR.fits',overwrite=True)
+        shdu.writeto(sourcename+'_WISE.fits',overwrite=True)
         #montage_wrapper.mGetHdr(sourcename+'_i.fits',sourcename+'_i.hdr') 
         #montage_wrapper.mProject(sourcename+'_s.fits',sourcename+'_so.fits',sourcename+'_i.hdr')
         #ihdu[0].data=np.where(ihdu[0].data>49999,np.nan,ihdu[0].data)
@@ -161,4 +161,4 @@ if __name__=='__main__':
                 print('*** image build failed! (%s) ***' % str(e))
                 continue
             else:
-                os.system('mogrify -quality 90 -trim '+sourcename+'*.png')
+                os.system('mogrify -quality 90 -trim '+simage)

@@ -66,20 +66,20 @@ def flatten(f,ra,dec,x,y,size,hduid=0,channel=0,freqaxis=3,verbose=True):
     header = wn.to_header()
     header["NAXIS"]=2
 
-    slice=[]
+    sl=[]
     for i in range(naxis,0,-1):
         if i==1:
-            slice.append(np.s_[xmin:xmax])
+            sl.append(np.s_[xmin:xmax])
         elif i==2:
-            slice.append(np.s_[ymin:ymax])
+            sl.append(np.s_[ymin:ymax])
         elif i==freqaxis:
-            slice.append(channel)
+            sl.append(channel)
         else:
-            slice.append(0)
+            sl.append(0)
     if verbose:
-        print(slice)
+        print(sl)
 
-    hdu=fits.PrimaryHDU(f[hduid].data[slice],header)
+    hdu=fits.PrimaryHDU(f[hduid].data[tuple(sl)],header)
     copy=('EQUINOX','EPOCH','BMAJ','BMIN','BPA')
     for k in copy:
         r=f[hduid].header.get(k)
