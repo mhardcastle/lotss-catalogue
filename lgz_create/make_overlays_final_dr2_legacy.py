@@ -119,10 +119,10 @@ if __name__=='__main__':
 
         lhdu=extract_subim(lofarfile,ra,dec,size)
         pshdu=fits.open(optfile)
-        pshdu.writeto(sourcename+'_Legacy.fits',overwrite=True)
+        #pshdu.writeto(sourcename+'_Legacy.fits',overwrite=True)
         if pshdu[0].header['NAXIS']==0:
             print('*** No optical image! ***')
-            logfile.write('*** No optical %s %f %f ***\n' % (sourcename,r['RA'],r['DEC']))
+            #logfile.write('*** No optical %s %f %f ***\n' % (sourcename,r['RA'],r['DEC']))
             continue
         # nan-blank
         pshdu[0].data=np.where(pshdu[0].data>8,np.nan,pshdu[0].data)
@@ -156,6 +156,7 @@ if __name__=='__main__':
             try:
                 show_overlay(lhdu,pshdu,ra,dec,size,firsthdu=None,overlay_cat=ots,overlay_scale=scale,coords_color='red',coords_ra=r['RA'],coords_dec=r['DEC'],coords_lw=3,lw=2,save_name=simage,no_labels=True,marker_ra=marker_ra,marker_dec=marker_dec,marker_lw=3,marker_color='magenta',title=title,lw_ellipse=3,ellipse_style=ls,ellipse_color=cs,peak=peak,ppsize=350,noisethresh=1.5,drlimit=1000,vmax_cap=0.5)
             except (Exception, RuntimeError) as e:
+                raise
                 error=True
             if error:
                 print('*** image build failed! (%s) ***' % str(e))

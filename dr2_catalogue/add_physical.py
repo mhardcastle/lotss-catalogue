@@ -59,8 +59,8 @@ ld=cosmo.luminosity_distance(z)
 lr=4*1e-29*np.pi*t['Total_flux']*ld.to(u.m)**2.0*(1+z)**(-0.3)
 angs=cosmo.kpc_proper_per_arcmin(z)*(u.arcmin/60.0)
 size=angs*asize/u.kpc
-t['Size']=np.where(np.isnan(zbest),np.nan,size)
-t['L_144']=np.where(np.isnan(zbest),np.nan,lr)
+t['Size']=np.where(np.isnan(z),np.nan,size)
+t['L_144']=np.where(np.isnan(z),np.nan,lr)
 
 '''
 # Add some column descriptions

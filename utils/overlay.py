@@ -158,7 +158,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         print('Dynamic range minimum flux density is',dr_minimum,'with DR limit',drlimit)
         rms_minimum=rms_use*lofarlevel
         print('RMS range minimum flux density is',rms_minimum,'at',lofarlevel,'sigma')
-        if minimum<dr_minimum:
+        if minimum is not None and minimum<dr_minimum:
             dr_minimum=minimum # override e.g. if there is a faint source near a bright one
             
         minlevel=max([dr_minimum,rms_minimum])

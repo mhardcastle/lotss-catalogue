@@ -18,7 +18,7 @@ from separation import separation
 class MapsList(object):
     def __init__(self,globstring,hdu_no=0,keephdu=True):
         warnings.simplefilter('ignore',category=AstropyWarning)
-        print 'Ingesting',globstring
+        print('Ingesting',globstring)
         g=glob.glob(globstring)
 
         files=[]
@@ -51,7 +51,7 @@ class MapsList(object):
         self.sizes=sizes
         self.wcs=wcs
         self.hdus=hdus
-    def find(self,ra,dec,returnhdu=False):
+    def find(self,ra,dec,returnhdu=False,radius=None):
         dist=separation(ra,dec,self.ras,self.decs)
         ranks=sorted(range(len(dist)),key=lambda i:dist[i])
         for r in ranks:
@@ -62,7 +62,8 @@ class MapsList(object):
             except TypeError:
                 x,y,_,_=w.wcs_world2pix(ra,dec,0,0,0)
             if x>=0 and y>=0 and x<xsize and y<ysize:
-                break
+                if radius is None or dist[r]<radius:
+                    break
         else:
             raise RuntimeError('Cannot find suitable map')
         if returnhdu:
