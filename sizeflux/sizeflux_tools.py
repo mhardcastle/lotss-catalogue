@@ -364,9 +364,7 @@ class Flood(object):
         multi_mask=np.zeros((sizey,sizex))
         #Main loop
         for i in range (0,len(multi_labels)):
-            #Because of how masked arrays work, we need to explicitly set to zero the areas of the array we want masked out... we need a temporary masked array for the intermediate step
-            temp_mask=(np.ma.masked_where(data_label!=multi_labels[i],one_mask))
-            temp_mask[temp_mask!=1]=0
+            temp_mask = np.where(data_label!=multi_labels[i],0,one_mask).astype(int)
             #As we have used a 1/0 matrix as a basis, iteratively adding the island masks together will give us the full mask we need 
             multi_mask=(multi_mask+temp_mask)
         #The output mask will only contain "1" in the areas corresponding to the islands of interest
@@ -377,7 +375,7 @@ class Flood(object):
         if verbose:
             print("Floodmask: number of non-zero pix in output array is: "+str(ntest))
 
-        flooded_array[flooded_mask==0]=np.nan
+        flooded_array[flooded_mask<1]=np.nan
         # for the purposes of this code we want to return the flooded mask and the flood-filled flux array
         return(flooded_mask,flooded_array)
 
