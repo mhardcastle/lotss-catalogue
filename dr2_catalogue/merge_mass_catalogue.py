@@ -48,13 +48,15 @@ def add_descs(tj,outname):
 
 if __name__=='__main__':
 
-    release=glob.glob('/beegfs/lofar/mjh/rgz/combined-release-v*-LM.fits')[-1]
+    release=sorted(glob.glob('/beegfs/lofar/mjh/rgz/combined-release-v*-LM.fits'))[-1]
 
-    kdcat='/beegfs/lofar/duncan/combined_release_v1.1_opt_mass_cols_v2.fits'
+    kdcat='/beegfs/lofar/duncan/combined_release_v1.2_opt_mass_cols.fits'
     #kdcat='/beegfs/lofar/mjh/rgz/fixed_mass_table.fits'
 
     print('Loading...')
+    print('...',release)
     t=Table.read(release)
+    print('...',kdcat)
     tkd=Table.read(kdcat)
 
 

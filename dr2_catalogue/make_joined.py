@@ -9,9 +9,9 @@ from surveys_db import SurveysDB
 # merge in legacy coverage and component tables
 
 fields=['Spring','Fall']
-versions=['v2.3','v2.5']
+versions=['v2.4','v2.6']
 pzname=['v0.3_joined','v0.3_south']
-outversion='v1.1'
+outversion='v1.2'
 tables=[]
 
 print('reading tables')

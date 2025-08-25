@@ -80,7 +80,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False,debug=False):
                 break
     return mean,noise,vmax
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,contour_color='yellow',first_color='lightgreen',vlass_color='salmon',drlimit=500,interactive_handler=None,peak=None,minimum=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid',logfile=None,sourcename=None,vmax_cap=None,cmap='jet',lofar_colorscale=False,rotate_north=True,figure=None,figsize=None):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,contour_color='yellow',first_color='lightgreen',vlass_color='salmon',vlasslevel=3.0,drlimit=500,interactive_handler=None,peak=None,minimum=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid',logfile=None,sourcename=None,vmax_cap=None,cmap='jet',lofar_colorscale=False,rotate_north=True,figure=None,figsize=None,stretch='log',vmax_override=None,tickspacing=None,gridspacing=1/60):
     '''
     show_overlay: make an overlay using AplPY.
     lofarhdu: the LOFAR cutout to use for contours
@@ -127,6 +127,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     kwargs={}
     if figsize is not None:
         kwargs['figsize']=figsize
+    if figure is not None:
+        kwargs['figure']=figure
     if lofarhdu is None:
         print('LOFAR HDU is missing, not showing it')
         show_lofar=False
@@ -183,8 +185,10 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         vmax=np.nanmax(vmaxes)
         if vmax_cap is not None and vmax>vmax_cap:
             vmax=vmax_cap
+        if vmax_override is not None:
+            vmax=vmax_override
         rgbname='rgb_'+tempnam()+'.png'
-        aplpy.make_rgb_image(hdu.filename(),rgbname,stretch_r='log',stretch_g='log',stretch_b='log',vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2],vmax_r=vmax,vmax_g=vmax,vmax_b=vmax)
+        aplpy.make_rgb_image(hdu.filename(),rgbname,stretch_r=stretch,stretch_g=stretch,stretch_b=stretch,vmin_r=vmins[0],vmin_g=vmins[1],vmin_b=vmins[2],vmax_r=vmax,vmax_g=vmax,vmax_b=vmax)
         f=aplpy.FITSFigure(rgbname,north=rotate_north,**kwargs)
         print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
@@ -212,6 +216,11 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
             print('*** Warning -- cannot show optical image, nans present ***')
         #f.show_colorscale(stretch='log')
 
+    if tickspacing is not None:
+        print('Attempt to change tick spacing')
+        f.ticks.set_xspacing(tickspacing)
+        f.ticks.set_yspacing(tickspacing)
+        
     if bmaj is not None:
         f._header['BMAJ']=bmaj
         f._header['BMIN']=bmin
@@ -228,8 +237,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     if vlasshdu is not None:
         vlassrms=find_noise_area(vlasshdu,ra,dec,size)[1]
         print('Using VLASS rms',vlassrms)
-        vlasslevels=vlassrms*3*2.0**np.linspace(0,14,30)
-        f.show_contour(vlasshdu,colors=vlass_color,linewidths=lw, levels=vlasslevels)
+        vlasslevels=vlassrms*vlasslevel*2.0**np.linspace(0,14,30)
+        f.show_contour(vlasshdu,colors=vlass_color,linewidths=lw, levels=vlasslevels,zorder=1)
 
     if bmaj is not None:
         f.add_beam()
@@ -279,8 +288,8 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     if show_grid:
         f.add_grid()
         f.grid.show()
-        f.grid.set_xspacing(1.0/60.0)
-        f.grid.set_yspacing(1.0/60.0)
+        f.grid.set_xspacing(gridspacing)
+        f.grid.set_yspacing(gridspacing)
 
     if title is not None:
         plt.title(title)

@@ -74,7 +74,7 @@ for hemisphere in hemispheres:
     sdss_gal_path = '{0}/{1}'.format(ancillary_data, 'specObj-dr16.fits')
     sdss_qso_path = '{0}/{1}'.format(ancillary_data, 'DR16Q_v4.fits')
     hetdex_path = '/beegfs/lofar/mjh/rgz/hetdex_sc1_v3.2.ecsv'
-    desi_path='/beegfs/lofar/mjh/rgz/zall-pix-fuji.fits'
+    desi_path='/beegfs/lofar/mjh/rgz/zall-pix-iron.fits'
     xray_2rxs_path = '{0}/{1}'.format(ancillary_data, '2RXS_AllWISE_catalog_paper_2017May26.fits')
     xray_xmmsl2_path = '{0}/{1}'.format(ancillary_data, 'XMMSL2_AllWISE_catalog_paper_2017JUN09.fits')
     bricks_path = '{0}/{1}'.format(ancillary_data, 'survey-bricks.fits')
@@ -89,8 +89,9 @@ for hemisphere in hemispheres:
     brick_dict[''] = -1
 
     # Extract brick/object properties from UID
-    ls_match = np.logical_and(lofar_cat['UID_L'] != '', lofar_cat['UID_L'] != 'N/A')
-    brickname = np.array([(id.split('_')[0]) for id in lofar_cat['UID_L'][ls_match]])
+    ls_match = (~lofar_cat['UID_L'].mask) & (lofar_cat['UID_L'] != '') & (lofar_cat['UID_L'] != 'N/A')
+    brickname = np.array([(str(id).split('_')[0]) for id in lofar_cat['UID_L'][ls_match]])
+    print(brickname)
     brickid = np.array([brick_dict[name] for name in brickname])
     objid = np.array([int(id.split('_')[1]) for id in lofar_cat['UID_L'][ls_match]])
 
@@ -254,6 +255,7 @@ for hemisphere in hemispheres:
     
     desi=Table.read(desi_path)
     filt=desi['ZCAT_PRIMARY'] & (desi['ZWARN']==0)
+    filt&=(desi['Z']<1.5) | (desi['SPECTYPE']!='GALAXY')
     desi=desi[filt]
     desi_coord = SkyCoord(desi['TARGET_RA'].data, desi['TARGET_DEC'].data, unit='deg')
 

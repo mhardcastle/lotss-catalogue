@@ -129,11 +129,13 @@ class LofarMaps(object):
         self.sc=coord.SkyCoord(self.ras, self.decs, unit=(u.deg, u.deg), frame='icrs')
         if not stay_in_imagedir:
             os.chdir(wd)
-    def find(self,ra,dec):
+    def find(self,ra,dec,limit=None):
         sc=coord.SkyCoord(ra, dec, unit=(u.deg, u.deg), frame='icrs')
-        dist=sc.separation(self.sc).value
+        dist=sc.separation(self.sc).to(u.deg).value
         #dist=(np.cos(self.decs*np.pi/180.0)*(self.ras-ra))**2.0 + (self.decs-dec)**2.0
         i=np.argmin(dist)
+        sep=dist[i]
+        if limit and sep>limit: return None
         return self.files[i]
         
 
