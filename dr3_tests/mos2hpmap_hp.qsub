@@ -1,0 +1,7 @@
+#PBS -q core32
+#PBS -l nodes=1:ppn=1 -l pmem=60G
+#PBS -l walltime=48:00:00
+
+hostname
+echo Mosaic is $MOSAIC
+python /home/mjh/git/lotss-catalogue/dr3_tests/mos2hpmap_hpm.py $MOSAIC
