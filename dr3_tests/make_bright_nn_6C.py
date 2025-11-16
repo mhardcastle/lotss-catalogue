@@ -33,9 +33,9 @@ def select_isolated_sources(t,radius,progress=False):
 
 fluxcut=0.1 # Jy
 sep=120 # arcsec
-NSIDE=64
+NSIDE=32
 
-t=Table.read('/beegfs/lofar/DR3/catalogues/LoTSS_DR3_v0.3.srl.fits')
+t=Table.read('/beegfs/lofar/DR3/catalogues/LoTSS_DR3_v0.5.srl.fits')
 
 t=t[t['Total_flux']>fluxcut*1000]
 print(len(t))
@@ -44,6 +44,8 @@ pixels=hp.ang2pix(NSIDE,t['RA'],t['DEC'],lonlat=True)
 t['pixel']=pixels
 
 t6C=Table.read('6C-DR3.fits')
+pixels_6C=hp.ang2pix(NSIDE,t6C['RA'],t6C['DEC'],lonlat=True)
+t6C['pixel']=pixels_6C
 pix6C=set(t6C['pixel'])
 skyfilt=[]
 for r in t:
@@ -55,4 +57,4 @@ t=t[skyfilt]
 
 t=select_isolated_sources(t,sep,progress=True)
 
-t.write('bright-cut-NN1-6Cmatch.fits')
+t.write('bright-cut-NN1-6Cmatch.fits',overwrite=True)
