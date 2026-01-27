@@ -23,12 +23,22 @@ plt.rcParams.update({
 t=Table.read(sys.argv[1])
 NSIDE = int(sys.argv[2])
 prefix=sys.argv[3]
+try:
+    version=sys.argv[4]
+except:
+    version='sum'
+
+if version not in ['sum','median']:
+    raise NotImplementedError('Undefined version '+version)
+
 NPIX = hp.nside2npix(NSIDE)
 print('NPIX =', NPIX)
 
 f1 = np.full(NPIX, 0, dtype=float)
 f2 = np.full(NPIX, 0, dtype=float)
 c = np.full(NPIX, 0, dtype=int)
+fl1={}
+fl2={}
 t['Proj_pixel']=hp.pixelfunc.ang2pix(NSIDE,t['RA'],t['DEC'],lonlat=True)
 
 #for pix in np.unique(t['Proj_pixel']):
@@ -36,17 +46,33 @@ t['Proj_pixel']=hp.pixelfunc.ang2pix(NSIDE,t['RA'],t['DEC'],lonlat=True)
 
 for r in t:
     pixel=r['Proj_pixel']
-    f1[pixel]+=r[prefix+'_Total_flux']
-    f2[pixel]+=r['Total_flux']
-#    m[pixel]+=r['Ratio']
-#    c[pixel]+=1
-
+    c[pixel]+=1
+    if version=='sum':
+        f1[pixel]+=r[prefix+'_Total_flux']
+        f2[pixel]+=r['Total_flux']
+    elif version=='median':
+        if pixel in fl1:
+            fl1[pixel].append(r[prefix+'_Total_flux'])
+            fl2[pixel].append(r['Total_flux'])
+        else:
+            fl1[pixel]=[r[prefix+'_Total_flux']]
+            fl2[pixel]=[r['Total_flux']]
+                        
 #m/=c
-m=f2/f1 # LOFAR/other
+if version=='sum':
+    m=f2/f1 # LOFAR/other
+elif version=='median':
+    m=np.full(NPIX, np.nan, dtype=float)
+    for pixel in fl1:
+        m[pixel]=np.median(np.array(fl2[pixel])/np.array(fl1[pixel]))
+
+# Mask low counts areas
+#m[c<100]=np.nan
 
 print(m)
 print(np.sum(~np.isnan(m)))
 print(np.nanmean(m))
+print(np.nanstd(m))
 
 #m[np.where(m==0.0)]= 50.0  # set zero values to white
 

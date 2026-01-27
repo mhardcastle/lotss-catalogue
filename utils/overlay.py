@@ -69,7 +69,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False,debug=False):
         subim=hdu[0].data[channel,ymin:ymax,xmin:xmax]
     else:
         subim=hdu[0].data[ymin:ymax,xmin:xmax]
-    if debug: subim.shape
+    if debug: print(subim.shape)
     mean,noise=find_noise(subim)
     if true_max:
         vmax=np.nanmax(subim)
@@ -80,7 +80,7 @@ def find_noise_area(hdu,ra,dec,size,channel=0,true_max=False,debug=False):
                 break
     return mean,noise,vmax
 
-def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,contour_color='yellow',first_color='lightgreen',vlass_color='salmon',vlasslevel=3.0,drlimit=500,interactive_handler=None,peak=None,minimum=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid',logfile=None,sourcename=None,vmax_cap=None,cmap='jet',lofar_colorscale=False,rotate_north=True,figure=None,figsize=None,stretch='log',vmax_override=None,tickspacing=None,gridspacing=1/60):
+def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use=None,bmaj=None,bmin=None,bpa=None,title=None,save_name=None,plotpos=None,ppsize=750,block=True,interactive=False,plot_coords=True,overlay_cat=None,lw=1.0,show_lofar=True,no_labels=False,show_grid=True,overlay_region=None,overlay_scale=1.0,circle_radius=None,coords_color='white',coords_lw=1,coords_ra=None,coords_dec=None,marker_ra=None,marker_dec=None,marker_color='white',marker_lw=3,noisethresh=1,lofarlevel=2.0,contour_color='yellow',first_color='lightgreen',vlass_color='salmon',vlasslevel=3.0,drlimit=500,interactive_handler=None,peak=None,minimum=None,ellipse_color='red',lw_ellipse=3,ellipse_style='solid',logfile=None,sourcename=None,vmax_cap=None,cmap='jet',lofar_colorscale=False,rotate_north=True,figure=None,figsize=None,stretch='log',vmax_override=None,tickspacing=None,gridspacing=1/60,rectangle=None,arrow=None,xlabel=None,ylabel=None,cscale_sigma=1):
     '''
     show_overlay: make an overlay using AplPY.
     lofarhdu: the LOFAR cutout to use for contours
@@ -154,7 +154,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
             print('Using user-specified peak flux of',peak)
             lofarmax=peak
         if rms_use is None:
-            rms_use=find_noise_area(lofarhdu,ra,dec,size)[1]
+            rms_use=find_noise_area(lofarhdu,ra,dec,size,debug=True)[1]
             print('Using LOFAR rms',rms_use)
         dr_minimum=lofarmax/drlimit
         print('Dynamic range minimum flux density is',dr_minimum,'with DR limit',drlimit)
@@ -202,7 +202,7 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
         f = aplpy.FITSFigure(hdu,north=rotate_north,**kwargs)
         print('centring on',ra,dec,size)
         f.recenter(ra,dec,width=size,height=size)
-        f.show_colorscale(vmin=rms_use,vmax=lofarmax,stretch='log',cmap=cmap)
+        f.show_colorscale(vmin=rms_use*cscale_sigma,vmax=lofarmax,stretch='log',cmap=cmap)
    
     else:
         f = aplpy.FITSFigure(hdu,north=rotate_north,**kwargs)
@@ -285,14 +285,25 @@ def show_overlay(lofarhdu,opthdu,ra,dec,size,firsthdu=None,vlasshdu=None,rms_use
     if no_labels:
         f.axis_labels.hide()
         f.tick_labels.hide()
+        plt.axis('off')
     if show_grid:
         f.add_grid()
         f.grid.show()
         f.grid.set_xspacing(gridspacing)
         f.grid.set_yspacing(gridspacing)
 
+    if rectangle is not None:
+        f.show_rectangles(rectangle[0],rectangle[1],rectangle[2],rectangle[3],zorder=100,edgecolor='white',linewidth=2)
+    if arrow is not None:
+        f.show_arrows(arrow[0],arrow[1],arrow[2],arrow[3],zorder=100,edgecolor='white',linewidth=2)
+
     if title is not None:
         plt.title(title)
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+        
     plt.tight_layout()
     if save_name is None:
         plt.show(block=block)
