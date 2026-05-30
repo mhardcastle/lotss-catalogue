@@ -111,7 +111,7 @@ def get_vlass(ra,dec,v=None):
         print(tile,epoch)
         if epoch.startswith('VLASS1'):
             epoch+='v2'
-        urlbase='https://archive-new.nrao.edu/vlass/quicklook/'+epoch+'/'+tile
+        urlbase='https://vlass-dl.nrao.edu/vlass/quicklook/'+epoch+'/'+tile
         if v is not None:
             lines=v.get_url(urlbase)
         else:
@@ -175,7 +175,7 @@ def mosaic_vlass(ra,dec,size=1000,outname=None,overwrite=False,v=None):
 
     isum=np.zeros([size,size])
     wsum=np.zeros_like(isum) # will be 0,1,2 etc...
-    mask=np.zeros_like(isum,dtype=np.bool) # True if there is at least one non-NaN contribution
+    mask=np.zeros_like(isum,dtype=bool) # True if there is at least one non-NaN contribution
 
     for i in range(len(hdus)):
         print('image',i,'(',files[i],')')
