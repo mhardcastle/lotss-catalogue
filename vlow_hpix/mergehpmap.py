@@ -7,7 +7,7 @@ import healpy as hp
 from astropy.io import fits
 import os
 
-NSIDE=4096
+NSIDE=8192 # was 4096
 
 import json
 
@@ -21,7 +21,7 @@ temperature=np.ones(pixels)*np.nan
 beamarea=18.12944056730881*(0.004166666666666667*np.pi/180)**2 # sr
 
 for k in tqdm(j):
-    f=f'/data/lofar/DR3/healpix_mosaics/{k}/vlow-hptable.fits'
+    f=f'/data/lofar/DR3/healpix_mosaics/{k}/vlow-hptable-{NSIDE}.fits'
     if not os.path.isfile(f): continue
     t=Table.read(f)
     # Unit conversions
@@ -34,4 +34,4 @@ for k in tqdm(j):
     if np.max(np.abs(temps))>1e5:
         print(k,np.max(temps))
     
-hp.fitsfunc.write_map('/data/lofar/mjh/temperature_hp.fits',temperature,overwrite=True)
+hp.fitsfunc.write_map(f'/data/lofar/mjh/temperature_hp-{NSIDE}.fits',temperature,overwrite=True)

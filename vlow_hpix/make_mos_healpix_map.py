@@ -62,17 +62,17 @@ def subpixels_in_pixel(ipix, nside_1, nside_2):
 
 if __name__=='__main__':
 
-    NSIDE=4096
+    NSIDE=8192 # was 4096
     NSIDE_BIG=16
     with open('/data/lofar/DR3/vlow_sub_healpix_map.json') as infile:
         j=json.load(infile)
     for bp in tqdm(j):
         big_pixel=int(bp)
         #pixels=subpixels_in_pixel(big_pixel,NSIDE_BIG,NSIDE)
-        wd=f'/beegfs/lofar/DR3/healpix_mosaics/{big_pixel}'
+        wd=f'/data/lofar/DR3/healpix_mosaics/{big_pixel}'
         if not os.path.isdir(wd): continue
         os.chdir(wd)
-        if os.path.isfile('vlow-hptable.fits'): continue
+        if os.path.isfile(f'vlow-hptable-{NSIDE}.fits'): continue
         hdu=fits.open('vlow-sub-mosaic-blanked.fits')
         #print(hdu[0].data.shape)
         #print(np.sum(~np.isnan(hdu[0].data)),'non-blanked pixels')
@@ -120,7 +120,7 @@ if __name__=='__main__':
         )
 
         t=Table([pixels,fluxes],names=['PIXEL','Flux per pixel'])
-        t.write('vlow-hptable.fits',overwrite=True)
+        t.write(f'vlow-hptable-{NSIDE}.fits',overwrite=True)
 
 
 

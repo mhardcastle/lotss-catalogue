@@ -12,7 +12,9 @@ import astropy.coordinates as ac
 import utils.plotting as pp
 
 from lofar_source_sorter_dr2 import Mask
+import pygraphviz as pgv
 
+print(pgv)
 
 '''
 M_Diagnosis_Code
@@ -858,11 +860,6 @@ if __name__=='__main__':
         # make flowchart from list of masks
         plot_flowchart = True
         plot_verbose = False
-        try:
-            import pygraphviz as pgv
-        except ImportError:
-            print('no pygraphviz; cannot make visual flowchart')
-            plot_flowchart = False
         if plot_flowchart:
 
             PW = 75.
